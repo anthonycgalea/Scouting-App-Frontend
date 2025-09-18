@@ -46,7 +46,7 @@ const teamDirectoryRoute = createRoute({
 
 const teamDetailRoute = createRoute({
   getParentRoute: () => teamDirectoryRoute,
-  path: '$teamId',
+  path: '/$teamId',
   component: TeamDetailPage,
 });
 
