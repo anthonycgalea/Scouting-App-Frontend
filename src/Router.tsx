@@ -7,6 +7,7 @@ import { UserSettingsPage } from './pages/Settings.page';
 import { theme } from './theme';
 import { TeamMembersPage } from './pages/TeamMembers.page';
 import { TeamDirectoryPage } from './pages/TeamDirectory.page';
+import { TeamDetailPage } from './pages/TeamDetailPage.page';
 import { DataManagerPage } from './pages/DataManager.page';
 
 const rootRoute = createRootRoute({
@@ -43,6 +44,12 @@ const teamDirectoryRoute = createRoute({
   component: TeamDirectoryPage,
 });
 
+const teamDetailRoute = createRoute({
+  getParentRoute: () => teamDirectoryRoute,
+  path: '$teamId',
+  component: TeamDetailPage,
+});
+
 const dataManagerRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/dataManager',
@@ -65,7 +72,7 @@ const teamMembersRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   homeRoute.addChildren([]),
   matchScheduleRoute.addChildren([]),
-  teamDirectoryRoute.addChildren([]),
+  teamDirectoryRoute.addChildren([teamDetailRoute]),
   dataManagerRoute.addChildren([]),
   settingsRoute.addChildren([]),
   teamMembersRoute.addChildren([])

@@ -1,5 +1,3 @@
-export function TeamAnalytics(){
-    <p>
-        placeholder text
-    </p>
+export function TeamAnalytics() {
+  return <p>placeholder text</p>;
 }
