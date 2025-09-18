@@ -30,7 +30,7 @@ const homeRoute = createRoute({
 
 const matchScheduleRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/matchSchedule',
+  path: '/matches',
   component: MatchSchedulePage,
 });
 

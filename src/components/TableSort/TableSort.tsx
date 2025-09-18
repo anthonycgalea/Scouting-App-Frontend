@@ -51,7 +51,7 @@ function Th({ children, reversed, onSort }: ThProps) {
   return (
     <Table.Th className={classes.th}>
       <UnstyledButton onClick={onSort} className={classes.control}>
-        <Group justify="space-between">
+        <Group justify="center" gap="xs" align="center">
           <Text fw={500} fz="sm">
             {children}
           </Text>
@@ -69,11 +69,12 @@ function filterData(
   { matchSearch, teamSearch }: { matchSearch: string; teamSearch: string }
 ) {
   const matchQuery = matchSearch.trim();
+  const matchNumberQuery = Number(matchQuery);
   const teamQuery = teamSearch.toLowerCase().trim();
 
   return data.filter((item) => {
     const matchMatches = matchQuery
-      ? item.matchNumber.toString().includes(matchQuery)
+      ? !Number.isNaN(matchNumberQuery) && item.matchNumber === matchNumberQuery
       : true;
 
     const teamMatches = teamQuery
@@ -128,12 +129,12 @@ export function TableSort() {
   const rows = sortedData.map((row) => (
     <Table.Tr key={row.matchNumber}>
       <Table.Td>{row.matchNumber}</Table.Td>
-      <Table.Td>{row.red1}</Table.Td>
-      <Table.Td>{row.red2}</Table.Td>
-      <Table.Td>{row.red3}</Table.Td>
-      <Table.Td>{row.blue1}</Table.Td>
-      <Table.Td>{row.blue2}</Table.Td>
-      <Table.Td>{row.blue3}</Table.Td>
+      <Table.Td className={classes.redCell}>{row.red1}</Table.Td>
+      <Table.Td className={classes.redCell}>{row.red2}</Table.Td>
+      <Table.Td className={classes.redCell}>{row.red3}</Table.Td>
+      <Table.Td className={classes.blueCell}>{row.blue1}</Table.Td>
+      <Table.Td className={classes.blueCell}>{row.blue2}</Table.Td>
+      <Table.Td className={classes.blueCell}>{row.blue3}</Table.Td>
     </Table.Tr>
   ));
 
@@ -154,7 +155,13 @@ export function TableSort() {
             onChange={handleTeamSearchChange}
           />
         </Group>
-        <Table horizontalSpacing="md" verticalSpacing="xs" miw={700} layout="fixed">
+        <Table
+          horizontalSpacing="md"
+          verticalSpacing="xs"
+          miw={700}
+          layout="fixed"
+          className={classes.table}
+        >
           <Table.Thead>
             <Table.Tr>
               <Th sorted reversed={reverseSortDirection} onSort={setSorting}>

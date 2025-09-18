@@ -6,6 +6,7 @@ import {
   IconLock,
   IconNotes,
   IconPresentationAnalytics,
+  IconUsersGroup,
 } from '@tabler/icons-react';
 import { Code, Group, ScrollArea } from '@mantine/core';
 import { LinksGroup } from '../NavbarLinksGroup/NavbarLinksGroup';
@@ -15,7 +16,8 @@ import classes from './NavbarNested.module.css';
 
 const data = [
   { label: 'Dashboard', icon: IconGauge },
-  { label: 'Match Schedule', icon: IconNotes, to: '/matchSchedule' },
+  { label: 'Matches', icon: IconNotes, to: '/matches' },
+  { label: 'Teams', icon: IconUsersGroup },
   { label: 'SuperScout', icon: IconBulb },
   { label: 'Analytics', icon: IconPresentationAnalytics },
   { label: 'Data Manager', icon: IconFileAnalytics },
