@@ -1,10 +1,10 @@
 import {
   IconAdjustments,
+  IconBulb,
   IconFileAnalytics,
   IconGauge,
   IconLock,
   IconNotes,
-  IconBulb,
   IconPresentationAnalytics,
 } from '@tabler/icons-react';
 import { Code, Group, ScrollArea } from '@mantine/core';
@@ -15,7 +15,7 @@ import classes from './NavbarNested.module.css';
 
 const data = [
   { label: 'Dashboard', icon: IconGauge },
-  { label: 'Match Schedule', icon: IconNotes },
+  { label: 'Match Schedule', icon: IconNotes, to: '/matchSchedule' },
   { label: 'SuperScout', icon: IconBulb },
   { label: 'Analytics', icon: IconPresentationAnalytics },
   { label: 'Data Manager', icon: IconFileAnalytics },

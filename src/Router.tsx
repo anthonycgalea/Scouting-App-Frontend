@@ -1,38 +1,43 @@
-import {
-  RouterProvider,
-  createRouter,
-  createRootRoute,
-  createRoute,
-} from '@tanstack/react-router'
-import { HomePage } from './pages/Home.page'
-import { MatchSchedulePage } from './pages/MatchSchedule.page'
+import { createRootRoute, createRoute, createRouter, Outlet } from '@tanstack/react-router';
+import { MantineProvider } from '@mantine/core';
+import { NavbarNested } from './components/Navbar/NavbarNested';
+import { HomePage } from './pages/Home.page';
+import { MatchSchedulePage } from './pages/MatchSchedule.page';
+import { theme } from './theme';
 
-const rootRoute = createRootRoute()
+const rootRoute = createRootRoute({
+  component: function RootLayout() {
+    return (
+      <MantineProvider theme={theme}>
+        <div style={{ display: 'flex', height: '100vh' }}>
+          <NavbarNested />
+          <div style={{ flex: 1, overflow: 'auto' }}>
+            <Outlet />
+          </div>
+        </div>
+      </MantineProvider>
+    );
+  },
+});
 
 // Define your app routes
 const homeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
   component: HomePage,
-})
+});
 
 const matchScheduleRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/matchSchedule',
   component: MatchSchedulePage,
-})
+});
 
 // Build the route tree
 const routeTree = rootRoute.addChildren([
   homeRoute.addChildren([]),
   matchScheduleRoute.addChildren([])
-])
+]);
 
 
-// Create the router
-const router = createRouter({ routeTree })
-
-
-export function Router() {
-  return <RouterProvider router={router} />
-}
+export const router = createRouter({ routeTree });
