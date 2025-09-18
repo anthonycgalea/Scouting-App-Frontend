@@ -1,14 +1,13 @@
-import {
-  IconCalendar,
-  IconChevronDown,
-  IconPackage,
-  IconSquareCheck,
-  IconUsers,
-} from '@tabler/icons-react';
-import { Button, Menu, Text, useMantineTheme } from '@mantine/core';
+import { IconChevronDown, IconClipboardList, IconPlayerPlay } from '@tabler/icons-react';
+import { Button, Menu, useMantineTheme } from '@mantine/core';
 
-export function ButtonMenu() {
+interface MatchNumberButtonMenuProps {
+  matchNumber: number;
+}
+
+export function MatchNumberButtonMenu({ matchNumber }: MatchNumberButtonMenuProps) {
   const theme = useMantineTheme();
+
   return (
     <Menu
       transitionProps={{ transition: 'pop-top-right' }}
@@ -18,50 +17,27 @@ export function ButtonMenu() {
       radius="md"
     >
       <Menu.Target>
-        <Button rightSection={<IconChevronDown size={18} stroke={1.5} />} pr={12} radius="md">
-          Create new
+        <Button
+          aria-label={`Match ${matchNumber} actions`}
+          rightSection={<IconChevronDown size={18} stroke={1.5} />}
+          pr={12}
+          radius="md"
+          variant="subtle"
+        >
+          Match {matchNumber}
         </Button>
       </Menu.Target>
       <Menu.Dropdown>
+        <Menu.Label>Match {matchNumber}</Menu.Label>
         <Menu.Item
-          leftSection={<IconPackage size={16} color={theme.colors.blue[6]} stroke={1.5} />}
-          rightSection={
-            <Text size="xs" tt="uppercase" fw={700} c="dimmed">
-              Ctrl + P
-            </Text>
-          }
+          leftSection={<IconClipboardList size={16} color={theme.colors.blue[6]} stroke={1.5} />}
         >
-          Project
+          View match details
         </Menu.Item>
         <Menu.Item
-          leftSection={<IconSquareCheck size={16} color={theme.colors.pink[6]} stroke={1.5} />}
-          rightSection={
-            <Text size="xs" tt="uppercase" fw={700} c="dimmed">
-              Ctrl + T
-            </Text>
-          }
+          leftSection={<IconPlayerPlay size={16} color={theme.colors.green[6]} stroke={1.5} />}
         >
-          Task
-        </Menu.Item>
-        <Menu.Item
-          leftSection={<IconUsers size={16} color={theme.colors.cyan[6]} stroke={1.5} />}
-          rightSection={
-            <Text size="xs" tt="uppercase" fw={700} c="dimmed">
-              Ctrl + U
-            </Text>
-          }
-        >
-          Team
-        </Menu.Item>
-        <Menu.Item
-          leftSection={<IconCalendar size={16} color={theme.colors.violet[6]} stroke={1.5} />}
-          rightSection={
-            <Text size="xs" tt="uppercase" fw={700} c="dimmed">
-              Ctrl + E
-            </Text>
-          }
-        >
-          Event
+          Start scouting
         </Menu.Item>
       </Menu.Dropdown>
     </Menu>
