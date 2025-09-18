@@ -1,15 +1,6 @@
 import { useState } from 'react';
-import { IconChevronDown, IconChevronUp, IconSearch, IconSelector } from '@tabler/icons-react';
-import {
-  Center,
-  Group,
-  keys,
-  ScrollArea,
-  Table,
-  Text,
-  TextInput,
-  UnstyledButton,
-} from '@mantine/core';
+import { IconChevronDown, IconChevronUp, IconSearch } from '@tabler/icons-react';
+import { Center, Group, ScrollArea, Table, Text, TextInput, UnstyledButton } from '@mantine/core';
 import classes from './TableSort.module.css';
 
 interface RowData {
@@ -29,8 +20,42 @@ interface ThProps {
   onSort: () => void;
 }
 
-function Th({ children, reversed, sorted, onSort }: ThProps) {
-  const Icon = sorted ? (reversed ? IconChevronUp : IconChevronDown) : IconSelector;
+const searchableKeys: (keyof RowData)[] = [
+  'matchNumber',
+  'red1',
+  'red2',
+  'red3',
+  'blue1',
+  'blue2',
+  'blue3',
+];
+
+const schedule: RowData[] = [
+  { matchNumber: 1, red1: 1678, red2: 4414, red3: 5940, blue1: 254, blue2: 971, blue3: 840 },
+  { matchNumber: 2, red1: 973, red2: 649, red3: 115, blue1: 118, blue2: 148, blue3: 3647 },
+  { matchNumber: 3, red1: 2122, red2: 2471, red3: 2990, blue1: 3847, blue2: 5026, blue3: 8033 },
+  { matchNumber: 4, red1: 1323, red2: 2046, red3: 5818, blue1: 1538, blue2: 359, blue3: 4419 },
+  { matchNumber: 5, red1: 604, red2: 2813, red3: 3250, blue1: 1671, blue2: 3255, blue3: 5109 },
+  { matchNumber: 6, red1: 4541, red2: 4183, red3: 4255, blue1: 4334, blue2: 3310, blue3: 589 },
+  { matchNumber: 7, red1: 6800, red2: 624, red3: 4587, blue1: 6240, blue2: 5012, blue3: 5414 },
+  { matchNumber: 8, red1: 5667, red2: 2473, red3: 6814, blue1: 5419, blue2: 5700, blue3: 6913 },
+  { matchNumber: 9, red1: 238, red2: 78, red3: 226, blue1: 125, blue2: 195, blue3: 1474 },
+  { matchNumber: 10, red1: 3538, red2: 27, red3: 494, blue1: 3620, blue2: 469, blue3: 910 },
+  { matchNumber: 11, red1: 4143, red2: 930, red3: 2830, blue1: 1732, blue2: 2062, blue3: 3352 },
+  { matchNumber: 12, red1: 2056, red2: 1241, red3: 3683, blue1: 1114, blue2: 4039, blue3: 1310 },
+  { matchNumber: 13, red1: 4481, red2: 2767, red3: 4003, blue1: 2481, blue2: 217, blue3: 3026 },
+  { matchNumber: 14, red1: 71, red2: 45, red3: 1024, blue1: 234, blue2: 245, blue3: 829 },
+  { matchNumber: 15, red1: 987, red2: 6045, red3: 5499, blue1: 399, blue2: 4145, blue3: 585 },
+  { matchNumber: 16, red1: 1619, red2: 2992, red3: 179, blue1: 1339, blue2: 4068, blue3: 4388 },
+  { matchNumber: 17, red1: 433, red2: 708, red3: 1710, blue1: 1806, blue2: 1939, blue3: 2410 },
+  { matchNumber: 18, red1: 303, red2: 222, red3: 7083, blue1: 2590, blue2: 223, blue3: 1257 },
+  { matchNumber: 19, red1: 870, red2: 287, red3: 1519, blue1: 353, blue2: 1885, blue3: 5960 },
+  { matchNumber: 20, red1: 862, red2: 1718, red3: 2959, blue1: 5561, blue2: 6077, blue3: 858 },
+];
+
+
+function Th({ children, reversed, onSort }: ThProps) {
+  const Icon = reversed ? IconChevronDown : IconChevronUp;
   return (
     <Table.Th className={classes.th}>
       <UnstyledButton onClick={onSort} className={classes.control}>
@@ -49,133 +74,37 @@ function Th({ children, reversed, sorted, onSort }: ThProps) {
 
 function filterData(data: RowData[], search: string) {
   const query = search.toLowerCase().trim();
-  return data.filter((item) =>
-    keys(data[0]).some((key) => item[key].toString().includes(query))
-  );
-}
-
-function sortData(
-  data: RowData[],
-  payload: { sortBy: keyof RowData | null; reversed: boolean; search: string }
-) {
-  const { sortBy } = payload;
-
-  if (!sortBy) {
-    return filterData(data, payload.search);
+  if (!query) {
+    return data;
   }
-
-  return filterData(
-    [...data].sort((a, b) => {
-      if (payload.reversed) {
-        return b[sortBy].localeCompare(a[sortBy]);
-      }
-
-      return a[sortBy].localeCompare(b[sortBy]);
-    }),
-    payload.search
+  return data.filter((item) =>
+    searchableKeys.some((key) => item[key].toString().toLowerCase().includes(query))
   );
 }
 
-const data = [
-  {
-    name: 'Athena Weissnat',
-    company: 'Little - Rippin',
-    email: 'Elouise.Prohaska@yahoo.com',
-  },
-  {
-    name: 'Deangelo Runolfsson',
-    company: 'Greenfelder - Krajcik',
-    email: 'Kadin_Trantow87@yahoo.com',
-  },
-  {
-    name: 'Danny Carter',
-    company: 'Kohler and Sons',
-    email: 'Marina3@hotmail.com',
-  },
-  {
-    name: 'Trace Tremblay PhD',
-    company: 'Crona, Aufderhar and Senger',
-    email: 'Antonina.Pouros@yahoo.com',
-  },
-  {
-    name: 'Derek Dibbert',
-    company: 'Gottlieb LLC',
-    email: 'Abagail29@hotmail.com',
-  },
-  {
-    name: 'Viola Bernhard',
-    company: 'Funk, Rohan and Kreiger',
-    email: 'Jamie23@hotmail.com',
-  },
-  {
-    name: 'Austin Jacobi',
-    company: 'Botsford - Corwin',
-    email: 'Genesis42@yahoo.com',
-  },
-  {
-    name: 'Hershel Mosciski',
-    company: 'Okuneva, Farrell and Kilback',
-    email: 'Idella.Stehr28@yahoo.com',
-  },
-  {
-    name: 'Mylene Ebert',
-    company: 'Kirlin and Sons',
-    email: 'Hildegard17@hotmail.com',
-  },
-  {
-    name: 'Lou Trantow',
-    company: 'Parisian - Lemke',
-    email: 'Hillard.Barrows1@hotmail.com',
-  },
-  {
-    name: 'Dariana Weimann',
-    company: 'Schowalter - Donnelly',
-    email: 'Colleen80@gmail.com',
-  },
-  {
-    name: 'Dr. Christy Herman',
-    company: 'VonRueden - Labadie',
-    email: 'Lilyan98@gmail.com',
-  },
-  {
-    name: 'Katelin Schuster',
-    company: 'Jacobson - Smitham',
-    email: 'Erich_Brekke76@gmail.com',
-  },
-  {
-    name: 'Melyna Macejkovic',
-    company: 'Schuster LLC',
-    email: 'Kylee4@yahoo.com',
-  },
-  {
-    name: 'Pinkie Rice',
-    company: 'Wolf, Trantow and Zulauf',
-    email: 'Fiona.Kutch@hotmail.com',
-  },
-  {
-    name: 'Brain Kreiger',
-    company: 'Lueilwitz Group',
-    email: 'Rico98@hotmail.com',
-  },
-];
+function sortData(data: RowData[], payload: { reversed: boolean; search: string }) {
+  const sorted = [...data].sort((a, b) =>
+    payload.reversed ? b.matchNumber - a.matchNumber : a.matchNumber - b.matchNumber
+  );
+
+  return filterData(sorted, payload.search);
+}
 
 export function TableSort() {
   const [search, setSearch] = useState('');
-  const [sortedData, setSortedData] = useState(data);
-  const [sortBy, setSortBy] = useState<keyof RowData | null>(null);
   const [reverseSortDirection, setReverseSortDirection] = useState(false);
+  const [sortedData, setSortedData] = useState(() => sortData(schedule, { reversed: false, search: '' }));
 
-  const setSorting = (field: keyof RowData) => {
-    const reversed = field === sortBy ? !reverseSortDirection : false;
+  const setSorting = () => {
+    const reversed = !reverseSortDirection;
     setReverseSortDirection(reversed);
-    setSortBy(field);
-    setSortedData(sortData(data, { sortBy: matchNumber }));
+    setSortedData(sortData(schedule, { reversed, search }));
   };
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = event.currentTarget;
     setSearch(value);
-    setSortedData(sortData(data, { sortBy, reversed: reverseSortDirection, search: value }));
+    setSortedData(sortData(schedule, { reversed: reverseSortDirection, search: value }));
   };
 
   const rows = sortedData.map((row) => (
@@ -193,72 +122,32 @@ export function TableSort() {
   return (
     <ScrollArea>
       <TextInput
-        placeholder="Search by any field"
+        placeholder="Search by match or team number"
         mb="md"
         leftSection={<IconSearch size={16} stroke={1.5} />}
         value={search}
         onChange={handleSearchChange}
       />
       <Table horizontalSpacing="md" verticalSpacing="xs" miw={700} layout="fixed">
-        <Table.Tbody>
+        <Table.Thead>
           <Table.Tr>
-            <Th
-              sorted={sortBy === 'matchNumber'}
-              reversed={reverseSortDirection}
-              onSort={() => setSorting('matchNumber')}
-            >
+            <Th sorted reversed={reverseSortDirection} onSort={setSorting}>
               Match #
             </Th>
-            <Th
-              sorted={sortBy === 'name'}
-              reversed={reverseSortDirection}
-              onSort={() => setSorting('name')}
-            >
-              Red 1
-            </Th>
-            <Th
-              sorted={sortBy === 'email'}
-              reversed={reverseSortDirection}
-              onSort={() => setSorting('email')}
-            >
-              Red 2
-            </Th>
-            <Th
-              sorted={sortBy === 'company'}
-              reversed={reverseSortDirection}
-              onSort={() => setSorting('company')}
-            >
-              Red 3
-            </Th>
-            <Th
-              sorted={sortBy === 'name'}
-              reversed={reverseSortDirection}
-              onSort={() => setSorting('name')}
-            >
-              Blue 1
-            </Th>
-            <Th
-              sorted={sortBy === 'email'}
-              reversed={reverseSortDirection}
-              onSort={() => setSorting('email')}
-            >
-              Blue 2
-            </Th>
-            <Th
-              sorted={sortBy === 'company'}
-              reversed={reverseSortDirection}
-              onSort={() => setSorting('company')}
-            >
-              Blue 3
-            </Th>
+            <Table.Th>Red 1</Table.Th>
+            <Table.Th>Red 2</Table.Th>
+            <Table.Th>Red 3</Table.Th>
+            <Table.Th>Blue 1</Table.Th>
+            <Table.Th>Blue 2</Table.Th>
+            <Table.Th>Blue 3</Table.Th>
           </Table.Tr>
-        </Table.Tbody>
+        </Table.Thead>
         <Table.Tbody>
           {rows.length > 0 ? (
             rows
           ) : (
             <Table.Tr>
-              <Table.Td colSpan={Object.keys(data[0]).length}>
+              <Table.Td colSpan={searchableKeys.length}>
                 <Text fw={500} ta="center">
                   Nothing found
                 </Text>
