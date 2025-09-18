@@ -19,7 +19,7 @@ const data = [
   { label: 'SuperScout', icon: IconBulb },
   { label: 'Analytics', icon: IconPresentationAnalytics },
   { label: 'Data Manager', icon: IconFileAnalytics },
-  { label: 'User Settings', icon: IconAdjustments },
+  { label: 'User Settings', icon: IconAdjustments, to: '/userSettings' },
   {
     label: 'Organization',
     icon: IconLock,

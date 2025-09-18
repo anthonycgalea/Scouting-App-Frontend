@@ -3,6 +3,7 @@ import { MantineProvider } from '@mantine/core';
 import { NavbarNested } from './components/Navbar/NavbarNested';
 import { HomePage } from './pages/Home.page';
 import { MatchSchedulePage } from './pages/MatchSchedule.page';
+import { UserSettingsPage } from './pages/Settings.page';
 import { theme } from './theme';
 
 const rootRoute = createRootRoute({
@@ -33,10 +34,17 @@ const matchScheduleRoute = createRoute({
   component: MatchSchedulePage,
 });
 
+const settingsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/userSettings',
+  component: UserSettingsPage,
+});
+
 // Build the route tree
 const routeTree = rootRoute.addChildren([
   homeRoute.addChildren([]),
-  matchScheduleRoute.addChildren([])
+  matchScheduleRoute.addChildren([]),
+  settingsRoute.addChildren([])
 ]);
 
 
