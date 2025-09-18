@@ -1,19 +1,38 @@
-// Router.tsx
-import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { HomePage } from './pages/Home.page';
-import { MatchSchedulePage } from './pages/MatchSchedule.page';
+import {
+  RouterProvider,
+  createRouter,
+  createRootRoute,
+  createRoute,
+} from '@tanstack/react-router'
+import { HomePage } from './pages/Home.page'
+import { MatchSchedulePage } from './pages/MatchSchedule.page'
+
+const rootRoute = createRootRoute()
+
+// Define your app routes
+const homeRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/',
+  component: HomePage,
+})
+
+const matchScheduleRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/matchSchedule',
+  component: MatchSchedulePage,
+})
+
+// Build the route tree
+const routeTree = rootRoute.addChildren([
+  homeRoute.addChildren([]),
+  matchScheduleRoute.addChildren([])
+])
+
+
+// Create the router
+const router = createRouter({ routeTree })
+
 
 export function Router() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        {/* Root / Home page */}
-        <Route path="/" element={<HomePage />} />
-
-        {/* Match Schedule page */}
-        <Route path="/matchSchedule" element={<MatchSchedulePage />} />
-      </Routes>
-    </BrowserRouter>
-  );
+  return <RouterProvider router={router} />
 }
