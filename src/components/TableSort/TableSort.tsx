@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { IconChevronDown, IconChevronUp, IconSearch } from '@tabler/icons-react';
 import { Center, Group, ScrollArea, Stack, Table, Text, TextInput, UnstyledButton } from '@mantine/core';
+import { MatchNumberButtonMenu } from './MatchNumberButtonMenu';
 import classes from './TableSort.module.css';
 
 interface RowData {
@@ -128,7 +129,9 @@ export function TableSort() {
 
   const rows = sortedData.map((row) => (
     <Table.Tr key={row.matchNumber}>
-      <Table.Td>{row.matchNumber}</Table.Td>
+      <Table.Td>
+        <MatchNumberButtonMenu matchNumber={row.matchNumber} />
+      </Table.Td>
       <Table.Td className={classes.redCell}>{row.red1}</Table.Td>
       <Table.Td className={classes.redCell}>{row.red2}</Table.Td>
       <Table.Td className={classes.redCell}>{row.red3}</Table.Td>
