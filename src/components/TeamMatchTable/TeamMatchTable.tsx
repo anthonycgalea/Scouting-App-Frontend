@@ -156,7 +156,7 @@ const data = [
   },
 ];
 
-export function TableScrollArea() {
+export function TeamMatchTable() {
   const [scrolled, setScrolled] = useState(false);
 
   const rows = data.map((row) => (
