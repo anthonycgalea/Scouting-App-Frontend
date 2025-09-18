@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { IconChevronDown, IconChevronUp, IconSearch } from '@tabler/icons-react';
-import { Center, Group, ScrollArea, Table, Text, TextInput, UnstyledButton } from '@mantine/core';
+import { Center, Group, ScrollArea, Stack, Table, Text, TextInput, UnstyledButton } from '@mantine/core';
 import classes from './TableSort.module.css';
 
 interface RowData {
@@ -20,15 +20,7 @@ interface ThProps {
   onSort: () => void;
 }
 
-const searchableKeys: (keyof RowData)[] = [
-  'matchNumber',
-  'red1',
-  'red2',
-  'red3',
-  'blue1',
-  'blue2',
-  'blue3',
-];
+const teamNumberKeys: (keyof RowData)[] = ['red1', 'red2', 'red3', 'blue1', 'blue2', 'blue3'];
 
 const schedule: RowData[] = [
   { matchNumber: 1, red1: 1678, red2: 4414, red3: 5940, blue1: 254, blue2: 971, blue3: 840 },
@@ -72,39 +64,65 @@ function Th({ children, reversed, onSort }: ThProps) {
   );
 }
 
-function filterData(data: RowData[], search: string) {
-  const query = search.toLowerCase().trim();
-  if (!query) {
-    return data;
-  }
-  return data.filter((item) =>
-    searchableKeys.some((key) => item[key].toString().toLowerCase().includes(query))
-  );
+function filterData(
+  data: RowData[],
+  { matchSearch, teamSearch }: { matchSearch: string; teamSearch: string }
+) {
+  const matchQuery = matchSearch.trim();
+  const teamQuery = teamSearch.toLowerCase().trim();
+
+  return data.filter((item) => {
+    const matchMatches = matchQuery
+      ? item.matchNumber.toString().includes(matchQuery)
+      : true;
+
+    const teamMatches = teamQuery
+      ? teamNumberKeys.some((key) => item[key].toString().toLowerCase().includes(teamQuery))
+      : true;
+
+    return matchMatches && teamMatches;
+  });
 }
 
-function sortData(data: RowData[], payload: { reversed: boolean; search: string }) {
+function sortData(
+  data: RowData[],
+  payload: { reversed: boolean; matchSearch: string; teamSearch: string }
+) {
   const sorted = [...data].sort((a, b) =>
     payload.reversed ? b.matchNumber - a.matchNumber : a.matchNumber - b.matchNumber
   );
 
-  return filterData(sorted, payload.search);
+  return filterData(sorted, { matchSearch: payload.matchSearch, teamSearch: payload.teamSearch });
 }
 
 export function TableSort() {
-  const [search, setSearch] = useState('');
+  const [matchSearch, setMatchSearch] = useState('');
+  const [teamSearch, setTeamSearch] = useState('');
   const [reverseSortDirection, setReverseSortDirection] = useState(false);
-  const [sortedData, setSortedData] = useState(() => sortData(schedule, { reversed: false, search: '' }));
+  const [sortedData, setSortedData] = useState(() =>
+    sortData(schedule, { reversed: false, matchSearch: '', teamSearch: '' })
+  );
 
   const setSorting = () => {
     const reversed = !reverseSortDirection;
     setReverseSortDirection(reversed);
-    setSortedData(sortData(schedule, { reversed, search }));
+    setSortedData(sortData(schedule, { reversed, matchSearch, teamSearch }));
   };
 
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMatchSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = event.currentTarget;
-    setSearch(value);
-    setSortedData(sortData(schedule, { reversed: reverseSortDirection, search: value }));
+    setMatchSearch(value);
+    setSortedData(
+      sortData(schedule, { reversed: reverseSortDirection, matchSearch: value, teamSearch })
+    );
+  };
+
+  const handleTeamSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = event.currentTarget;
+    setTeamSearch(value);
+    setSortedData(
+      sortData(schedule, { reversed: reverseSortDirection, matchSearch, teamSearch: value })
+    );
   };
 
   const rows = sortedData.map((row) => (
@@ -121,41 +139,50 @@ export function TableSort() {
 
   return (
     <ScrollArea>
-      <TextInput
-        placeholder="Search by match or team number"
-        mb="md"
-        leftSection={<IconSearch size={16} stroke={1.5} />}
-        value={search}
-        onChange={handleSearchChange}
-      />
-      <Table horizontalSpacing="md" verticalSpacing="xs" miw={700} layout="fixed">
-        <Table.Thead>
-          <Table.Tr>
-            <Th sorted reversed={reverseSortDirection} onSort={setSorting}>
-              Match #
-            </Th>
-            <Table.Th>Red 1</Table.Th>
-            <Table.Th>Red 2</Table.Th>
-            <Table.Th>Red 3</Table.Th>
-            <Table.Th>Blue 1</Table.Th>
-            <Table.Th>Blue 2</Table.Th>
-            <Table.Th>Blue 3</Table.Th>
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          {rows.length > 0 ? (
-            rows
-          ) : (
+      <Stack gap="md">
+        <Group gap="md" grow>
+          <TextInput
+            placeholder="Filter by match number"
+            leftSection={<IconSearch size={16} stroke={1.5} />}
+            value={matchSearch}
+            onChange={handleMatchSearchChange}
+          />
+          <TextInput
+            placeholder="Filter by team number"
+            leftSection={<IconSearch size={16} stroke={1.5} />}
+            value={teamSearch}
+            onChange={handleTeamSearchChange}
+          />
+        </Group>
+        <Table horizontalSpacing="md" verticalSpacing="xs" miw={700} layout="fixed">
+          <Table.Thead>
             <Table.Tr>
-              <Table.Td colSpan={searchableKeys.length}>
-                <Text fw={500} ta="center">
-                  Nothing found
-                </Text>
-              </Table.Td>
+              <Th sorted reversed={reverseSortDirection} onSort={setSorting}>
+                Match #
+              </Th>
+              <Table.Th>Red 1</Table.Th>
+              <Table.Th>Red 2</Table.Th>
+              <Table.Th>Red 3</Table.Th>
+              <Table.Th>Blue 1</Table.Th>
+              <Table.Th>Blue 2</Table.Th>
+              <Table.Th>Blue 3</Table.Th>
             </Table.Tr>
-          )}
-        </Table.Tbody>
-      </Table>
+          </Table.Thead>
+          <Table.Tbody>
+            {rows.length > 0 ? (
+              rows
+            ) : (
+              <Table.Tr>
+                <Table.Td colSpan={1 + teamNumberKeys.length}>
+                  <Text fw={500} ta="center">
+                    Nothing found
+                  </Text>
+                </Table.Td>
+              </Table.Tr>
+            )}
+          </Table.Tbody>
+        </Table>
+      </Stack>
     </ScrollArea>
   );
 }
