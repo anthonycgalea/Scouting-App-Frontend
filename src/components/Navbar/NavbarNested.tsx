@@ -26,7 +26,7 @@ const data = [
     label: 'Organization',
     icon: IconLock,
     links: [
-      { label: 'Team Members', link: '/' },
+      { label: 'Team Members', link: '/teamMembers' },
       { label: 'Events', link: '/' },
       { label: 'Organization Settings', link: '/' },
     ],

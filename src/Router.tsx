@@ -5,6 +5,7 @@ import { HomePage } from './pages/Home.page';
 import { MatchSchedulePage } from './pages/MatchSchedule.page';
 import { UserSettingsPage } from './pages/Settings.page';
 import { theme } from './theme';
+import { TeamMembersPage } from './pages/TeamMembers.page';
 
 const rootRoute = createRootRoute({
   component: function RootLayout() {
@@ -40,11 +41,18 @@ const settingsRoute = createRoute({
   component: UserSettingsPage,
 });
 
+const teamMembersRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/teamMembers',
+  component: TeamMembersPage,
+});
+
 // Build the route tree
 const routeTree = rootRoute.addChildren([
   homeRoute.addChildren([]),
   matchScheduleRoute.addChildren([]),
-  settingsRoute.addChildren([])
+  settingsRoute.addChildren([]),
+  teamMembersRoute.addChildren([])
 ]);
 
 
