@@ -7,6 +7,7 @@ import { UserSettingsPage } from './pages/Settings.page';
 import { theme } from './theme';
 import { TeamMembersPage } from './pages/TeamMembers.page';
 import { TeamDirectoryPage } from './pages/TeamDirectory.page';
+import { DataManagerPage } from './pages/DataManager.page';
 
 const rootRoute = createRootRoute({
   component: function RootLayout() {
@@ -42,6 +43,12 @@ const teamDirectoryRoute = createRoute({
   component: TeamDirectoryPage,
 });
 
+const dataManagerRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/dataManager',
+  component: DataManagerPage
+})
+
 const settingsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/userSettings',
@@ -59,6 +66,7 @@ const routeTree = rootRoute.addChildren([
   homeRoute.addChildren([]),
   matchScheduleRoute.addChildren([]),
   teamDirectoryRoute.addChildren([]),
+  dataManagerRoute.addChildren([]),
   settingsRoute.addChildren([]),
   teamMembersRoute.addChildren([])
 ]);

@@ -1,0 +1,35 @@
+.th {
+  padding: 0;
+}
+
+
+
+.control {
+  width: 100%;
+  padding: var(--mantine-spacing-xs) var(--mantine-spacing-md);
+
+  @mixin hover {
+    background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+  }
+}
+
+.icon {
+  width: 21px;
+  height: 21px;
+  border-radius: 21px;
+}
+
+.redCell {
+  background-color: light-dark(var(--mantine-color-red-1), var(--mantine-color-red-9));
+  color: light-dark(var(--mantine-color-red-9), var(--mantine-color-red-1));
+}
+
+.blueCell {
+  background-color: light-dark(var(--mantine-color-blue-1), var(--mantine-color-blue-9));
+  color: light-dark(var(--mantine-color-blue-9), var(--mantine-color-blue-1));
+}
+
+.table :global(th),
+.table :global(td) {
+  text-align: center;
+}

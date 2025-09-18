@@ -20,7 +20,7 @@ const data = [
   { label: 'Teams', icon: IconUsersGroup, to: '/teams' },
   { label: 'SuperScout', icon: IconBulb },
   { label: 'Analytics', icon: IconPresentationAnalytics },
-  { label: 'Data Manager', icon: IconFileAnalytics },
+  { label: 'Data Manager', icon: IconFileAnalytics, to: '/dataManager' },
   { label: 'User Settings', icon: IconAdjustments, to: '/userSettings' },
   {
     label: 'Organization',
