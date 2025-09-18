@@ -17,12 +17,11 @@ export function LinksGroup({ icon: Icon, label, initiallyOpened, links, to }: Li
   const [opened, setOpened] = useState(initiallyOpened || false);
   const isRouteLink = Boolean(to) && !hasLinks;
   const items = (hasLinks ? links : []).map((link) => (
-    <Text<'a'>
-      component="a"
+    <Text<typeof Link>
+      component={Link}
       className={classes.link}
-      href={link.link}
+      to={link.link}
       key={link.label}
-      onClick={(event) => event.preventDefault()}
     >
       {link.label}
     </Text>

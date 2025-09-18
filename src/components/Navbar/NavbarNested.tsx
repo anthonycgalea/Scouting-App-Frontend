@@ -17,7 +17,7 @@ import classes from './NavbarNested.module.css';
 const data = [
   { label: 'Dashboard', icon: IconGauge },
   { label: 'Matches', icon: IconNotes, to: '/matches' },
-  { label: 'Teams', icon: IconUsersGroup },
+  { label: 'Teams', icon: IconUsersGroup, to: '/teams' },
   { label: 'SuperScout', icon: IconBulb },
   { label: 'Analytics', icon: IconPresentationAnalytics },
   { label: 'Data Manager', icon: IconFileAnalytics },
