@@ -9,6 +9,7 @@ import { TeamMembersPage } from './pages/TeamMembers.page';
 import { TeamDirectoryPage } from './pages/TeamDirectory.page';
 import { TeamDetailPage } from './pages/TeamDetailPage.page';
 import { DataManagerPage } from './pages/DataManager.page';
+import { SuperScoutPage } from './pages/SuperScout.page';
 
 const rootRoute = createRootRoute({
   component: function RootLayout() {
@@ -53,8 +54,14 @@ const teamDetailRoute = createRoute({
 const dataManagerRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/dataManager',
-  component: DataManagerPage
-})
+  component: DataManagerPage,
+});
+
+const superScoutRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/superScout',
+  component: SuperScoutPage,
+});
 
 const settingsRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -75,6 +82,7 @@ const routeTree = rootRoute.addChildren([
   teamDirectoryRoute.addChildren([]),
   teamDetailRoute.addChildren([]),
   dataManagerRoute.addChildren([]),
+  superScoutRoute.addChildren([]),
   settingsRoute.addChildren([]),
   teamMembersRoute.addChildren([])
 ]);

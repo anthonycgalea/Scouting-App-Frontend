@@ -18,7 +18,7 @@ const data = [
   { label: 'Dashboard', icon: IconGauge },
   { label: 'Matches', icon: IconNotes, to: '/matches' },
   { label: 'Teams', icon: IconUsersGroup, to: '/teams' },
-  { label: 'SuperScout', icon: IconBulb },
+  { label: 'SuperScout', icon: IconBulb, to: '/superScout' },
   { label: 'Analytics', icon: IconPresentationAnalytics },
   { label: 'Data Manager', icon: IconFileAnalytics, to: '/dataManager' },
   { label: 'User Settings', icon: IconAdjustments, to: '/userSettings' },
