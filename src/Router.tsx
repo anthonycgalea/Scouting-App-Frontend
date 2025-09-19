@@ -45,8 +45,8 @@ const teamDirectoryRoute = createRoute({
 });
 
 const teamDetailRoute = createRoute({
-  getParentRoute: () => teamDirectoryRoute,
-  path: '/$teamId',
+  getParentRoute: () => rootRoute,
+  path: '/teams/$teamId',
   component: TeamDetailPage,
 });
 
@@ -72,7 +72,8 @@ const teamMembersRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   homeRoute.addChildren([]),
   matchScheduleRoute.addChildren([]),
-  teamDirectoryRoute.addChildren([teamDetailRoute]),
+  teamDirectoryRoute.addChildren([]),
+  teamDetailRoute.addChildren([]),
   dataManagerRoute.addChildren([]),
   settingsRoute.addChildren([]),
   teamMembersRoute.addChildren([])

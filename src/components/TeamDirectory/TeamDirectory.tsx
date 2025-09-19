@@ -1,40 +1,40 @@
-import { Anchor, Group, Progress, Table, Text } from '@mantine/core';
+import { Anchor, Button, Group, Progress, Table, Text } from '@mantine/core';
 import classes from './TeamDirectory.module.css';
 
 const data = [
   {
-    title: 'Foundation',
-    author: 'Isaac Asimov',
+    teamNumber: 1,
+    teamName: 'The Juggernauts',
     year: 1951,
     reviews: { positive: 2223, negative: 259 },
   },
   {
-    title: 'Frankenstein',
-    author: 'Mary Shelley',
+    teamNumber: 33,
+    teamName: 'Killer Bees',
     year: 1818,
     reviews: { positive: 5677, negative: 1265 },
   },
   {
-    title: 'Solaris',
-    author: 'Stanislaw Lem',
+    teamNumber: 51,
+    teamName: 'Wings of Fire',
     year: 1961,
     reviews: { positive: 3487, negative: 1845 },
   },
   {
-    title: 'Dune',
-    author: 'Frank Herbert',
+    teamNumber: 67,
+    teamName: 'HOT',
     year: 1965,
     reviews: { positive: 8576, negative: 663 },
   },
   {
-    title: 'The Left Hand of Darkness',
-    author: 'Ursula K. Le Guin',
+    teamNumber: 68,
+    teamName: 'Truck Town Thunder',
     year: 1969,
     reviews: { positive: 6631, negative: 993 },
   },
   {
-    title: 'A Scanner Darkly',
-    author: 'Philip K Dick',
+    teamNumber: 494,
+    teamName: 'Martians',
     year: 1977,
     reviews: { positive: 8124, negative: 1847 },
   },
@@ -47,13 +47,19 @@ export function TeamDirectory() {
     const negativeReviews = (row.reviews.negative / totalReviews) * 100;
 
     return (
-      <Table.Tr key={row.title}>
+      <Table.Tr key={row.teamNumber}>
         <Table.Td>
           <Anchor component="button" fz="sm">
-            {row.title}
+            <Button
+              aria-label={`${row.teamNumber}`}
+              radius="md"
+              variant="subtle"
+            >
+              {row.teamNumber}
+            </Button>             
           </Anchor>
         </Table.Td>
-        <Table.Td>{row.year}</Table.Td>
+        <Table.Td>{row.teamName}</Table.Td>
         <Table.Td>{Intl.NumberFormat().format(totalReviews)}</Table.Td>
         <Table.Td>
           <Group justify="space-between">
