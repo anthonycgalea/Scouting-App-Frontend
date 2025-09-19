@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { IconChevronDown, IconChevronUp, IconSearch, IconCheck, IconCircleX  } from '@tabler/icons-react';
-import { Center, Group, ScrollArea, Stack, Table, Text, TextInput, UnstyledButton } from '@mantine/core';
+import { Box, Center, Group, ScrollArea, Stack, Table, Text, TextInput, UnstyledButton } from '@mantine/core';
 import { DataManagerButtonMenu } from './DataManagerButtonMenu';
+import { ExportHeader } from '../ExportHeader/ExportHeader';
 import classes from './DataManager.module.css';
 
 interface RowData {
@@ -148,6 +149,10 @@ export function DataManager() {
   ));
 
   return (
+    <>
+    <Box>
+      <ExportHeader />
+    </Box>
     <ScrollArea>
       <Stack gap="md">
         <Group gap="md" grow>
@@ -156,13 +161,13 @@ export function DataManager() {
             leftSection={<IconSearch size={16} stroke={1.5} />}
             value={matchSearch}
             onChange={handleMatchSearchChange}
-          />
+            />
           <TextInput
             placeholder="Filter by team number"
             leftSection={<IconSearch size={16} stroke={1.5} />}
             value={teamSearch}
             onChange={handleTeamSearchChange}
-          />
+            />
         </Group>
         <Table
           horizontalSpacing="md"
@@ -170,7 +175,7 @@ export function DataManager() {
           miw={700}
           layout="fixed"
           className={classes.table}
-        >
+          >
           <Table.Thead>
             <Table.Tr>
               <Th sorted reversed={reverseSortDirection} onSort={setSorting}>
@@ -201,5 +206,6 @@ export function DataManager() {
         </Table>
       </Stack>
     </ScrollArea>
+    </>
   );
 }

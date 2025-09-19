@@ -1,41 +1,43 @@
-import { Anchor, Button, Group, Progress, Table, Text } from '@mantine/core';
+import { Link } from '@tanstack/react-router';
+import { Button, Group, Progress, Table, Text } from '@mantine/core';
 import classes from './TeamDirectory.module.css';
+import { IconCheck, IconCircleX } from '@tabler/icons-react';
 
 const data = [
   {
     teamNumber: 1,
     teamName: 'The Juggernauts',
-    year: 1951,
+    pitScouted: true,
     reviews: { positive: 2223, negative: 259 },
   },
   {
     teamNumber: 33,
     teamName: 'Killer Bees',
-    year: 1818,
+    pitScouted: true,
     reviews: { positive: 5677, negative: 1265 },
   },
   {
     teamNumber: 51,
     teamName: 'Wings of Fire',
-    year: 1961,
+    pitScouted: false,
     reviews: { positive: 3487, negative: 1845 },
   },
   {
     teamNumber: 67,
     teamName: 'HOT',
-    year: 1965,
+    pitScouted: true,
     reviews: { positive: 8576, negative: 663 },
   },
   {
     teamNumber: 68,
     teamName: 'Truck Town Thunder',
-    year: 1969,
+    pitScouted: false,
     reviews: { positive: 6631, negative: 993 },
   },
   {
     teamNumber: 494,
     teamName: 'Martians',
-    year: 1977,
+    pitScouted: true,
     reviews: { positive: 8124, negative: 1847 },
   },
 ];
@@ -49,18 +51,23 @@ export function TeamDirectory() {
     return (
       <Table.Tr key={row.teamNumber}>
         <Table.Td>
-          <Anchor component="button" fz="sm">
-            <Button
-              aria-label={`${row.teamNumber}`}
-              radius="md"
-              variant="subtle"
-            >
-              {row.teamNumber}
-            </Button>             
-          </Anchor>
+          <Button
+            component={Link}
+            to={`/teams/${row.teamNumber}`}
+            aria-label={`${row.teamNumber}`}
+            radius="md"
+            variant="subtle"
+          >
+            {row.teamNumber}
+          </Button>
         </Table.Td>
         <Table.Td>{row.teamName}</Table.Td>
-        <Table.Td>{Intl.NumberFormat().format(totalReviews)}</Table.Td>
+        <Table.Td className='centerColumn'>
+          { row.pitScouted ? 
+          <IconCheck size={30}/> :
+          <IconCircleX size={30}/>}
+
+        </Table.Td>
         <Table.Td>
           <Group justify="space-between">
             <Text fz="xs" c="teal" fw={700}>
@@ -95,7 +102,7 @@ export function TeamDirectory() {
           <Table.Tr>
             <Table.Th>Team #</Table.Th>
             <Table.Th>Team Name</Table.Th>
-            <Table.Th>Pit Scouted?</Table.Th>
+            <Table.Th className='centerColumn'>Pit Scouted?</Table.Th>
             <Table.Th>Matches Scouted</Table.Th>
           </Table.Tr>
         </Table.Thead>

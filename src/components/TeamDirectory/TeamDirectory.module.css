@@ -3,3 +3,8 @@
     border-left: 3px solid light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
   }
 }
+
+.centerColumn :global(th),
+.centerColumn :global(td) {
+  text-align: center;
+}
