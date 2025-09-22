@@ -86,7 +86,7 @@ export function MatchSchedulePage() {
     <Box p="md">
       <Stack gap="md">
         <Suspense fallback={<Skeleton height={34} width="50%" radius="sm" />}>
-          <EventHeader />
+          <EventHeader pageInfo="Match Schedule" />
         </Suspense>
         <MatchScheduleToggle
           value={activeSection}
