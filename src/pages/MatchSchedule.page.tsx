@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { Box, Center, Loader, Stack, Text } from '@mantine/core';
 import { useMatchSchedule } from '@/api';
-import type { MatchScheduleEntry } from '@/api';
+import { groupMatchesBySection, SECTION_DEFINITIONS } from '@/components/MatchSchedule/matchSections';
 import {
   MatchScheduleSection,
   MatchScheduleToggle,
@@ -10,34 +10,6 @@ import {
 const MatchScheduleComponent = lazy(async () => ({
   default: (await import('@/components/MatchSchedule/MatchSchedule')).MatchSchedule,
 }));
-
-const SECTION_DEFINITIONS: ReadonlyArray<{ value: MatchScheduleSection; label: string }> = [
-  { value: 'qualification', label: 'Qualification' },
-  { value: 'playoffs', label: 'Playoffs' },
-  { value: 'finals', label: 'Finals' },
-];
-
-const groupMatchesBySection = (matches: MatchScheduleEntry[]) => {
-  const grouped: Record<MatchScheduleSection, MatchScheduleEntry[]> = {
-    qualification: [],
-    playoffs: [],
-    finals: [],
-  };
-
-  matches.forEach((match) => {
-    const matchLevel = match.match_level?.toLowerCase();
-
-    if (matchLevel === 'qm') {
-      grouped.qualification.push(match);
-    } else if (matchLevel === 'sf') {
-      grouped.playoffs.push(match);
-    } else if (matchLevel === 'f') {
-      grouped.finals.push(match);
-    }
-  });
-
-  return grouped;
-};
 
 export function MatchSchedulePage() {
   const { data: scheduleData = [], isLoading, isError } = useMatchSchedule();
