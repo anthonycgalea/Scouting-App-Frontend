@@ -4,9 +4,13 @@ import classes from './EventHeader.module.css';
 
 interface EventHeaderProps {
   eventCode?: string;
+  pageInfo?: string;
 }
 
-export const EventHeader = ({ eventCode }: EventHeaderProps) => {
+export const EventHeader = ({
+  eventCode,
+  pageInfo = 'Match Schedule',
+}: EventHeaderProps) => {
   const { data: eventInfo, isLoading, isError } = useEventInfo(eventCode);
 
   if (isLoading) {
@@ -20,7 +24,7 @@ export const EventHeader = ({ eventCode }: EventHeaderProps) => {
   if (!eventInfo) {
     return (
       <Title className={classes.Title} order={2}>
-        Match Schedule
+        {pageInfo}
       </Title>
     );
   }
@@ -30,7 +34,7 @@ export const EventHeader = ({ eventCode }: EventHeaderProps) => {
 
   return (
     <Title className={classes.Title} order={2}>
-      {eventInfo.year} {displayName} Match Schedule
+      {eventInfo.year} {displayName} {pageInfo}
     </Title>
   );
 };
