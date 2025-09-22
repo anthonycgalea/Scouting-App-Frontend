@@ -11,7 +11,7 @@ export const ApiProvider = ({ children }: ApiProviderProps) => {
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-      {import.meta.env.DEV ? <ReactQueryDevtools position="bottom-right" /> : null}
+      {import.meta.env.DEV ? <ReactQueryDevtools position="bottom" /> : null}
     </QueryClientProvider>
   );
 };
