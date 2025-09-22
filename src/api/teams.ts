@@ -13,7 +13,7 @@ export const eventTeamsQueryKey = (eventCode: string) =>
 export const fetchEventTeams = (eventCode: string) =>
   apiFetch<EventTeam[]>(`event/${eventCode}/teams`);
 
-export const useEventTeams = (eventCode = '2025mimid') =>
+export const useEventTeams = (eventCode = '2025micmp4') =>
   useQuery({
     queryKey: eventTeamsQueryKey(eventCode),
     queryFn: () => fetchEventTeams(eventCode),

@@ -29,7 +29,7 @@ export function AddEventPage() {
       </Table.Td>
       <Table.Td>
         <Button variant="light" leftSection={<IconPlus stroke={1.5} />}> 
-          Add event to Organization
+          Add
         </Button>
       </Table.Td>
     </Table.Tr>
