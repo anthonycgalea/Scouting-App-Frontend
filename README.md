@@ -32,3 +32,13 @@ This template comes with the following features:
 - `storybook` – starts storybook dev server
 - `storybook:build` – build production storybook bundle to `storybook-static`
 - `prettier:write` – formats all files with Prettier
+
+## API configuration
+
+The application uses [TanStack Query](https://tanstack.com/query/latest) for server state management. Configure the backend origin with the `VITE_API_BASE_URL` environment variable. When the variable is not provided during development, the app defaults to `http://localhost:8000`.
+
+Create a `.env.local` file to override the backend location:
+
+```
+VITE_API_BASE_URL=https://your-production-api.example.com
+```
