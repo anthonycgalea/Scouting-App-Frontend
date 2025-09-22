@@ -1,5 +1,6 @@
 import { Alert, Skeleton, Title } from '@mantine/core';
 import { useTeamInfo } from '@/api';
+import classes from './TeamHeader.module.css';
 
 interface TeamHeaderProps {
   teamNumber: number;
@@ -7,7 +8,7 @@ interface TeamHeaderProps {
 
 export const TeamHeader = ({ teamNumber }: TeamHeaderProps) => {
   const {
-    data: teamInfoData = [],
+    data: teamInfo,
     isLoading,
     isError,
   } = useTeamInfo(teamNumber);
@@ -24,11 +25,9 @@ export const TeamHeader = ({ teamNumber }: TeamHeaderProps) => {
     );
   }
 
-  const [teamInfo] = teamInfoData;
-
   if (!teamInfo) {
-    return <Title order={2}>Team {teamNumber}</Title>;
+    return <Title className={classes.Title} order={2}>Team {teamNumber}</Title>;
   }
 
-  return <Title order={2}>Team {teamInfo.team_number} - {teamInfo.team_name}</Title>;
+  return <Title className={classes.Title} order={2}>Team {teamInfo.team_number} - {teamInfo.team_name}</Title>;
 };

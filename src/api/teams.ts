@@ -11,6 +11,7 @@ export interface TeamInfo {
   team_number: number;
   team_name: string;
   location: string;
+  rookieYear: number | null;
 }
 
 export const eventTeamsQueryKey = (eventCode: string) =>
@@ -29,7 +30,7 @@ export const teamInfoQueryKey = (teamNumber: number) =>
   ['team-info', teamNumber] as const;
 
 export const fetchTeamInfo = (teamNumber: number) =>
-  apiFetch<TeamInfo[]>(`teams/${teamNumber}/info`);
+  apiFetch<TeamInfo>(`teams/${teamNumber}/info`);
 
 export const useTeamInfo = (teamNumber: number) =>
   useQuery({
