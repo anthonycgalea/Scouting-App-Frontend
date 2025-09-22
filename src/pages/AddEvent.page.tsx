@@ -1,4 +1,5 @@
-import { Box, ScrollArea, Table, Text, Title } from '@mantine/core';
+import { IconPlus } from '@tabler/icons-react';
+import { ActionIcon, Box, Group, ScrollArea, Table, Text, Title } from '@mantine/core';
 
 type AvailableEvent = {
   id: string;
@@ -49,14 +50,22 @@ export function AddEventPage() {
       <Table.Td>
         <Text size="sm">{event.isPublic ? 'Yes' : 'No'}</Text>
       </Table.Td>
+      <Table.Td>
+        <ActionIcon variant="default" size="xl" radius="md" aria-label={`Add ${event.name}`}>
+          <IconPlus stroke={1.5} />
+        </ActionIcon>
+      </Table.Td>
     </Table.Tr>
   ));
 
   return (
     <Box p="md">
-      <Title order={2} mb="lg">
-        Available Events
-      </Title>
+      <Group justify="space-between" align="center" mb="lg">
+        <Title order={2}>Available Events</Title>
+        <ActionIcon variant="default" size="xl" radius="md" aria-label="Add event">
+          <IconPlus stroke={1.5} />
+        </ActionIcon>
+      </Group>
       <ScrollArea>
         <Table miw={800} verticalSpacing="sm">
           <Table.Thead>
@@ -65,6 +74,7 @@ export function AddEventPage() {
               <Table.Th>Week</Table.Th>
               <Table.Th>Team Count</Table.Th>
               <Table.Th>Public</Table.Th>
+              <Table.Th />
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>{rows}</Table.Tbody>
