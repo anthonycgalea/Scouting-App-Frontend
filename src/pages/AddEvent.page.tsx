@@ -1,59 +1,36 @@
 import { IconPlus } from '@tabler/icons-react';
-import { ActionIcon, Box, Group, ScrollArea, Table, Text, Title } from '@mantine/core';
-
-type AvailableEvent = {
-  id: string;
-  name: string;
-  week: number;
-  teamCount: number;
-  isPublic: boolean;
-};
-
-const availableEvents: AvailableEvent[] = [
-  {
-    id: 'tx-san-antonio-1',
-    name: 'San Antonio District #1',
-    week: 2,
-    teamCount: 38,
-    isPublic: true,
-  },
-  {
-    id: 'tx-el-paso',
-    name: 'El Paso Regional',
-    week: 3,
-    teamCount: 42,
-    isPublic: false,
-  },
-  {
-    id: 'tx-lubbock',
-    name: 'Lubbock District',
-    week: 4,
-    teamCount: 36,
-    isPublic: true,
-  },
-];
+import { Box, Button, Group, ScrollArea, Table, Text, Title } from '@mantine/core';
+import { type EventSummary, useEvents } from '../api';
 
 export function AddEventPage() {
-  const rows = availableEvents.map((event) => (
-    <Table.Tr key={event.id}>
+  const currentYear = new Date().getFullYear();
+  const {
+    data: events,
+    isLoading,
+    isError,
+  } = useEvents(currentYear);
+
+  const eventList: EventSummary[] = events ?? [];
+
+  const rows = eventList.map((event) => (
+    <Table.Tr key={event.event_key}>
       <Table.Td>
         <Text size="sm" fw={500}>
-          {event.name}
+          {event.event_name}
         </Text>
       </Table.Td>
       <Table.Td>
         <Text size="sm">Week {event.week}</Text>
       </Table.Td>
       <Table.Td>
-        <Text size="sm">{event.teamCount}</Text>
+        <Text size="sm" c="dimmed">
+          —
+        </Text>
       </Table.Td>
       <Table.Td>
-        <Text size="sm">{event.isPublic ? 'Yes' : 'No'}</Text>
-      </Table.Td>
-      <Table.Td>
-        <ActionIcon variant="default" size="xl" radius="md" aria-label={`Add ${event.name}`}>
-          <IconPlus stroke={1.5} />
-        </ActionIcon>
+        <Button variant="light" leftSection={<IconPlus stroke={1.5} />}> 
+          Add event to Organization
+        </Button>
       </Table.Td>
     </Table.Tr>
   ));
@@ -70,11 +47,38 @@ export function AddEventPage() {
               <Table.Th>Event Name</Table.Th>
               <Table.Th>Week</Table.Th>
               <Table.Th>Team Count</Table.Th>
-              <Table.Th>Public</Table.Th>
               <Table.Th />
             </Table.Tr>
           </Table.Thead>
-          <Table.Tbody>{rows}</Table.Tbody>
+          <Table.Tbody>
+            {isLoading ? (
+              <Table.Tr>
+                <Table.Td colSpan={4}>
+                  <Text size="sm" c="dimmed">
+                    Loading events...
+                  </Text>
+                </Table.Td>
+              </Table.Tr>
+            ) : isError ? (
+              <Table.Tr>
+                <Table.Td colSpan={4}>
+                  <Text size="sm" c="red">
+                    Unable to load events. Please try again later.
+                  </Text>
+                </Table.Td>
+              </Table.Tr>
+            ) : rows.length > 0 ? (
+              rows
+            ) : (
+              <Table.Tr>
+                <Table.Td colSpan={4}>
+                  <Text size="sm" c="dimmed">
+                    No events found for {currentYear}.
+                  </Text>
+                </Table.Td>
+              </Table.Tr>
+            )}
+          </Table.Tbody>
         </Table>
       </ScrollArea>
     </Box>

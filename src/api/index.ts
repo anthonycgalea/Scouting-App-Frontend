@@ -3,4 +3,5 @@ export * from './config';
 export * from './httpClient';
 export * from './queryClient';
 export * from './matches';
+export * from './events';
 export * from './teams';
