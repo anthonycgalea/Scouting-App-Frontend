@@ -1,100 +1,112 @@
 import { useState } from 'react';
 import cx from 'clsx';
-import { Avatar, Checkbox, Group, ScrollArea, Table, Text } from '@mantine/core';
+import { Button, Checkbox, ScrollArea, Stack, Switch, Table, Text } from '@mantine/core';
+import { Link } from '@tanstack/react-router';
 import classes from './EventSelect.module.css';
 
-const data = [
+type EventRow = {
+  id: string;
+  name: string;
+  week: number;
+  teamCount: number;
+  isPublic: boolean;
+};
+
+const initialEvents: EventRow[] = [
   {
-    id: '1',
-    avatar:
-      'https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-1.png',
-    name: 'Robert Wolfkisser',
-    job: 'Engineer',
-    email: 'rob_wolf@gmail.com',
+    id: 'tx-houston-1',
+    name: 'Houston District #1',
+    week: 1,
+    teamCount: 48,
+    isPublic: true,
   },
   {
-    id: '2',
-    avatar:
-      'https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-7.png',
-    name: 'Jill Jailbreaker',
-    job: 'Engineer',
-    email: 'jj@breaker.com',
+    id: 'tx-dallas-1',
+    name: 'Dallas Regional',
+    week: 2,
+    teamCount: 56,
+    isPublic: true,
   },
   {
-    id: '3',
-    avatar:
-      'https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-2.png',
-    name: 'Henry Silkeater',
-    job: 'Designer',
-    email: 'henry@silkeater.io',
+    id: 'tx-austin-1',
+    name: 'Austin District #1',
+    week: 3,
+    teamCount: 40,
+    isPublic: false,
   },
   {
-    id: '4',
-    avatar:
-      'https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-3.png',
-    name: 'Bill Horsefighter',
-    job: 'Designer',
-    email: 'bhorsefighter@gmail.com',
-  },
-  {
-    id: '5',
-    avatar:
-      'https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-10.png',
-    name: 'Jeremy Footviewer',
-    job: 'Manager',
-    email: 'jeremy@foot.dev',
+    id: 'tx-houston-2',
+    name: 'Houston District #2',
+    week: 4,
+    teamCount: 44,
+    isPublic: false,
   },
 ];
 
 export function EventSelect() {
-  const [selection, setSelection] = useState(['1']);
-  const toggleRow = (id: string) =>
-    setSelection((current) =>
-      current.includes(id) ? current.filter((item) => item !== id) : [...current, id]
-    );
-  const toggleAll = () =>
-    setSelection((current) => (current.length === data.length ? [] : data.map((item) => item.id)));
+  const [events, setEvents] = useState<EventRow[]>(initialEvents);
+  const [activeEventId, setActiveEventId] = useState<string>(initialEvents[0]?.id ?? '');
 
-  const rows = data.map((item) => {
-    const selected = selection.includes(item.id);
+  const toggleEventPublic = (id: string) => {
+    setEvents((current) =>
+      current.map((event) =>
+        event.id === id ? { ...event, isPublic: !event.isPublic } : event
+      )
+    );
+  };
+
+  const rows = events.map((event) => {
+    const selected = activeEventId === event.id;
     return (
-      <Table.Tr key={item.id} className={cx({ [classes.rowSelected]: selected })}>
+      <Table.Tr key={event.id} className={cx({ [classes.rowSelected]: selected })}>
         <Table.Td>
-          <Checkbox checked={selection.includes(item.id)} onChange={() => toggleRow(item.id)} />
+          <Checkbox
+            aria-label={`Set ${event.name} as the active event`}
+            checked={selected}
+            onChange={() => setActiveEventId(event.id)}
+          />
         </Table.Td>
         <Table.Td>
-          <Group gap="sm">
-            <Avatar size={26} src={item.avatar} radius={26} />
-            <Text size="sm" fw={500}>
-              {item.name}
-            </Text>
-          </Group>
+          <Text size="sm" fw={500}>
+            {event.name}
+          </Text>
         </Table.Td>
-        <Table.Td>{item.email}</Table.Td>
-        <Table.Td>{item.job}</Table.Td>
+        <Table.Td>
+          <Text size="sm">Week {event.week}</Text>
+        </Table.Td>
+        <Table.Td>
+          <Text size="sm">{event.teamCount}</Text>
+        </Table.Td>
+        <Table.Td>
+          <Switch
+            aria-label={`Toggle public visibility for ${event.name}`}
+            checked={event.isPublic}
+            onChange={() => toggleEventPublic(event.id)}
+          />
+        </Table.Td>
       </Table.Tr>
     );
   });
 
   return (
-    <ScrollArea>
-      <Table miw={800} verticalSpacing="sm">
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th w={40}>
-              <Checkbox
-                onChange={toggleAll}
-                checked={selection.length === data.length}
-                indeterminate={selection.length > 0 && selection.length !== data.length}
-              />
-            </Table.Th>
-            <Table.Th>User</Table.Th>
-            <Table.Th>Email</Table.Th>
-            <Table.Th>Job</Table.Th>
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>{rows}</Table.Tbody>
-      </Table>
-    </ScrollArea>
+    <Stack>
+      <ScrollArea>
+        <Table miw={800} verticalSpacing="sm">
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th w={40}>Active</Table.Th>
+              <Table.Th>Event Name</Table.Th>
+              <Table.Th>Week</Table.Th>
+              <Table.Th>Team Count</Table.Th>
+              <Table.Th>Public</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>{rows}</Table.Tbody>
+        </Table>
+      </ScrollArea>
+      <Button component={Link} to="/eventSelect/add" variant="light">
+        Add Event
+      </Button>
+    </Stack>
   );
 }
