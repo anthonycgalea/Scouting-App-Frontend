@@ -1,99 +1,72 @@
+import { useEventTeams } from '@/api';
+import { Button, Center, Loader, Table, Text } from '@mantine/core';
 import { Link } from '@tanstack/react-router';
-import { Button, Group, Progress, Table, Text } from '@mantine/core';
 import classes from './TeamDirectory.module.css';
-import { IconCheck, IconCircleX } from '@tabler/icons-react';
 
-const data = [
-  {
-    teamNumber: 1,
-    teamName: 'The Juggernauts',
-    pitScouted: true,
-    reviews: { positive: 2223, negative: 259 },
-  },
-  {
-    teamNumber: 33,
-    teamName: 'Killer Bees',
-    pitScouted: true,
-    reviews: { positive: 5677, negative: 1265 },
-  },
-  {
-    teamNumber: 51,
-    teamName: 'Wings of Fire',
-    pitScouted: false,
-    reviews: { positive: 3487, negative: 1845 },
-  },
-  {
-    teamNumber: 67,
-    teamName: 'HOT',
-    pitScouted: true,
-    reviews: { positive: 8576, negative: 663 },
-  },
-  {
-    teamNumber: 68,
-    teamName: 'Truck Town Thunder',
-    pitScouted: false,
-    reviews: { positive: 6631, negative: 993 },
-  },
-  {
-    teamNumber: 494,
-    teamName: 'Martians',
-    pitScouted: true,
-    reviews: { positive: 8124, negative: 1847 },
-  },
-];
+const placeholder = (
+  <Text fz="sm" c="dimmed">
+    Coming soon
+  </Text>
+);
 
 export function TeamDirectory() {
-  const rows = data.map((row) => {
-    const totalReviews = row.reviews.negative + row.reviews.positive;
-    const positiveReviews = (row.reviews.positive / totalReviews) * 100;
-    const negativeReviews = (row.reviews.negative / totalReviews) * 100;
+  const {
+    data: teams = [],
+    isLoading,
+    isError,
+  } = useEventTeams();
 
+  if (isLoading) {
     return (
-      <Table.Tr key={row.teamNumber}>
-        <Table.Td>
-          <Button
-            component={Link}
-            to={`/teams/${row.teamNumber}`}
-            aria-label={`${row.teamNumber}`}
-            radius="md"
-            variant="subtle"
-          >
-            {row.teamNumber}
-          </Button>
-        </Table.Td>
-        <Table.Td>{row.teamName}</Table.Td>
-        <Table.Td className='centerColumn'>
-          { row.pitScouted ? 
-          <IconCheck size={30}/> :
-          <IconCircleX size={30}/>}
-
-        </Table.Td>
-        <Table.Td>
-          <Group justify="space-between">
-            <Text fz="xs" c="teal" fw={700}>
-              {positiveReviews.toFixed(0)}%
-            </Text>
-            <Text fz="xs" c="red" fw={700}>
-              {negativeReviews.toFixed(0)}%
-            </Text>
-          </Group>
-          <Progress.Root>
-            <Progress.Section
-              className={classes.progressSection}
-              value={positiveReviews}
-              color="teal"
-            />
-
-            <Progress.Section
-              className={classes.progressSection}
-              value={negativeReviews}
-              color="red"
-            />
-          </Progress.Root>
-        </Table.Td>
-      </Table.Tr>
+      <Center mih={200}>
+        <Loader />
+      </Center>
     );
-  });
+  }
+
+  if (isError) {
+    return (
+      <Center mih={200}>
+        <Text c="red.6" fw={500}>
+          Unable to load the team directory.
+        </Text>
+      </Center>
+    );
+  }
+
+  if (teams.length === 0) {
+    return (
+      <Center mih={200}>
+        <Text fw={500}>No teams are available for this event.</Text>
+      </Center>
+    );
+  }
+
+  const rows = [...teams]
+    .sort((teamA, teamB) => teamA.team_number - teamB.team_number)
+    .map((team) => {
+      const location = team.location.trim();
+
+      return (
+        <Table.Tr key={team.team_number}>
+          <Table.Td>
+            <Button
+              component={Link}
+              to={`/teams/${team.team_number}`}
+              aria-label={`${team.team_number}`}
+              radius="md"
+              variant="subtle"
+            >
+              {team.team_number}
+            </Button>
+          </Table.Td>
+          <Table.Td>{team.team_name}</Table.Td>
+          <Table.Td>{location || <Text c="dimmed">Unknown</Text>}</Table.Td>
+          <Table.Td className={classes.centerColumn}>{placeholder}</Table.Td>
+          <Table.Td>{placeholder}</Table.Td>
+        </Table.Tr>
+      );
+    });
 
   return (
     <Table.ScrollContainer minWidth={800}>
@@ -102,7 +75,8 @@ export function TeamDirectory() {
           <Table.Tr>
             <Table.Th>Team #</Table.Th>
             <Table.Th>Team Name</Table.Th>
-            <Table.Th className='centerColumn'>Pit Scouted?</Table.Th>
+            <Table.Th>Location</Table.Th>
+            <Table.Th className={classes.centerColumn}>Pit Scouted?</Table.Th>
             <Table.Th>Matches Scouted</Table.Th>
           </Table.Tr>
         </Table.Thead>
