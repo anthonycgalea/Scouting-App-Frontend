@@ -62,9 +62,6 @@ export function AddEventPage() {
     <Box p="md">
       <Group justify="space-between" align="center" mb="lg">
         <Title order={2}>Available Events</Title>
-        <ActionIcon variant="default" size="xl" radius="md" aria-label="Add event">
-          <IconPlus stroke={1.5} />
-        </ActionIcon>
       </Group>
       <ScrollArea>
         <Table miw={800} verticalSpacing="sm">
