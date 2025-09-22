@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
-import { Box, Center, Loader, Stack, Text } from '@mantine/core';
+import { Box, Center, Loader, Skeleton, Stack, Text } from '@mantine/core';
 import { useMatchSchedule } from '@/api';
 import { groupMatchesBySection, SECTION_DEFINITIONS } from '@/components/MatchSchedule/matchSections';
 import {
@@ -9,6 +9,10 @@ import {
 
 const MatchScheduleComponent = lazy(async () => ({
   default: (await import('@/components/MatchSchedule/MatchSchedule')).MatchSchedule,
+}));
+
+const EventHeader = lazy(async () => ({
+  default: (await import('@/components/EventHeader/EventHeader')).EventHeader,
 }));
 
 export function MatchSchedulePage() {
@@ -81,6 +85,9 @@ export function MatchSchedulePage() {
   return (
     <Box p="md">
       <Stack gap="md">
+        <Suspense fallback={<Skeleton height={34} width="50%" radius="sm" />}>
+          <EventHeader />
+        </Suspense>
         <MatchScheduleToggle
           value={activeSection}
           options={toggleOptions}
