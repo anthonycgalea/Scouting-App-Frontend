@@ -21,13 +21,15 @@ export function EventSelect() {
   const organizationId = 4;
   const { data, isLoading, isError } = useOrganizationEvents(organizationId);
   const [events, setEvents] = useState<OrganizationEventDetail[]>([]);
+  const [initialEvents, setInitialEvents] = useState<OrganizationEventDetail[]>([]);
   const { colorScheme } = useMantineColorScheme();
 
   const deleteIconColor = colorScheme === 'dark' ? 'red' : 'black';
 
   useEffect(() => {
     if (data) {
-      setEvents(data);
+      setEvents(data.map((event) => ({ ...event })));
+      setInitialEvents(data.map((event) => ({ ...event })));
     }
   }, [data]);
 
@@ -86,6 +88,17 @@ export function EventSelect() {
     );
   });
 
+  const hasChanges =
+    events.length !== initialEvents.length ||
+    events.some((event) => {
+      const initialEvent = initialEvents.find(({ eventKey }) => eventKey === event.eventKey);
+      if (!initialEvent) {
+        return true;
+      }
+
+      return initialEvent.isActive !== event.isActive || initialEvent.isPublic !== event.isPublic;
+    });
+
   return (
     <Stack>
       <ScrollArea>
@@ -131,6 +144,7 @@ export function EventSelect() {
           </Table.Tbody>
         </Table>
       </ScrollArea>
+      <Button disabled={!hasChanges}>Save Changes</Button>
       <Button component={Link} to="/eventSelect/add" variant="light">
         Add Event
       </Button>
