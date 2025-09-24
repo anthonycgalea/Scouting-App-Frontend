@@ -1,3 +1,4 @@
+import { getStoredAccessToken } from '../auth/tokenStorage';
 import { createApiUrl } from './config';
 
 export type JsonBody = Record<string, unknown> | Array<unknown>;
@@ -30,6 +31,11 @@ export class ApiError extends Error {
 
 const buildRequestInit = ({ json, headers, body, ...rest }: RequestOptions = {}): RequestInit => {
   const requestHeaders = new Headers(headers);
+  const accessToken = getStoredAccessToken();
+
+  if (accessToken && !requestHeaders.has('Authorization')) {
+    requestHeaders.set('Authorization', `Bearer ${accessToken}`);
+  }
 
   if (json !== undefined && !requestHeaders.has('Content-Type')) {
     requestHeaders.set('Content-Type', 'application/json');
