@@ -1,7 +1,13 @@
 import { useMemo, useState } from 'react';
 import { IconPlus } from '@tabler/icons-react';
 import { Box, Button, Group, ScrollArea, Select, Table, Text, TextInput, Title } from '@mantine/core';
-import { type EventSummary, type OrganizationEventDetail, useEvents, useOrganizationEvents } from '../api';
+import {
+  type EventSummary,
+  type OrganizationEventDetail,
+  useCreateOrganizationEvent,
+  useEvents,
+  useOrganizationEvents,
+} from '../api';
 
 export function AddEventPage() {
   const currentYear = new Date().getFullYear();
@@ -17,6 +23,13 @@ export function AddEventPage() {
     isLoading: isOrganizationEventsLoading,
     isError: isOrganizationEventsError,
   } = useOrganizationEvents(organizationId);
+
+  const {
+    mutate: createOrganizationEvent,
+    isPending: isCreatingOrganizationEvent,
+  } = useCreateOrganizationEvent();
+
+  const [pendingEventKey, setPendingEventKey] = useState<string | null>(null);
 
   const eventList: EventSummary[] = events ?? [];
   const organizationEventList: OrganizationEventDetail[] = organizationEvents ?? [];
@@ -76,23 +89,45 @@ export function AddEventPage() {
     });
   }, [eventList, existingEventKeys, searchTerm, selectedWeek]);
 
-  const rows = sortedFilteredEvents.map((event) => (
-    <Table.Tr key={event.event_key}>
-      <Table.Td>
-        <Text size="sm" fw={500}>
-          {event.event_name}
-        </Text>
-      </Table.Td>
-      <Table.Td>
-        <Text size="sm">Week {event.week}</Text>
-      </Table.Td>
-      <Table.Td>
-        <Button variant="light" leftSection={<IconPlus stroke={1.5} />}>
-          Add
-        </Button>
-      </Table.Td>
-    </Table.Tr>
-  ));
+  const handleAddEvent = (eventKey: string) => {
+    setPendingEventKey(eventKey);
+    createOrganizationEvent(
+      { OrganizationId: organizationId, EventKey: eventKey },
+      {
+        onSettled: () => {
+          setPendingEventKey(null);
+        },
+      }
+    );
+  };
+
+  const rows = sortedFilteredEvents.map((event) => {
+    const isPendingForRow = isCreatingOrganizationEvent && pendingEventKey === event.event_key;
+
+    return (
+      <Table.Tr key={event.event_key}>
+        <Table.Td>
+          <Text size="sm" fw={500}>
+            {event.event_name}
+          </Text>
+        </Table.Td>
+        <Table.Td>
+          <Text size="sm">Week {event.week}</Text>
+        </Table.Td>
+        <Table.Td>
+          <Button
+            variant="light"
+            leftSection={<IconPlus stroke={1.5} />}
+            onClick={() => handleAddEvent(event.event_key)}
+            loading={isPendingForRow}
+            disabled={isCreatingOrganizationEvent && !isPendingForRow}
+          >
+            Add
+          </Button>
+        </Table.Td>
+      </Table.Tr>
+    );
+  });
 
   const isLoadingEvents = isLoading || isOrganizationEventsLoading;
   const isErrorLoadingEvents = isError || isOrganizationEventsError;
