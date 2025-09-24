@@ -42,3 +42,15 @@ Create a `.env.local` file to override the backend location:
 ```
 VITE_API_BASE_URL=https://your-production-api.example.com
 ```
+
+## Discord login configuration
+
+Discord authentication is handled by Supabase. The frontend constructs the full Supabase authorize URL (including the OAuth
+state parameter) at runtime, so no additional code changes or manual query parameters are required. To make sure the redirect
+completes successfully you only need to:
+
+1. Enable the Discord provider in the Supabase dashboard and supply the Discord client ID/secret.
+2. Add the application origin (for example, `http://localhost:5173` during local development) to **Authentication → URL configuration → Redirect URLs** so Supabase is allowed to send the user back to the app.
+
+Once those two Supabase settings are in place, the login button will redirect through Supabase and complete the Discord OAuth
+flow without any further setup in this repository.
