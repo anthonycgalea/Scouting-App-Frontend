@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import { apiFetch } from './httpClient';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { apiFetch, type JsonBody } from './httpClient';
 
 export interface EventSummary {
   event_key: string;
@@ -14,6 +14,11 @@ export interface OrganizationEventDetail {
   eventName: string;
   isPublic: boolean;
   isActive: boolean;
+}
+
+export interface CreateOrganizationEventRequest {
+  OrganizationId: number;
+  EventKey: string;
 }
 
 export const eventsQueryKey = (year: number) => ['events', year] as const;
@@ -48,3 +53,28 @@ export const useOrganizationEvents = (organizationId: number) =>
     queryKey: organizationEventsQueryKey(organizationId),
     queryFn: () => fetchOrganizationEvents(organizationId),
   });
+
+export const createOrganizationEvent = (body: CreateOrganizationEventRequest) => {
+  const payload: JsonBody = {
+    OrganizationId: body.OrganizationId,
+    EventKey: body.EventKey,
+  };
+
+  return apiFetch<void>('organization/createEvent', {
+    method: 'POST',
+    json: payload,
+  });
+};
+
+export const useCreateOrganizationEvent = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createOrganizationEvent,
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: organizationEventsQueryKey(variables.OrganizationId),
+      });
+    },
+  });
+};
