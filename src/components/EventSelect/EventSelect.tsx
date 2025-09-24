@@ -1,7 +1,19 @@
 import { useEffect, useState } from 'react';
 import cx from 'clsx';
-import { Button, Checkbox, ScrollArea, Stack, Switch, Table, Text } from '@mantine/core';
+import {
+  ActionIcon,
+  Button,
+  Checkbox,
+  ScrollArea,
+  Stack,
+  Switch,
+  Table,
+  Text,
+  VisuallyHidden,
+  useMantineColorScheme,
+} from '@mantine/core';
 import { Link } from '@tanstack/react-router';
+import { IconTrash } from '@tabler/icons-react';
 import { type OrganizationEventDetail, useOrganizationEvents } from '@/api';
 import classes from './EventSelect.module.css';
 
@@ -9,6 +21,9 @@ export function EventSelect() {
   const organizationId = 4;
   const { data, isLoading, isError } = useOrganizationEvents(organizationId);
   const [events, setEvents] = useState<OrganizationEventDetail[]>([]);
+  const { colorScheme } = useMantineColorScheme();
+
+  const deleteIconColor = colorScheme === 'dark' ? 'red' : 'black';
 
   useEffect(() => {
     if (data) {
@@ -58,6 +73,15 @@ export function EventSelect() {
             onChange={() => toggleEventPublic(event.eventKey)}
           />
         </Table.Td>
+        <Table.Td ta="right">
+          <ActionIcon
+            variant="transparent"
+            aria-label={`Delete ${event.eventName}`}
+            c={deleteIconColor}
+          >
+            <IconTrash stroke={1.5} />
+          </ActionIcon>
+        </Table.Td>
       </Table.Tr>
     );
   });
@@ -71,12 +95,15 @@ export function EventSelect() {
               <Table.Th w={40}>Active</Table.Th>
               <Table.Th>Event Name</Table.Th>
               <Table.Th>Public</Table.Th>
+              <Table.Th w={60}>
+                <VisuallyHidden>Delete</VisuallyHidden>
+              </Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
             {isLoading ? (
               <Table.Tr>
-                <Table.Td colSpan={3}>
+                <Table.Td colSpan={4}>
                   <Text size="sm" c="dimmed">
                     Loading events...
                   </Text>
@@ -84,7 +111,7 @@ export function EventSelect() {
               </Table.Tr>
             ) : isError ? (
               <Table.Tr>
-                <Table.Td colSpan={3}>
+                <Table.Td colSpan={4}>
                   <Text size="sm" c="red">
                     Unable to load events. Please try again later.
                   </Text>
@@ -94,7 +121,7 @@ export function EventSelect() {
               rows
             ) : (
               <Table.Tr>
-                <Table.Td colSpan={3}>
+                <Table.Td colSpan={4}>
                   <Text size="sm" c="dimmed">
                     No events have been added yet.
                   </Text>
