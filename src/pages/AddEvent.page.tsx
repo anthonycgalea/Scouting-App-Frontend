@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { IconPlus } from '@tabler/icons-react';
 import { Box, Button, Group, ScrollArea, Select, Table, Text, TextInput, Title } from '@mantine/core';
-import { type EventSummary, useEvents } from '../api';
+import { type EventSummary, type OrganizationEventDetail, useEvents, useOrganizationEvents } from '../api';
 
 export function AddEventPage() {
   const currentYear = new Date().getFullYear();
@@ -11,7 +11,20 @@ export function AddEventPage() {
     isError,
   } = useEvents(currentYear);
 
+  const organizationId = 4;
+  const {
+    data: organizationEvents,
+    isLoading: isOrganizationEventsLoading,
+    isError: isOrganizationEventsError,
+  } = useOrganizationEvents(organizationId);
+
   const eventList: EventSummary[] = events ?? [];
+  const organizationEventList: OrganizationEventDetail[] = organizationEvents ?? [];
+
+  const existingEventKeys = useMemo(
+    () => new Set(organizationEventList.map((event) => event.eventKey)),
+    [organizationEventList]
+  );
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedWeek, setSelectedWeek] = useState<string>('all');
@@ -35,6 +48,10 @@ export function AddEventPage() {
     const normalizedSearch = searchTerm.trim().toLowerCase();
 
     const filteredEvents = eventList.filter((event) => {
+      if (existingEventKeys.has(event.event_key)) {
+        return false;
+      }
+
       const matchesSearch = event.event_name
         .toLowerCase()
         .includes(normalizedSearch);
@@ -57,7 +74,7 @@ export function AddEventPage() {
 
       return a.event_name.localeCompare(b.event_name);
     });
-  }, [eventList, searchTerm, selectedWeek]);
+  }, [eventList, existingEventKeys, searchTerm, selectedWeek]);
 
   const rows = sortedFilteredEvents.map((event) => (
     <Table.Tr key={event.event_key}>
@@ -70,17 +87,15 @@ export function AddEventPage() {
         <Text size="sm">Week {event.week}</Text>
       </Table.Td>
       <Table.Td>
-        <Text size="sm" c="dimmed">
-          —
-        </Text>
-      </Table.Td>
-      <Table.Td>
-        <Button variant="light" leftSection={<IconPlus stroke={1.5} />}> 
+        <Button variant="light" leftSection={<IconPlus stroke={1.5} />}>
           Add
         </Button>
       </Table.Td>
     </Table.Tr>
   ));
+
+  const isLoadingEvents = isLoading || isOrganizationEventsLoading;
+  const isErrorLoadingEvents = isError || isOrganizationEventsError;
 
   return (
     <Box p="md">
@@ -104,27 +119,26 @@ export function AddEventPage() {
         />
       </Group>
       <ScrollArea>
-        <Table miw={800} verticalSpacing="sm">
+        <Table miw={700} verticalSpacing="sm">
           <Table.Thead>
             <Table.Tr>
               <Table.Th>Event Name</Table.Th>
               <Table.Th>Week</Table.Th>
-              <Table.Th>Team Count</Table.Th>
               <Table.Th />
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
-            {isLoading ? (
+            {isLoadingEvents ? (
               <Table.Tr>
-                <Table.Td colSpan={4}>
+                <Table.Td colSpan={3}>
                   <Text size="sm" c="dimmed">
                     Loading events...
                   </Text>
                 </Table.Td>
               </Table.Tr>
-            ) : isError ? (
+            ) : isErrorLoadingEvents ? (
               <Table.Tr>
-                <Table.Td colSpan={4}>
+                <Table.Td colSpan={3}>
                   <Text size="sm" c="red">
                     Unable to load events. Please try again later.
                   </Text>
@@ -134,7 +148,7 @@ export function AddEventPage() {
               rows
             ) : (
               <Table.Tr>
-                <Table.Td colSpan={4}>
+                <Table.Td colSpan={3}>
                   <Text size="sm" c="dimmed">
                     No events found for {currentYear}.
                   </Text>

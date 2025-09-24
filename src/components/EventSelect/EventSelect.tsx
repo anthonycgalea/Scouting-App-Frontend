@@ -1,87 +1,61 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import cx from 'clsx';
 import { Button, Checkbox, ScrollArea, Stack, Switch, Table, Text } from '@mantine/core';
 import { Link } from '@tanstack/react-router';
+import { type OrganizationEventDetail, useOrganizationEvents } from '@/api';
 import classes from './EventSelect.module.css';
 
-type EventRow = {
-  id: string;
-  name: string;
-  week: number;
-  teamCount: number;
-  isPublic: boolean;
-};
-
-const initialEvents: EventRow[] = [
-  {
-    id: 'tx-houston-1',
-    name: 'Houston District #1',
-    week: 1,
-    teamCount: 48,
-    isPublic: true,
-  },
-  {
-    id: 'tx-dallas-1',
-    name: 'Dallas Regional',
-    week: 2,
-    teamCount: 56,
-    isPublic: true,
-  },
-  {
-    id: 'tx-austin-1',
-    name: 'Austin District #1',
-    week: 3,
-    teamCount: 40,
-    isPublic: false,
-  },
-  {
-    id: 'tx-houston-2',
-    name: 'Houston District #2',
-    week: 4,
-    teamCount: 44,
-    isPublic: false,
-  },
-];
-
 export function EventSelect() {
-  const [events, setEvents] = useState<EventRow[]>(initialEvents);
-  const [activeEventId, setActiveEventId] = useState<string>(initialEvents[0]?.id ?? '');
+  const organizationId = 4;
+  const { data, isLoading, isError } = useOrganizationEvents(organizationId);
+  const [events, setEvents] = useState<OrganizationEventDetail[]>([]);
 
-  const toggleEventPublic = (id: string) => {
+  useEffect(() => {
+    if (data) {
+      setEvents(data);
+    }
+  }, [data]);
+
+  const activeEventId = events.find((event) => event.isActive)?.eventKey ?? '';
+
+  const setActiveEventId = (eventKey: string) => {
+    setEvents((current) =>
+      current.map((event) => ({
+        ...event,
+        isActive: event.eventKey === eventKey,
+      }))
+    );
+  };
+
+  const toggleEventPublic = (eventKey: string) => {
     setEvents((current) =>
       current.map((event) =>
-        event.id === id ? { ...event, isPublic: !event.isPublic } : event
+        event.eventKey === eventKey ? { ...event, isPublic: !event.isPublic } : event
       )
     );
   };
 
   const rows = events.map((event) => {
-    const selected = activeEventId === event.id;
+    const selected = activeEventId === event.eventKey;
     return (
-      <Table.Tr key={event.id} className={cx({ [classes.rowSelected]: selected })}>
+      <Table.Tr key={event.eventKey} className={cx({ [classes.rowSelected]: selected })}>
         <Table.Td>
           <Checkbox
-            aria-label={`Set ${event.name} as the active event`}
+            aria-label={`Set ${event.eventName} as the active event`}
             checked={selected}
-            onChange={() => setActiveEventId(event.id)}
+            onChange={() => setActiveEventId(event.eventKey)}
           />
         </Table.Td>
         <Table.Td>
           <Text size="sm" fw={500}>
-            {event.name}
+            {event.eventName}
           </Text>
         </Table.Td>
         <Table.Td>
-          <Text size="sm">Week {event.week}</Text>
-        </Table.Td>
-        <Table.Td>
-          <Text size="sm">{event.teamCount}</Text>
-        </Table.Td>
-        <Table.Td>
           <Switch
-            aria-label={`Toggle public visibility for ${event.name}`}
+            aria-label={`Toggle public visibility for ${event.eventName}`}
             checked={event.isPublic}
-            onChange={() => toggleEventPublic(event.id)}
+            onChange={() => toggleEventPublic(event.eventKey)}
           />
         </Table.Td>
       </Table.Tr>
@@ -91,17 +65,43 @@ export function EventSelect() {
   return (
     <Stack>
       <ScrollArea>
-        <Table miw={800} verticalSpacing="sm">
+        <Table miw={600} verticalSpacing="sm">
           <Table.Thead>
             <Table.Tr>
               <Table.Th w={40}>Active</Table.Th>
               <Table.Th>Event Name</Table.Th>
-              <Table.Th>Week</Table.Th>
-              <Table.Th>Team Count</Table.Th>
               <Table.Th>Public</Table.Th>
             </Table.Tr>
           </Table.Thead>
-          <Table.Tbody>{rows}</Table.Tbody>
+          <Table.Tbody>
+            {isLoading ? (
+              <Table.Tr>
+                <Table.Td colSpan={3}>
+                  <Text size="sm" c="dimmed">
+                    Loading events...
+                  </Text>
+                </Table.Td>
+              </Table.Tr>
+            ) : isError ? (
+              <Table.Tr>
+                <Table.Td colSpan={3}>
+                  <Text size="sm" c="red">
+                    Unable to load events. Please try again later.
+                  </Text>
+                </Table.Td>
+              </Table.Tr>
+            ) : rows.length > 0 ? (
+              rows
+            ) : (
+              <Table.Tr>
+                <Table.Td colSpan={3}>
+                  <Text size="sm" c="dimmed">
+                    No events have been added yet.
+                  </Text>
+                </Table.Td>
+              </Table.Tr>
+            )}
+          </Table.Tbody>
         </Table>
       </ScrollArea>
       <Button component={Link} to="/eventSelect/add" variant="light">
