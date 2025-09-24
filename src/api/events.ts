@@ -9,6 +9,13 @@ export interface EventSummary {
   week: number;
 }
 
+export interface OrganizationEventDetail {
+  eventKey: string;
+  eventName: string;
+  isPublic: boolean;
+  isActive: boolean;
+}
+
 export const eventsQueryKey = (year: number) => ['events', year] as const;
 
 export const fetchEvents = (year: number) => apiFetch<EventSummary[]>(`events/${year}`);
@@ -28,4 +35,16 @@ export const useEventInfo = (eventCode = '2025micmp4') =>
   useQuery<EventSummary>({
     queryKey: eventInfoQueryKey(eventCode),
     queryFn: () => fetchEventInfo(eventCode),
+  });
+
+export const organizationEventsQueryKey = (organizationId: number) =>
+  ['organization-events', organizationId] as const;
+
+export const fetchOrganizationEvents = (organizationId: number) =>
+  apiFetch<OrganizationEventDetail[]>(`organization/${organizationId}/events`);
+
+export const useOrganizationEvents = (organizationId: number) =>
+  useQuery<OrganizationEventDetail[]>({
+    queryKey: organizationEventsQueryKey(organizationId),
+    queryFn: () => fetchOrganizationEvents(organizationId),
   });
