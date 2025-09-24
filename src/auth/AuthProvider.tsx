@@ -39,14 +39,25 @@ interface AuthContextValue {
   logout: () => void;
 }
 
-const DISCORD_OAUTH_URL =
-  'https://discord.com/oauth2/authorize?client_id=1420518719024529479&response_type=code&redirect_uri=https%3A%2F%2Fvjrtjqnvatjfokogdhej.supabase.co%2Fauth%2Fv1%2Fcallback&scope=identify+email';
-
 const SUPABASE_PROJECT_ID = 'vjrtjqnvatjfokogdhej';
 const SUPABASE_STORAGE_KEY_SUFFIX = '-auth-token';
 const SUPABASE_DEFAULT_STORAGE_KEY = `sb-${SUPABASE_PROJECT_ID}${SUPABASE_STORAGE_KEY_SUFFIX}`;
 
 const isBrowser = typeof window !== 'undefined';
+
+const getDiscordOAuthUrl = () => {
+  const baseUrl = `https://${SUPABASE_PROJECT_ID}.supabase.co/auth/v1/authorize?provider=discord`;
+
+  if (!isBrowser) {
+    return baseUrl;
+  }
+
+  const authorizeUrl = new URL(baseUrl);
+  authorizeUrl.searchParams.set('scopes', 'identify email');
+  authorizeUrl.searchParams.set('redirect_to', window.location.origin);
+
+  return authorizeUrl.toString();
+};
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
@@ -183,7 +194,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    window.location.href = DISCORD_OAUTH_URL;
+    window.location.href = getDiscordOAuthUrl();
   }, []);
 
   const logout = useCallback(() => {
