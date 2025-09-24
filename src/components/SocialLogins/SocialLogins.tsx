@@ -1,5 +1,6 @@
 import { Button, ButtonProps, Group } from '@mantine/core';
 import { DiscordIcon } from '@mantinex/dev-icons';
+import { useAuth } from '../../auth/AuthProvider';
 import { GoogleIcon } from './GoogleIcon';
 import classes from './SocialLogins.module.css';
 
@@ -14,10 +15,12 @@ export function DiscordButton(props: ButtonProps & React.ComponentPropsWithoutRe
 }
 
 export function SocialLogins() {
+  const { loginWithDiscord } = useAuth();
+
   return (
     <Group justify="center" p="md">
-      <GoogleButton>Continue with Google</GoogleButton>
-      <DiscordButton>Login through Discord</DiscordButton>
+      <GoogleButton disabled>Continue with Google</GoogleButton>
+      <DiscordButton onClick={loginWithDiscord}>Login through Discord</DiscordButton>
     </Group>
   );
 }
