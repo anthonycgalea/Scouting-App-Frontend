@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { IconPlus } from '@tabler/icons-react';
 import { Box, Button, Group, ScrollArea, Select, Table, Text, TextInput, Title } from '@mantine/core';
+import { useNavigate } from '@tanstack/react-router';
 import {
   type EventSummary,
   type OrganizationEventDetail,
@@ -11,6 +12,7 @@ import {
 
 export function AddEventPage() {
   const currentYear = new Date().getFullYear();
+  const navigate = useNavigate({ from: '/eventSelect/add' });
   const {
     data: events,
     isLoading,
@@ -94,6 +96,9 @@ export function AddEventPage() {
     createOrganizationEvent(
       { OrganizationId: organizationId, EventKey: eventKey },
       {
+        onSuccess: () => {
+          navigate({ to: '/eventSelect' });
+        },
         onSettled: () => {
           setPendingEventKey(null);
         },

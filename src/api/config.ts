@@ -10,6 +10,7 @@ const getBaseUrl = () => {
     return 'http://localhost:8000';
   }
 
+  // eslint-disable-next-line no-console
   console.warn('VITE_API_BASE_URL is not set. Falling back to relative API paths.');
   return '';
 };
