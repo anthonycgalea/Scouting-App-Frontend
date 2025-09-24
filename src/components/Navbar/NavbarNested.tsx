@@ -8,9 +8,10 @@ import {
   IconPresentationAnalytics,
   IconUsersGroup,
 } from '@tabler/icons-react';
-import { Code, Group, ScrollArea } from '@mantine/core';
+import { Button, Code, Group, ScrollArea } from '@mantine/core';
 import { LinksGroup } from '../NavbarLinksGroup/NavbarLinksGroup';
 import { UserButton } from '../UserButton/UserButton';
+import { useAuth } from '../../auth/AuthProvider';
 import { Logo } from './Logo';
 import classes from './NavbarNested.module.css';
 
@@ -33,6 +34,7 @@ const data = [
 ];
 
 export function NavbarNested() {
+  const { user, loading, logout } = useAuth();
   const links = data.map((item) => <LinksGroup {...item} key={item.label} />);
 
   return (
@@ -49,7 +51,16 @@ export function NavbarNested() {
       </ScrollArea>
 
       <div className={classes.footer}>
-        <UserButton />
+        {!loading && user ? (
+          <>
+            <Button fullWidth mb="sm" variant="light" onClick={logout}>
+              Log out
+            </Button>
+            <UserButton />
+          </>
+        ) : (
+          <UserButton />
+        )}
       </div>
     </nav>
   );
