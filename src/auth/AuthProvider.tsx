@@ -5,28 +5,19 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
-import { clearStoredTokens, persistTokensFromUrl } from './tokenStorage';
-
-type SupabaseSessionUserMetadata = {
-  email?: string;
-  full_name?: string;
-  name?: string;
-  preferred_username?: string;
-  user_name?: string;
-};
-
-type SupabaseSessionUser = {
-  email?: string;
-  user_metadata?: SupabaseSessionUserMetadata;
-};
-
-type SupabaseStoredSession = {
-  currentSession?: {
-    user?: SupabaseSessionUser;
-  } | null;
-};
+import { ApiError } from '../api/httpClient';
+import { fetchUserInfo, UserInfoResponse } from '../api/user';
+import {
+  clearStoredAuthUser,
+  clearStoredTokens,
+  getStoredAccessToken,
+  getStoredAuthUser,
+  persistAuthUser,
+  persistTokensFromUrl,
+} from './tokenStorage';
 
 export interface AuthUser {
   displayName: string;
@@ -42,7 +33,6 @@ interface AuthContextValue {
 
 const SUPABASE_PROJECT_ID = 'vjrtjqnvatjfokogdhej';
 const SUPABASE_STORAGE_KEY_SUFFIX = '-auth-token';
-const SUPABASE_DEFAULT_STORAGE_KEY = `sb-${SUPABASE_PROJECT_ID}${SUPABASE_STORAGE_KEY_SUFFIX}`;
 
 const isBrowser = typeof window !== 'undefined';
 
@@ -62,83 +52,19 @@ const getDiscordOAuthUrl = () => {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-const resolveSupabaseStorageKey = () => {
-  if (!isBrowser) {
-    return null;
-  }
+const getDisplayNameFromUserInfo = (user: UserInfoResponse) =>
+  user.full_name ??
+  user.display_name ??
+  user.name ??
+  user.username ??
+  user.user_name ??
+  user.email ??
+  'User';
 
-  if (window.localStorage.getItem(SUPABASE_DEFAULT_STORAGE_KEY)) {
-    return SUPABASE_DEFAULT_STORAGE_KEY;
-  }
-
-  for (let index = 0; index < window.localStorage.length; index += 1) {
-    const key = window.localStorage.key(index);
-    if (key?.startsWith('sb-') && key.endsWith(SUPABASE_STORAGE_KEY_SUFFIX)) {
-      return key;
-    }
-  }
-
-  return null;
-};
-
-const getDisplayName = (user: SupabaseSessionUser | undefined | null) => {
-  if (!user) {
-    return null;
-  }
-
-  const metadata = user.user_metadata ?? {};
-
-  return (
-    metadata.full_name ??
-    metadata.name ??
-    metadata.user_name ??
-    metadata.preferred_username ??
-    metadata.email ??
-    user.email ??
-    null
-  );
-};
-
-const readUserFromStorage = (): AuthUser | null => {
-  if (!isBrowser) {
-    return null;
-  }
-
-  const storageKey = resolveSupabaseStorageKey();
-  if (!storageKey) {
-    return null;
-  }
-
-  const rawValue = window.localStorage.getItem(storageKey);
-  if (!rawValue) {
-    return null;
-  }
-
-  try {
-    const parsedValue: SupabaseStoredSession = JSON.parse(rawValue);
-    const supabaseUser = parsedValue?.currentSession?.user;
-
-    if (!supabaseUser) {
-      return null;
-    }
-
-    const email = supabaseUser.email ?? supabaseUser.user_metadata?.email ?? '';
-    const displayName = getDisplayName(supabaseUser);
-
-    if (!displayName && !email) {
-      return null;
-    }
-
-    return {
-      displayName: displayName ?? email,
-      email,
-    };
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('Failed to parse Supabase session from storage', error);
-    return null;
-  }
-};
+const mapUserInfoToAuthUser = (userInfo: UserInfoResponse): AuthUser => ({
+  displayName: getDisplayNameFromUserInfo(userInfo),
+  email: userInfo.email ?? '',
+});
 
 const clearSupabaseSessions = () => {
   if (!isBrowser) {
@@ -159,13 +85,59 @@ const clearSupabaseSessions = () => {
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(() => (isBrowser ? getStoredAuthUser() : null));
   const [loading, setLoading] = useState<boolean>(isBrowser);
+  const requestIdRef = useRef(0);
 
-  const refreshUserFromStorage = useCallback(() => {
-    const nextUser = readUserFromStorage();
-    setUser(nextUser);
-    setLoading(false);
+  const refreshUserInfo = useCallback(async () => {
+    const nextRequestId = requestIdRef.current + 1;
+    requestIdRef.current = nextRequestId;
+
+    if (!isBrowser) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
+    const accessToken = getStoredAccessToken();
+
+    if (!accessToken) {
+      setUser(null);
+      clearStoredAuthUser();
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const userInfo = await fetchUserInfo();
+      if (requestIdRef.current !== nextRequestId) {
+        return;
+      }
+
+      const nextUser = mapUserInfoToAuthUser(userInfo);
+      setUser(nextUser);
+      persistAuthUser(nextUser);
+    } catch (error) {
+      if (requestIdRef.current !== nextRequestId) {
+        return;
+      }
+
+      if (error instanceof ApiError && error.metadata.status === 401) {
+        clearStoredTokens();
+        clearStoredAuthUser();
+        clearSupabaseSessions();
+        setUser(null);
+      } else {
+        // eslint-disable-next-line no-console
+        console.error('Failed to fetch user info', error);
+      }
+    } finally {
+      if (requestIdRef.current === nextRequestId) {
+        setLoading(false);
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -173,26 +145,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       persistTokensFromUrl();
     }
 
-    refreshUserFromStorage();
-  }, [refreshUserFromStorage]);
+    void refreshUserInfo();
+  }, [refreshUserInfo]);
 
   useEffect(() => {
     if (!isBrowser) {
       return () => undefined;
     }
 
-    const handleStorageChange = () => {
-      refreshUserFromStorage();
+    const handleRefresh = () => {
+      void refreshUserInfo();
     };
 
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('focus', handleStorageChange);
+    window.addEventListener('storage', handleRefresh);
+    window.addEventListener('focus', handleRefresh);
 
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('focus', handleStorageChange);
+      window.removeEventListener('storage', handleRefresh);
+      window.removeEventListener('focus', handleRefresh);
     };
-  }, [refreshUserFromStorage]);
+  }, [refreshUserInfo]);
 
   const loginWithDiscord = useCallback(() => {
     if (!isBrowser) {
@@ -204,6 +176,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = useCallback(() => {
     clearStoredTokens();
+    clearStoredAuthUser();
     clearSupabaseSessions();
     setUser(null);
     setLoading(false);

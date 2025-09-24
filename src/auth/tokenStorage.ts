@@ -1,4 +1,5 @@
 const TOKEN_STORAGE_KEY = 'scouting-app.auth.tokens';
+const USER_STORAGE_KEY = 'scouting-app.auth.user';
 
 const isBrowser = typeof window !== 'undefined';
 
@@ -35,6 +36,35 @@ const readStoredTokens = (): StoredTokens | null => {
     return parsedValue;
   } catch (error) {
     window.sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+    return null;
+  }
+};
+
+type StoredAuthUser = {
+  displayName: string;
+  email: string;
+};
+
+const readStoredAuthUser = (): StoredAuthUser | null => {
+  if (!isBrowser) {
+    return null;
+  }
+
+  const rawValue = window.sessionStorage.getItem(USER_STORAGE_KEY);
+  if (!rawValue) {
+    return null;
+  }
+
+  try {
+    const parsedValue = JSON.parse(rawValue) as StoredAuthUser;
+
+    if (!parsedValue?.displayName && !parsedValue?.email) {
+      return null;
+    }
+
+    return parsedValue;
+  } catch (error) {
+    window.sessionStorage.removeItem(USER_STORAGE_KEY);
     return null;
   }
 };
@@ -77,10 +107,28 @@ export const persistTokensFromUrl = () => {
 
 export const getStoredAccessToken = () => readStoredTokens()?.accessToken ?? null;
 
+export const getStoredAuthUser = () => readStoredAuthUser();
+
 export const clearStoredTokens = () => {
   if (!isBrowser) {
     return;
   }
 
   window.sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+};
+
+export const persistAuthUser = (user: StoredAuthUser) => {
+  if (!isBrowser) {
+    return;
+  }
+
+  window.sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+};
+
+export const clearStoredAuthUser = () => {
+  if (!isBrowser) {
+    return;
+  }
+
+  window.sessionStorage.removeItem(USER_STORAGE_KEY);
 };
