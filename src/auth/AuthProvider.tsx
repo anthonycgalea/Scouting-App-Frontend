@@ -7,6 +7,7 @@ import {
   useMemo,
   useState,
 } from 'react';
+import { clearStoredTokens, persistTokensFromUrl } from './tokenStorage';
 
 type SupabaseSessionUserMetadata = {
   email?: string;
@@ -168,6 +169,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
+    if (isBrowser) {
+      persistTokensFromUrl();
+    }
+
     refreshUserFromStorage();
   }, [refreshUserFromStorage]);
 
@@ -198,6 +203,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const logout = useCallback(() => {
+    clearStoredTokens();
     clearSupabaseSessions();
     setUser(null);
     setLoading(false);
