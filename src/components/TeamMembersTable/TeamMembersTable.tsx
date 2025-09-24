@@ -1,4 +1,6 @@
-import { Badge, Group, Select, Table, Text } from '@mantine/core';
+import { useOrganizationEvents } from '@/api';
+import { Badge, Group, Select, Table, Text, TextInput } from '@mantine/core';
+import { useMemo, useState } from 'react';
 
 const data = [
   {
@@ -40,7 +42,22 @@ const data = [
 
 const rolesData = ['Team Admin', 'Lead Scout', 'Member', 'Guest'];
 
+const ORGANIZATION_ID = 4;
+
 export function TeamMembersTable() {
+  const { data: organizationEvents = [] } = useOrganizationEvents(ORGANIZATION_ID);
+
+  const eventOptions = useMemo(
+    () =>
+      organizationEvents.map((organizationEvent) => ({
+        value: organizationEvent.eventKey,
+        label: organizationEvent.short_name ?? organizationEvent.eventName,
+      })),
+    [organizationEvents],
+  );
+
+  const [guestAssignments, setGuestAssignments] = useState<Record<string, string | null>>({});
+
   const rows = data.map((item) => (
     <Table.Tr key={item.name}>
       <Table.Td>
@@ -64,6 +81,30 @@ export function TeamMembersTable() {
           allowDeselect={false}
         />
       </Table.Td>
+      <Table.Td>
+        {item.role === 'Guest' ? (
+          <Select
+            data={eventOptions}
+            value={guestAssignments[item.email] ?? null}
+            onChange={(value) =>
+              setGuestAssignments((current) => ({ ...current, [item.email]: value }))
+            }
+            placeholder="Select event"
+            variant="unstyled"
+            allowDeselect={false}
+            comboboxProps={{ withinPortal: false }}
+            aria-label={`Guest event for ${item.name}`}
+          />
+        ) : (
+          <TextInput
+            value=""
+            readOnly
+            disabled
+            variant="unstyled"
+            aria-label={`No guest event for ${item.name}`}
+          />
+        )}
+      </Table.Td>
       <Table.Td>{item.lastActive}</Table.Td>
       <Table.Td>
         {item.active ? (
@@ -86,6 +127,7 @@ export function TeamMembersTable() {
           <Table.Tr>
             <Table.Th>Team Member</Table.Th>
             <Table.Th>Role</Table.Th>
+            <Table.Th>Guest Event</Table.Th>
             <Table.Th>Last active</Table.Th>
             <Table.Th>Status</Table.Th>
           </Table.Tr>

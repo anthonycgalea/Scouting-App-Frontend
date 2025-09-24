@@ -12,6 +12,7 @@ export interface EventSummary {
 export interface OrganizationEventDetail {
   eventKey: string;
   eventName: string;
+  short_name?: string;
   isPublic: boolean;
   isActive: boolean;
 }
