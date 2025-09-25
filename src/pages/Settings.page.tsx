@@ -5,9 +5,9 @@ import { useOrganizations, useUserInfo } from '../api';
 import { ColorSchemeToggle } from '../components/ColorSchemeToggle/ColorSchemeToggle';
 
 export function UserSettingsPage() {
+  const { data: organizations, isLoading, isError } = useOrganizations();
   const { data: userInfo } = useUserInfo();
   const isUserLoggedIn = userInfo?.id !== undefined && userInfo?.id !== null;
-  const { data: organizations, isLoading, isError } = useOrganizations({ enabled: isUserLoggedIn });
   const [selectedUserOrganizationId, setSelectedUserOrganizationId] = useState<string | null>(null);
   const [hasUserSelectedOrganization, setHasUserSelectedOrganization] = useState(false);
 
@@ -25,31 +25,19 @@ export function UserSettingsPage() {
       return null;
     }
 
-    const resolvedUserOrganizationId =
-      userInfo?.userOrgId ??
-      userInfo?.user_org_id ??
-      userInfo?.user_org?.user_organization_id ??
-      null;
+    const userOrganizationId =
+      userInfo?.user_org;
 
-    if (resolvedUserOrganizationId !== null && resolvedUserOrganizationId !== undefined) {
-      const matchingOrganization = organizations.find(
-        (organization) => organization.user_organization_id === resolvedUserOrganizationId
-      );
-
-      if (matchingOrganization) {
-        return matchingOrganization.user_organization_id.toString();
-      }
+    if (userOrganizationId === null || userOrganizationId === undefined) {
+      return null;
     }
 
-    const dataViewerOrganization = organizations.find((organization) => {
-      const normalizedRole = organization.role.trim().toLowerCase();
-      const normalizedName = organization.name.trim().toLowerCase();
+    const matchingOrganization = organizations.find(
+      (organization) => organization.user_organization_id === userOrganizationId
+    );
 
-      return normalizedRole === 'data viewer' || normalizedName === 'data viewer';
-    });
-
-    return dataViewerOrganization ? dataViewerOrganization.user_organization_id.toString() : null;
-  }, [organizations, userInfo]);
+    return matchingOrganization ? matchingOrganization.user_organization_id.toString() : null;
+  }, [isUserLoggedIn, organizations, userInfo]);
 
   useEffect(() => {
     if (!isUserLoggedIn || hasUserSelectedOrganization) {
@@ -57,11 +45,7 @@ export function UserSettingsPage() {
     }
 
     setSelectedUserOrganizationId(defaultUserOrganizationId);
-  }, [
-    defaultUserOrganizationId,
-    hasUserSelectedOrganization,
-    isUserLoggedIn,
-  ]);
+  }, [defaultUserOrganizationId, hasUserSelectedOrganization, isUserLoggedIn]);
 
   const handleOrganizationChange = (value: string | null) => {
     setHasUserSelectedOrganization(true);
@@ -85,7 +69,7 @@ export function UserSettingsPage() {
               style={{ flex: 1, minWidth: 260 }}
               searchable
               allowDeselect
-            />
+              />
             <Button component={Link} to="/organizations/apply">
               Apply to an Organization
             </Button>
