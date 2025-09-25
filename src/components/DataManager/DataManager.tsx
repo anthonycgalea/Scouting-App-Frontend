@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { type ReactNode, useMemo, useState } from 'react';
 import { IconChevronDown, IconChevronUp, IconSearch, IconCheck, IconCircleX  } from '@tabler/icons-react';
-import { Box, Center, Group, ScrollArea, Stack, Table, Text, TextInput, UnstyledButton } from '@mantine/core';
+import { Box, Center, Group, Loader, ScrollArea, Stack, Table, Text, TextInput, UnstyledButton } from '@mantine/core';
 import { DataManagerButtonMenu } from './DataManagerButtonMenu';
 import { ExportHeader } from '../ExportHeader/ExportHeader';
 import classes from './DataManager.module.css';
+import { useMatchSchedule } from '@/api';
 
 interface RowData {
   matchNumber: number;
@@ -17,37 +18,13 @@ interface RowData {
 }
 
 interface ThProps {
-  children: React.ReactNode;
+  children: ReactNode;
   reversed: boolean;
   sorted: boolean;
   onSort: () => void;
 }
 
 const teamNumberKeys: (keyof RowData)[] = ['red1', 'red2', 'red3', 'blue1', 'blue2', 'blue3'];
-
-const schedule: RowData[] = [
-  { matchNumber: 1, red1: 1678, red2: 4414, red3: 5940, blue1: 254, blue2: 971, blue3: 840, fullyScouted: true },
-  { matchNumber: 2, red1: 973, red2: 649, red3: 115, blue1: 118, blue2: 148, blue3: 3647, fullyScouted: true },
-  { matchNumber: 3, red1: 2122, red2: 2471, red3: 2990, blue1: 3847, blue2: 5026, blue3: 8033, fullyScouted: true },
-  { matchNumber: 4, red1: 1323, red2: 2046, red3: 5818, blue1: 1538, blue2: 359, blue3: 4419, fullyScouted: true },
-  { matchNumber: 5, red1: 604, red2: 2813, red3: 3250, blue1: 1671, blue2: 3255, blue3: 5109, fullyScouted: true },
-  { matchNumber: 6, red1: 4541, red2: 4183, red3: 4255, blue1: 4334, blue2: 3310, blue3: 589, fullyScouted: true },
-  { matchNumber: 7, red1: 6800, red2: 624, red3: 4587, blue1: 6240, blue2: 5012, blue3: 5414, fullyScouted: true },
-  { matchNumber: 8, red1: 5667, red2: 2473, red3: 6814, blue1: 5419, blue2: 5700, blue3: 6913, fullyScouted: false },
-  { matchNumber: 9, red1: 238, red2: 78, red3: 226, blue1: 125, blue2: 195, blue3: 1474, fullyScouted: false },
-  { matchNumber: 10, red1: 3538, red2: 27, red3: 494, blue1: 3620, blue2: 469, blue3: 910, fullyScouted: false },
-  { matchNumber: 11, red1: 4143, red2: 930, red3: 2830, blue1: 1732, blue2: 2062, blue3: 3352, fullyScouted: false },
-  { matchNumber: 12, red1: 2056, red2: 1241, red3: 3683, blue1: 1114, blue2: 4039, blue3: 1310, fullyScouted: false },
-  { matchNumber: 13, red1: 4481, red2: 2767, red3: 4003, blue1: 2481, blue2: 217, blue3: 3026, fullyScouted: false },
-  { matchNumber: 14, red1: 71, red2: 45, red3: 1024, blue1: 234, blue2: 245, blue3: 829, fullyScouted: false },
-  { matchNumber: 15, red1: 987, red2: 6045, red3: 5499, blue1: 399, blue2: 4145, blue3: 585, fullyScouted: false },
-  { matchNumber: 16, red1: 1619, red2: 2992, red3: 179, blue1: 1339, blue2: 4068, blue3: 4388, fullyScouted: false },
-  { matchNumber: 17, red1: 433, red2: 708, red3: 1710, blue1: 1806, blue2: 1939, blue3: 2410, fullyScouted: false },
-  { matchNumber: 18, red1: 303, red2: 222, red3: 7083, blue1: 2590, blue2: 223, blue3: 1257, fullyScouted: false },
-  { matchNumber: 19, red1: 870, red2: 287, red3: 1519, blue1: 353, blue2: 1885, blue3: 5960, fullyScouted: false },
-  { matchNumber: 20, red1: 862, red2: 1718, red3: 2959, blue1: 5561, blue2: 6077, blue3: 858, fullyScouted: false },
-];
-
 
 function Th({ children, reversed, onSort }: ThProps) {
   const Icon = reversed ? IconChevronDown : IconChevronUp;
@@ -100,33 +77,43 @@ function sortData(
 }
 
 export function DataManager() {
+  const { data: scheduleData = [], isLoading, isError } = useMatchSchedule();
   const [matchSearch, setMatchSearch] = useState('');
   const [teamSearch, setTeamSearch] = useState('');
   const [reverseSortDirection, setReverseSortDirection] = useState(false);
-  const [sortedData, setSortedData] = useState(() =>
-    sortData(schedule, { reversed: false, matchSearch: '', teamSearch: '' })
+
+  const schedule = useMemo<RowData[]>(
+    () =>
+      scheduleData.map((match) => ({
+        matchNumber: match.match_number,
+        red1: match.red1_id,
+        red2: match.red2_id,
+        red3: match.red3_id,
+        blue1: match.blue1_id,
+        blue2: match.blue2_id,
+        blue3: match.blue3_id,
+        fullyScouted: false,
+      })),
+    [scheduleData]
+  );
+
+  const sortedData = useMemo(
+    () => sortData(schedule, { reversed: reverseSortDirection, matchSearch, teamSearch }),
+    [schedule, reverseSortDirection, matchSearch, teamSearch]
   );
 
   const setSorting = () => {
-    const reversed = !reverseSortDirection;
-    setReverseSortDirection(reversed);
-    setSortedData(sortData(schedule, { reversed, matchSearch, teamSearch }));
+    setReverseSortDirection((current) => !current);
   };
 
   const handleMatchSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = event.currentTarget;
     setMatchSearch(value);
-    setSortedData(
-      sortData(schedule, { reversed: reverseSortDirection, matchSearch: value, teamSearch })
-    );
   };
 
   const handleTeamSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = event.currentTarget;
     setTeamSearch(value);
-    setSortedData(
-      sortData(schedule, { reversed: reverseSortDirection, matchSearch, teamSearch: value })
-    );
   };
 
   const rows = sortedData.map((row) => (
@@ -148,64 +135,103 @@ export function DataManager() {
     </Table.Tr>
   ));
 
+  const totalColumns = 2 + teamNumberKeys.length;
+
+  let tableBody: ReactNode;
+  if (isLoading) {
+    tableBody = (
+      <Table.Tr>
+        <Table.Td colSpan={totalColumns}>
+          <Center mih={120}>
+            <Loader />
+          </Center>
+        </Table.Td>
+      </Table.Tr>
+    );
+  } else if (isError) {
+    tableBody = (
+      <Table.Tr>
+        <Table.Td colSpan={totalColumns}>
+          <Center mih={120}>
+            <Text c="red.6" fw={500}>
+              Unable to load the match schedule.
+            </Text>
+          </Center>
+        </Table.Td>
+      </Table.Tr>
+    );
+  } else if (schedule.length === 0) {
+    tableBody = (
+      <Table.Tr>
+        <Table.Td colSpan={totalColumns}>
+          <Center mih={120}>
+            <Text fw={500}>No matches are available for this event.</Text>
+          </Center>
+        </Table.Td>
+      </Table.Tr>
+    );
+  } else if (rows.length === 0) {
+    tableBody = (
+      <Table.Tr>
+        <Table.Td colSpan={totalColumns}>
+          <Text fw={500} ta="center">
+            Nothing found
+          </Text>
+        </Table.Td>
+      </Table.Tr>
+    );
+  } else {
+    tableBody = rows;
+  }
+
   return (
     <>
-    <Box>
-      <ExportHeader />
-    </Box>
-    <ScrollArea>
-      <Stack gap="md">
-        <Group gap="md" grow>
-          <TextInput
-            placeholder="Filter by match number"
-            leftSection={<IconSearch size={16} stroke={1.5} />}
-            value={matchSearch}
-            onChange={handleMatchSearchChange}
+      <Box>
+        <ExportHeader />
+      </Box>
+      <ScrollArea>
+        <Stack gap="md">
+          <Group gap="md" grow>
+            <TextInput
+              placeholder="Filter by match number"
+              leftSection={<IconSearch size={16} stroke={1.5} />}
+              value={matchSearch}
+              onChange={handleMatchSearchChange}
+              disabled={isLoading || isError || schedule.length === 0}
             />
-          <TextInput
-            placeholder="Filter by team number"
-            leftSection={<IconSearch size={16} stroke={1.5} />}
-            value={teamSearch}
-            onChange={handleTeamSearchChange}
+            <TextInput
+              placeholder="Filter by team number"
+              leftSection={<IconSearch size={16} stroke={1.5} />}
+              value={teamSearch}
+              onChange={handleTeamSearchChange}
+              disabled={isLoading || isError || schedule.length === 0}
             />
-        </Group>
-        <Table
-          horizontalSpacing="md"
-          verticalSpacing="xs"
-          miw={700}
-          layout="fixed"
-          className={classes.table}
+          </Group>
+          <Table
+            horizontalSpacing="md"
+            verticalSpacing="xs"
+            miw={700}
+            layout="fixed"
+            className={classes.table}
           >
-          <Table.Thead>
-            <Table.Tr>
-              <Th sorted reversed={reverseSortDirection} onSort={setSorting}>
-                Match #
-              </Th>
-              <Table.Th>Red 1</Table.Th>
-              <Table.Th>Red 2</Table.Th>
-              <Table.Th>Red 3</Table.Th>
-              <Table.Th>Blue 1</Table.Th>
-              <Table.Th>Blue 2</Table.Th>
-              <Table.Th>Blue 3</Table.Th>
-              <Table.Th>Fully Scouted?</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {rows.length > 0 ? (
-              rows
-            ) : (
+            <Table.Thead>
               <Table.Tr>
-                <Table.Td colSpan={1 + teamNumberKeys.length}>
-                  <Text fw={500} ta="center">
-                    Nothing found
-                  </Text>
-                </Table.Td>
+                <Th sorted reversed={reverseSortDirection} onSort={setSorting}>
+                  Match #
+                </Th>
+                <Table.Th>Red 1</Table.Th>
+                <Table.Th>Red 2</Table.Th>
+                <Table.Th>Red 3</Table.Th>
+                <Table.Th>Blue 1</Table.Th>
+                <Table.Th>Blue 2</Table.Th>
+                <Table.Th>Blue 3</Table.Th>
+                <Table.Th>Fully Scouted?</Table.Th>
               </Table.Tr>
-            )}
-          </Table.Tbody>
-        </Table>
-      </Stack>
-    </ScrollArea>
+            </Table.Thead>
+            <Table.Tbody>{tableBody}</Table.Tbody>
+          </Table>
+        </Stack>
+      </ScrollArea>
     </>
   );
 }
