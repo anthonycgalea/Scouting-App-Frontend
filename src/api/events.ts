@@ -17,6 +17,14 @@ export interface OrganizationEventDetail {
   isActive: boolean;
 }
 
+export interface UpdateOrganizationEventsRequestItem {
+  eventKey: string;
+  isPublic: boolean;
+  isActive: boolean;
+}
+
+export type UpdateOrganizationEventsRequest = UpdateOrganizationEventsRequestItem[];
+
 export interface CreateOrganizationEventRequest {
   OrganizationId: number;
   EventKey: string;
@@ -92,6 +100,31 @@ export const useCreateOrganizationEvent = () => {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: organizationEventsQueryKey(variables.OrganizationId),
+      });
+    },
+  });
+};
+
+export const updateOrganizationEvents = (body: UpdateOrganizationEventsRequest) =>
+  apiFetch<void>('organization/events', {
+    method: 'PATCH',
+    json: body,
+  });
+
+export interface UpdateOrganizationEventsVariables {
+  organizationId: number;
+  events: UpdateOrganizationEventsRequest;
+}
+
+export const useUpdateOrganizationEvents = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ events }: UpdateOrganizationEventsVariables) =>
+      updateOrganizationEvents(events),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: organizationEventsQueryKey(variables.organizationId),
       });
     },
   });

@@ -18,6 +18,7 @@ import { IconPlus, IconTrash } from '@tabler/icons-react';
 import {
   type OrganizationEventDetail,
   useOrganizationEvents,
+  useUpdateOrganizationEvents,
   useUserInfo,
   useUserOrganization,
 } from '@/api';
@@ -40,6 +41,8 @@ export function EventSelect() {
   const [events, setEvents] = useState<OrganizationEventDetail[]>([]);
   const [initialEvents, setInitialEvents] = useState<OrganizationEventDetail[]>([]);
   const { colorScheme } = useMantineColorScheme();
+  const { mutate: updateOrganizationEventsMutation, isPending: isSavingEvents } =
+    useUpdateOrganizationEvents();
 
   const deleteIconColor = colorScheme === 'dark' ? 'red' : 'black';
 
@@ -127,6 +130,27 @@ export function EventSelect() {
   const shouldPromptForOrganization =
     !isLoadingEvents && !isErrorLoadingEvents && isUserLoggedIn && !organizationId;
 
+  const handleSaveChanges = () => {
+    if (!organizationId) {
+      return;
+    }
+
+    const payload = events.map(({ eventKey, isActive, isPublic }) => ({
+      eventKey,
+      isActive,
+      isPublic,
+    }));
+
+    updateOrganizationEventsMutation(
+      { organizationId, events: payload },
+      {
+        onSuccess: () => {
+          setInitialEvents(events.map((event) => ({ ...event })));
+        },
+      }
+    );
+  };
+
   return (
     <Stack>
       <ScrollArea>
@@ -193,7 +217,12 @@ export function EventSelect() {
         >
           Add Event
         </Button>
-        <Button disabled={!hasChanges || !organizationId} size="md">
+        <Button
+          disabled={!hasChanges || !organizationId}
+          loading={isSavingEvents}
+          onClick={handleSaveChanges}
+          size="md"
+        >
           Save Changes
         </Button>
       </Group>
