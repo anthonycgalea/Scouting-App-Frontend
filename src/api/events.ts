@@ -13,6 +13,7 @@ export interface OrganizationEventDetail {
   eventKey: string;
   eventName: string;
   short_name?: string;
+  week?: number | null;
   isPublic: boolean;
   isActive: boolean;
 }
