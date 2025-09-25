@@ -77,7 +77,6 @@ export function ApplyToOrganizationPage() {
       setPendingOrganizationId(null);
     }
   };
-
   const rows = sortedOrganizations.map((organization) => (
     <Table.Tr key={organization.id}>
       <Table.Td>

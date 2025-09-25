@@ -11,8 +11,10 @@ import {
   useUserInfo,
   useUserOrganization,
 } from '../api';
+import { useRequireOrganizationAccess } from '@/hooks/useRequireOrganizationAccess';
 
 export function AddEventPage() {
+  const { canAccessOrganizationPages, isCheckingAccess } = useRequireOrganizationAccess();
   const currentYear = new Date().getFullYear();
   const navigate = useNavigate({ from: '/eventSelect/add' });
   const {
@@ -150,6 +152,10 @@ export function AddEventPage() {
   const isErrorLoadingEvents = isError || isUserOrganizationError || isOrganizationEventsError;
   const shouldPromptForOrganization =
     !isLoadingEvents && !isErrorLoadingEvents && isUserLoggedIn && !organizationId;
+
+  if (isCheckingAccess || !canAccessOrganizationPages) {
+    return null;
+  }
 
   return (
     <Box p="md">
