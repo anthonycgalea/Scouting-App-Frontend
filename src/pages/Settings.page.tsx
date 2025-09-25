@@ -25,14 +25,15 @@ export function UserSettingsPage() {
       return null;
     }
 
-    const userOrgId = userInfo?.userOrgId ?? userInfo?.user_org_id;
+    const userOrganizationId =
+      userInfo?.userOrgId ?? userInfo?.user_org_id ?? userInfo?.user_org?.user_organization_id;
 
-    if (userOrgId === null || userOrgId === undefined) {
+    if (userOrganizationId === null || userOrganizationId === undefined) {
       return null;
     }
 
     const matchingOrganization = organizations.find(
-      (organization) => organization.user_organization_id === userOrgId
+      (organization) => organization.user_organization_id === userOrganizationId
     );
 
     return matchingOrganization ? matchingOrganization.user_organization_id.toString() : null;
