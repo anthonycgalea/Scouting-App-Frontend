@@ -5,11 +5,13 @@ export interface Organization {
   id: number;
   name: string;
   team_number: number;
+  role: string;
+  user_organization_id: number;
 }
 
 export const organizationsQueryKey = ['organizations'] as const;
 
-export const fetchOrganizations = () => apiFetch<Organization[]>('admin/organizations');
+export const fetchOrganizations = () => apiFetch<Organization[]>('user/organizations');
 
 export const useOrganizations = () =>
   useQuery<Organization[]>({
