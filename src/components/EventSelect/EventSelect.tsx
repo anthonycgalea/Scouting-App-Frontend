@@ -15,12 +15,28 @@ import {
 } from '@mantine/core';
 import { Link } from '@tanstack/react-router';
 import { IconPlus, IconTrash } from '@tabler/icons-react';
-import { type OrganizationEventDetail, useOrganizationEvents } from '@/api';
+import {
+  type OrganizationEventDetail,
+  useOrganizationEvents,
+  useUserInfo,
+  useUserOrganization,
+} from '@/api';
 import classes from './EventSelect.module.css';
 
 export function EventSelect() {
-  const organizationId = 4;
-  const { data, isLoading, isError } = useOrganizationEvents(organizationId);
+  const { data: userInfo } = useUserInfo();
+  const isUserLoggedIn = userInfo?.id !== undefined && userInfo?.id !== null;
+  const {
+    data: userOrganization,
+    isLoading: isUserOrganizationLoading,
+    isError: isUserOrganizationError,
+  } = useUserOrganization({ enabled: isUserLoggedIn });
+  const organizationId = userOrganization?.organization_id ?? null;
+  const {
+    data,
+    isLoading,
+    isError,
+  } = useOrganizationEvents(organizationId, { enabled: isUserLoggedIn && !!organizationId });
   const [events, setEvents] = useState<OrganizationEventDetail[]>([]);
   const [initialEvents, setInitialEvents] = useState<OrganizationEventDetail[]>([]);
   const { colorScheme } = useMantineColorScheme();
@@ -28,11 +44,17 @@ export function EventSelect() {
   const deleteIconColor = colorScheme === 'dark' ? 'red' : 'black';
 
   useEffect(() => {
+    if (!organizationId) {
+      setEvents([]);
+      setInitialEvents([]);
+      return;
+    }
+
     if (data) {
       setEvents(data.map((event) => ({ ...event })));
       setInitialEvents(data.map((event) => ({ ...event })));
     }
-  }, [data]);
+  }, [data, organizationId]);
 
   const activeEventId = events.find((event) => event.isActive)?.eventKey ?? '';
 
@@ -100,6 +122,11 @@ export function EventSelect() {
       return initialEvent.isActive !== event.isActive || initialEvent.isPublic !== event.isPublic;
     });
 
+  const isLoadingEvents = isLoading || isUserOrganizationLoading;
+  const isErrorLoadingEvents = isError || isUserOrganizationError;
+  const shouldPromptForOrganization =
+    !isLoadingEvents && !isErrorLoadingEvents && isUserLoggedIn && !organizationId;
+
   return (
     <Stack>
       <ScrollArea>
@@ -115,7 +142,7 @@ export function EventSelect() {
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
-            {isLoading ? (
+            {isLoadingEvents ? (
               <Table.Tr>
                 <Table.Td colSpan={4}>
                   <Text size="sm" c="dimmed">
@@ -123,11 +150,19 @@ export function EventSelect() {
                   </Text>
                 </Table.Td>
               </Table.Tr>
-            ) : isError ? (
+            ) : isErrorLoadingEvents ? (
               <Table.Tr>
                 <Table.Td colSpan={4}>
                   <Text size="sm" c="red">
                     Unable to load events. Please try again later.
+                  </Text>
+                </Table.Td>
+              </Table.Tr>
+            ) : shouldPromptForOrganization ? (
+              <Table.Tr>
+                <Table.Td colSpan={4}>
+                  <Text size="sm" c="dimmed">
+                    Select an organization to manage its events.
                   </Text>
                 </Table.Td>
               </Table.Tr>
@@ -152,10 +187,11 @@ export function EventSelect() {
           variant="light"
           size="md"
           leftSection={<IconPlus stroke={1.5} />}
+          disabled={!organizationId}
         >
           Add Event
         </Button>
-        <Button disabled={!hasChanges} size="md">
+        <Button disabled={!hasChanges || !organizationId} size="md">
           Save Changes
         </Button>
       </Group>

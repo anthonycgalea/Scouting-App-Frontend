@@ -49,11 +49,28 @@ export const organizationEventsQueryKey = (organizationId: number) =>
 export const fetchOrganizationEvents = (organizationId: number) =>
   apiFetch<OrganizationEventDetail[]>(`organization/${organizationId}/events`);
 
-export const useOrganizationEvents = (organizationId: number) =>
-  useQuery<OrganizationEventDetail[]>({
-    queryKey: organizationEventsQueryKey(organizationId),
-    queryFn: () => fetchOrganizationEvents(organizationId),
+export const useOrganizationEvents = (
+  organizationId: number | null | undefined,
+  { enabled }: { enabled?: boolean } = {}
+) => {
+  const shouldEnable = (enabled ?? true) && organizationId != null;
+  const queryKey =
+    organizationId != null
+      ? organizationEventsQueryKey(organizationId)
+      : (['organization-events', 'unknown'] as const);
+
+  return useQuery<OrganizationEventDetail[]>({
+    queryKey,
+    queryFn: () => {
+      if (organizationId == null) {
+        throw new Error('Organization ID is required to fetch organization events');
+      }
+
+      return fetchOrganizationEvents(organizationId);
+    },
+    enabled: shouldEnable,
   });
+};
 
 export const createOrganizationEvent = (body: CreateOrganizationEventRequest) => {
   const payload: JsonBody = {
