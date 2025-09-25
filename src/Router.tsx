@@ -12,6 +12,7 @@ import { DataManagerPage } from './pages/DataManager.page';
 import { SuperScoutPage } from './pages/SuperScout.page';
 import { OrganizationEventSelectPage } from './pages/OrganizationEventSelect.page';
 import { AddEventPage } from './pages/AddEvent.page';
+import { ApplyToOrganizationPage } from './pages/ApplyToOrganization.page';
 
 const rootRoute = createRootRoute({
   component: function RootLayout() {
@@ -77,6 +78,12 @@ const teamMembersRoute = createRoute({
   component: TeamMembersPage,
 });
 
+const applyToOrganizationRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/organizations/apply',
+  component: ApplyToOrganizationPage,
+});
+
 const organizationEventSelectRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/eventSelect',
@@ -100,7 +107,8 @@ const routeTree = rootRoute.addChildren([
   settingsRoute.addChildren([]),
   teamMembersRoute.addChildren([]),
   organizationEventSelectRoute.addChildren([]),
-  addEventRoute.addChildren([])
+  addEventRoute.addChildren([]),
+  applyToOrganizationRoute.addChildren([])
 ]);
 
 
