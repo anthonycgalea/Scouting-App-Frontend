@@ -15,11 +15,11 @@ export function DiscordButton(props: ButtonProps & React.ComponentPropsWithoutRe
 }
 
 export function SocialLogins() {
-  const { loginWithDiscord } = useAuth();
+  const { loginWithDiscord, loginWithGoogle } = useAuth();
 
   return (
     <Group justify="center" p="md">
-      <GoogleButton disabled>Continue with Google</GoogleButton>
+      <GoogleButton onClick={loginWithGoogle}>Continue with Google</GoogleButton>
       <DiscordButton onClick={loginWithDiscord}>Login through Discord</DiscordButton>
     </Group>
   );
