@@ -75,7 +75,7 @@ function filterData(
             return false;
           }
 
-          return teamNumber.toString().toLowerCase().includes(teamQuery);
+          return teamNumber.toString().toLowerCase() === teamQuery ;
         })
       : true;
 
