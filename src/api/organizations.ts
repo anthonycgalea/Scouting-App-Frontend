@@ -39,6 +39,12 @@ export const updateOrganizationMember = ({ userId, role }: UpdateOrganizationMem
     json: { userId, role },
   });
 
+export const deleteOrganizationApplication = ({ userId }: { userId: string }) =>
+  apiFetch<void>('organization/applications', {
+    method: 'DELETE',
+    json: { userId },
+  });
+
 export const applyToOrganization = (organizationId: number) =>
   apiFetch<void>('user/organization/apply', {
     method: 'POST',
@@ -82,6 +88,17 @@ export const useUpdateOrganizationMember = () => {
 
   return useMutation({
     mutationFn: updateOrganizationMember,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: organizationApplicationsQueryKey });
+    },
+  });
+};
+
+export const useDeleteOrganizationApplication = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteOrganizationApplication,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: organizationApplicationsQueryKey });
     },
