@@ -1,13 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Group, Select, Stack } from '@mantine/core';
 import { Link } from '@tanstack/react-router';
-import { useOrganizations, useUserInfo } from '../api';
+import { useOrganizations, useUserInfo, useUserRole } from '../api';
 import { ColorSchemeToggle } from '../components/ColorSchemeToggle/ColorSchemeToggle';
 
 export function UserSettingsPage() {
-  const { data: organizations, isLoading, isError } = useOrganizations();
   const { data: userInfo } = useUserInfo();
   const isUserLoggedIn = userInfo?.id !== undefined && userInfo?.id !== null;
+  const { data: userRole } = useUserRole({ enabled: isUserLoggedIn });
+  const canManageOrganizations = userRole?.role === 'LEAD' || userRole?.role === 'ADMIN';
+  const {
+    data: organizations,
+    isLoading,
+    isError,
+  } = useOrganizations({ enabled: isUserLoggedIn && canManageOrganizations });
   const [selectedUserOrganizationId, setSelectedUserOrganizationId] = useState<string | null>(null);
   const [hasUserSelectedOrganization, setHasUserSelectedOrganization] = useState(false);
 
@@ -21,7 +27,12 @@ export function UserSettingsPage() {
   );
 
   const defaultUserOrganizationId = useMemo(() => {
-    if (!isUserLoggedIn || !organizations || organizations.length === 0) {
+    if (
+      !isUserLoggedIn ||
+      !canManageOrganizations ||
+      !organizations ||
+      organizations.length === 0
+    ) {
       return null;
     }
 
@@ -37,15 +48,20 @@ export function UserSettingsPage() {
     );
 
     return matchingOrganization ? matchingOrganization.user_organization_id.toString() : null;
-  }, [isUserLoggedIn, organizations, userInfo]);
+  }, [isUserLoggedIn, canManageOrganizations, organizations, userInfo]);
 
   useEffect(() => {
-    if (!isUserLoggedIn || hasUserSelectedOrganization) {
+    if (!isUserLoggedIn || !canManageOrganizations || hasUserSelectedOrganization) {
       return;
     }
 
     setSelectedUserOrganizationId(defaultUserOrganizationId);
-  }, [defaultUserOrganizationId, hasUserSelectedOrganization, isUserLoggedIn]);
+  }, [
+    defaultUserOrganizationId,
+    hasUserSelectedOrganization,
+    isUserLoggedIn,
+    canManageOrganizations,
+  ]);
 
   const handleOrganizationChange = (value: string | null) => {
     setHasUserSelectedOrganization(true);
@@ -55,7 +71,7 @@ export function UserSettingsPage() {
   return (
     <Stack gap="xl" p="md" align="center">
       <Group gap="sm" align="flex-end" wrap="wrap">
-        {isUserLoggedIn && (
+        {isUserLoggedIn && canManageOrganizations && (
           <>
             <Select
               label="Organization"
