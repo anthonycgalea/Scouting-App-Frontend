@@ -6,6 +6,7 @@ export interface UserInfoResponse {
   email?: string;
   full_name?: string;
   display_name?: string;
+  displayName?: string;
   name?: string;
   username?: string;
   user_name?: string;

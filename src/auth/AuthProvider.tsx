@@ -55,6 +55,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 const getDisplayNameFromUserInfo = (user: UserInfoResponse) =>
   user.full_name ??
   user.display_name ??
+  user.displayName ??
   user.name ??
   user.username ??
   user.user_name ??
