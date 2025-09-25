@@ -3,7 +3,7 @@ import cx from 'clsx';
 import {
   ActionIcon,
   Button,
-  Checkbox,
+  Radio,
   Group,
   ScrollArea,
   Stack,
@@ -80,10 +80,10 @@ export function EventSelect() {
     return (
       <Table.Tr key={event.eventKey} className={cx({ [classes.rowSelected]: selected })}>
         <Table.Td>
-          <Checkbox
+          <Radio
             aria-label={`Set ${event.eventName} as the active event`}
-            checked={selected}
-            onChange={() => setActiveEventId(event.eventKey)}
+            value={event.eventKey}
+            name="active-event"
           />
         </Table.Td>
         <Table.Td>
@@ -130,10 +130,11 @@ export function EventSelect() {
   return (
     <Stack>
       <ScrollArea>
-        <Table miw={600} verticalSpacing="sm">
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th w={40}>Active</Table.Th>
+        <Radio.Group value={activeEventId} onChange={setActiveEventId} name="active-event">
+          <Table miw={600} verticalSpacing="sm">
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th w={40}>Active</Table.Th>
               <Table.Th>Event Name</Table.Th>
               <Table.Th>Public</Table.Th>
               <Table.Th w={60}>
@@ -141,44 +142,45 @@ export function EventSelect() {
               </Table.Th>
             </Table.Tr>
           </Table.Thead>
-          <Table.Tbody>
-            {isLoadingEvents ? (
-              <Table.Tr>
-                <Table.Td colSpan={4}>
-                  <Text size="sm" c="dimmed">
-                    Loading events...
-                  </Text>
-                </Table.Td>
-              </Table.Tr>
-            ) : isErrorLoadingEvents ? (
-              <Table.Tr>
-                <Table.Td colSpan={4}>
-                  <Text size="sm" c="red">
-                    Unable to load events. Please try again later.
-                  </Text>
-                </Table.Td>
-              </Table.Tr>
-            ) : shouldPromptForOrganization ? (
-              <Table.Tr>
-                <Table.Td colSpan={4}>
-                  <Text size="sm" c="dimmed">
-                    Select an organization to manage its events.
-                  </Text>
-                </Table.Td>
-              </Table.Tr>
-            ) : rows.length > 0 ? (
-              rows
-            ) : (
-              <Table.Tr>
-                <Table.Td colSpan={4}>
-                  <Text size="sm" c="dimmed">
-                    No events have been added yet.
-                  </Text>
-                </Table.Td>
-              </Table.Tr>
-            )}
-          </Table.Tbody>
-        </Table>
+            <Table.Tbody>
+              {isLoadingEvents ? (
+                <Table.Tr>
+                  <Table.Td colSpan={4}>
+                    <Text size="sm" c="dimmed">
+                      Loading events...
+                    </Text>
+                  </Table.Td>
+                </Table.Tr>
+              ) : isErrorLoadingEvents ? (
+                <Table.Tr>
+                  <Table.Td colSpan={4}>
+                    <Text size="sm" c="red">
+                      Unable to load events. Please try again later.
+                    </Text>
+                  </Table.Td>
+                </Table.Tr>
+              ) : shouldPromptForOrganization ? (
+                <Table.Tr>
+                  <Table.Td colSpan={4}>
+                    <Text size="sm" c="dimmed">
+                      Select an organization to manage its events.
+                    </Text>
+                  </Table.Td>
+                </Table.Tr>
+              ) : rows.length > 0 ? (
+                rows
+              ) : (
+                <Table.Tr>
+                  <Table.Td colSpan={4}>
+                    <Text size="sm" c="dimmed">
+                      No events have been added yet.
+                    </Text>
+                  </Table.Td>
+                </Table.Tr>
+              )}
+            </Table.Tbody>
+          </Table>
+        </Radio.Group>
       </ScrollArea>
       <Group justify="space-between" w="100%">
         <Button
