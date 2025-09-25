@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Group, Select, Stack } from '@mantine/core';
 import { Link } from '@tanstack/react-router';
-import { useOrganizations, useUserInfo } from '../api';
+import { useOrganizations, useUpdateUserOrganization, useUserInfo } from '../api';
 import { ColorSchemeToggle } from '../components/ColorSchemeToggle/ColorSchemeToggle';
 
 export function UserSettingsPage() {
   const { data: organizations, isLoading, isError } = useOrganizations();
   const { data: userInfo } = useUserInfo();
+  const { mutate: updateUserOrganization } = useUpdateUserOrganization();
   const isUserLoggedIn = userInfo?.id !== undefined && userInfo?.id !== null;
   const [selectedUserOrganizationId, setSelectedUserOrganizationId] = useState<string | null>(null);
   const [hasUserSelectedOrganization, setHasUserSelectedOrganization] = useState(false);
@@ -50,6 +51,19 @@ export function UserSettingsPage() {
   const handleOrganizationChange = (value: string | null) => {
     setHasUserSelectedOrganization(true);
     setSelectedUserOrganizationId(value);
+    const userOrganizationId = value ? Number.parseInt(value, 10) : null;
+
+    if (userOrganizationId === null) {
+      updateUserOrganization(null);
+      return;
+    }
+
+    if (Number.isNaN(userOrganizationId)) {
+      updateUserOrganization(null);
+      return;
+    }
+
+    updateUserOrganization(userOrganizationId);
   };
 
   return (
