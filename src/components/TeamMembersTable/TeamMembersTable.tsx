@@ -37,6 +37,7 @@ export function TeamMembersTable() {
     isLoading: isUserOrganizationLoading,
   } = useUserOrganization({ enabled: isUserLoggedIn });
   const organizationId = userOrganization?.organization_id ?? null;
+  const currentUserId = userInfo?.id ?? null;
   const { data: organizationEvents = [], isLoading: isOrganizationEventsLoading } = useOrganizationEvents(
     organizationId,
     { enabled: isUserLoggedIn && !!organizationId }
@@ -82,7 +83,7 @@ export function TeamMembersTable() {
   ];
 
   const handleRoleUpdate = async (userId: string, role: OrganizationMemberRole) => {
-    if (!canManageMembers) {
+    if (!canManageMembers || userId === currentUserId) {
       return;
     }
 
@@ -94,8 +95,8 @@ export function TeamMembersTable() {
     }
   };
 
-  const handleRevokeAccess = async (userId: string) => {
-    if (!canManageMembers) {
+  const handleRevokeAccess = async (userId: string, memberRole: OrganizationMemberRole) => {
+    if (!canManageMembers || userId === currentUserId || memberRole === 'ADMIN') {
       return;
     }
 
@@ -155,6 +156,8 @@ export function TeamMembersTable() {
         isUpdatingOrganizationMember && pendingMemberUpdateUserId === member.userId;
       const isDeletingThisUser =
         isDeletingOrganizationMember && pendingMemberDeleteUserId === member.userId;
+      const isCurrentUser = member.userId === currentUserId;
+      const canRevokeAccess = canManageMembers && !isCurrentUser && member.role !== 'ADMIN';
 
       return (
         <Table.Tr key={member.userId}>
@@ -171,7 +174,7 @@ export function TeamMembersTable() {
             </Group>
           </Table.Td>
           <Table.Td>
-            {canManageMembers ? (
+            {canManageMembers && !isCurrentUser ? (
               <Select
                 data={ROLE_OPTIONS.map(({ label, value }) => ({ label, value }))}
                 value={member.role}
@@ -199,9 +202,9 @@ export function TeamMembersTable() {
                 variant="light"
                 loading={isDeletingThisUser}
                 onClick={() => {
-                  void handleRevokeAccess(member.userId);
+                  void handleRevokeAccess(member.userId, member.role);
                 }}
-                disabled={isUpdatingThisUser || isDeletingThisUser}
+                disabled={isUpdatingThisUser || isDeletingThisUser || !canRevokeAccess}
               >
                 Revoke Access
               </Button>
@@ -228,6 +231,7 @@ export function TeamMembersTable() {
         isUpdatingOrganizationMember && pendingMemberUpdateUserId === member.userId;
       const isDeletingThisUser =
         isDeletingOrganizationMember && pendingMemberDeleteUserId === member.userId;
+      const canRevokeAccess = canManageMembers && member.role !== 'ADMIN';
 
       return (
         <Table.Tr key={member.userId}>
@@ -267,9 +271,14 @@ export function TeamMembersTable() {
                   variant="light"
                   loading={isDeletingThisUser}
                   onClick={() => {
-                    void handleRevokeAccess(member.userId);
+                    void handleRevokeAccess(member.userId, member.role);
                   }}
-                  disabled={isUpdatingThisUser || isDeletingThisUser}
+                  disabled={
+                    isUpdatingThisUser ||
+                    isDeletingThisUser ||
+                    !canRevokeAccess ||
+                    member.userId === currentUserId
+                  }
                 >
                   Revoke Access
                 </Button>
