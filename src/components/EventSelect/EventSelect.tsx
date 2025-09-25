@@ -4,6 +4,7 @@ import {
   ActionIcon,
   Button,
   Checkbox,
+  Group,
   ScrollArea,
   Stack,
   Switch,
@@ -13,7 +14,7 @@ import {
   useMantineColorScheme,
 } from '@mantine/core';
 import { Link } from '@tanstack/react-router';
-import { IconTrash } from '@tabler/icons-react';
+import { IconPlus, IconTrash } from '@tabler/icons-react';
 import { type OrganizationEventDetail, useOrganizationEvents } from '@/api';
 import classes from './EventSelect.module.css';
 
@@ -144,10 +145,20 @@ export function EventSelect() {
           </Table.Tbody>
         </Table>
       </ScrollArea>
-      <Button disabled={!hasChanges}>Save Changes</Button>
-      <Button component={Link} to="/eventSelect/add" variant="light">
-        Add Event
-      </Button>
+      <Group justify="space-between" w="100%">
+        <Button
+          component={Link}
+          to="/eventSelect/add"
+          variant="light"
+          size="md"
+          leftSection={<IconPlus stroke={1.5} />}
+        >
+          Add Event
+        </Button>
+        <Button disabled={!hasChanges} size="md">
+          Save Changes
+        </Button>
+      </Group>
     </Stack>
   );
 }
