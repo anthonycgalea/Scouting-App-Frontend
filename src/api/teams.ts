@@ -17,8 +17,7 @@ export interface TeamInfo {
 export const eventTeamsQueryKey = (eventCode: string) =>
   ['event-teams', eventCode] as const;
 
-export const fetchEventTeams = (eventCode: string) =>
-  apiFetch<EventTeam[]>(`event/${eventCode}/teams`);
+export const fetchEventTeams = (_eventCode: string) => apiFetch<EventTeam[]>('event/teams');
 
 export const useEventTeams = (eventCode = '2025micmp4') =>
   useQuery({
