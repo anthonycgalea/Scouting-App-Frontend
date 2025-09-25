@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Group, Select, Stack } from '@mantine/core';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { useOrganizations, useUpdateUserOrganization, useUserInfo } from '../api';
+import { useQueryClient } from '@tanstack/react-query';
+import { useOrganizations, useUpdateUserOrganization, useUserInfo, userRoleQueryKey } from '../api';
 import { ColorSchemeToggle } from '../components/ColorSchemeToggle/ColorSchemeToggle';
 
 export function UserSettingsPage() {
   const { data: organizations, isLoading, isError } = useOrganizations();
   const { data: userInfo } = useUserInfo();
-  const { mutate: updateUserOrganization } = useUpdateUserOrganization();
+  const { mutateAsync: updateUserOrganization } = useUpdateUserOrganization();
+  const queryClient = useQueryClient();
   const navigate = useNavigate({ from: '/userSettings' });
   const isUserLoggedIn = userInfo?.id !== undefined && userInfo?.id !== null;
   const [selectedUserOrganizationId, setSelectedUserOrganizationId] = useState<string | null>(null);
@@ -49,7 +51,7 @@ export function UserSettingsPage() {
     setSelectedUserOrganizationId(defaultUserOrganizationId);
   }, [defaultUserOrganizationId, hasUserSelectedOrganization, isUserLoggedIn]);
 
-  const handleOrganizationChange = (value: string | null) => {
+  const handleOrganizationChange = async (value: string | null) => {
     setHasUserSelectedOrganization(true);
     setSelectedUserOrganizationId(value);
     const userOrganizationId = value ? Number.parseInt(value, 10) : null;
@@ -58,17 +60,16 @@ export function UserSettingsPage() {
       void navigate({ to: '/' });
     };
 
-    if (userOrganizationId === null) {
-      updateUserOrganization(null, { onSuccess: redirectToHome });
-      return;
-    }
+    const parsedUserOrganizationId =
+      userOrganizationId === null || Number.isNaN(userOrganizationId) ? null : userOrganizationId;
 
-    if (Number.isNaN(userOrganizationId)) {
-      updateUserOrganization(null, { onSuccess: redirectToHome });
-      return;
+    try {
+      await updateUserOrganization(parsedUserOrganizationId);
+      await queryClient.refetchQueries({ queryKey: userRoleQueryKey });
+      redirectToHome();
+    } catch (error) {
+      console.error('Failed to update user organization', error);
     }
-
-    updateUserOrganization(userOrganizationId, { onSuccess: redirectToHome });
   };
 
   return (
