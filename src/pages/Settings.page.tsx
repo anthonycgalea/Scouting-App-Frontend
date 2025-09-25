@@ -55,23 +55,25 @@ export function UserSettingsPage() {
     <Stack gap="xl" p="md" align="center">
       <Group gap="sm" align="flex-end" wrap="wrap">
         {isUserLoggedIn && (
-          <Select
-            label="Organization"
-            placeholder="Select an organization"
-            data={organizationOptions}
-            value={selectedOrganizationId}
-            onChange={handleOrganizationChange}
-            nothingFoundMessage="No organizations available"
-            disabled={isLoading || isError}
-            error={isError ? 'Unable to load organizations. Please try again later.' : undefined}
-            style={{ flex: 1, minWidth: 260 }}
-            searchable
-            allowDeselect
-          />
+          <>
+            <Select
+              label="Organization"
+              placeholder="Select an organization"
+              data={organizationOptions}
+              value={selectedOrganizationId}
+              onChange={handleOrganizationChange}
+              nothingFoundMessage="No organizations available"
+              disabled={isLoading || isError}
+              error={isError ? 'Unable to load organizations. Please try again later.' : undefined}
+              style={{ flex: 1, minWidth: 260 }}
+              searchable
+              allowDeselect
+              />
+            <Button component={Link} to="/organizations/apply">
+              Apply to an Organization
+            </Button>
+          </>
         )}
-        <Button component={Link} to="/organizations/apply">
-          Apply to an Organization
-        </Button>
       </Group>
       <ColorSchemeToggle />
     </Stack>
