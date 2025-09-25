@@ -1,6 +1,7 @@
 import {
   useOrganizationApplications,
   useOrganizationEvents,
+  useDeleteOrganizationApplication,
   useUpdateOrganizationMember,
   useUserInfo,
   useUserOrganization,
@@ -66,6 +67,8 @@ export function TeamMembersTable() {
   );
   const { data: organizationApplications = [], isLoading: isOrganizationApplicationsLoading } =
     useOrganizationApplications({ enabled: isUserLoggedIn && !!organizationId });
+  const { mutateAsync: deleteOrganizationApplication, isPending: isDeletingOrganizationApplication } =
+    useDeleteOrganizationApplication();
 
   const isLoadingEvents = isUserOrganizationLoading || isOrganizationEventsLoading;
   const isAdmin = userRole?.role === 'ADMIN';
@@ -83,6 +86,8 @@ export function TeamMembersTable() {
   const { mutateAsync: updateOrganizationMember, isPending: isUpdatingOrganizationMember } =
     useUpdateOrganizationMember();
   const [pendingMemberUpdateUserId, setPendingMemberUpdateUserId] = useState<string | null>(null);
+  const [pendingApplicationDeleteUserId, setPendingApplicationDeleteUserId] =
+    useState<string | null>(null);
 
   const roleButtonOptions: Array<{
     label: string;
@@ -101,6 +106,15 @@ export function TeamMembersTable() {
       await updateOrganizationMember({ userId, role });
     } finally {
       setPendingMemberUpdateUserId((current) => (current === userId ? null : current));
+    }
+  };
+
+  const handleRejectApplication = async (userId: string) => {
+    setPendingApplicationDeleteUserId(userId);
+    try {
+      await deleteOrganizationApplication({ userId });
+    } finally {
+      setPendingApplicationDeleteUserId((current) => (current === userId ? null : current));
     }
   };
 
@@ -175,6 +189,8 @@ export function TeamMembersTable() {
 
     const isUpdatingThisUser =
       isUpdatingOrganizationMember && pendingMemberUpdateUserId === application.userId;
+    const isDeletingThisUser =
+      isDeletingOrganizationApplication && pendingApplicationDeleteUserId === application.userId;
 
     return (
       <Table.Tr key={application.userId}>
@@ -208,12 +224,21 @@ export function TeamMembersTable() {
                   onClick={() => {
                     void handleRoleUpdate(application.userId, option.role);
                   }}
-                  disabled={isUpdatingThisUser}
+                  disabled={isUpdatingThisUser || isDeletingThisUser}
                 >
                   {option.label}
                 </Button>
               ))}
-            <Button color="red" leftSection={<IconX size={16} />} variant="light">
+            <Button
+              color="red"
+              leftSection={<IconX size={16} />}
+              variant="light"
+              loading={isDeletingThisUser}
+              onClick={() => {
+                void handleRejectApplication(application.userId);
+              }}
+              disabled={isDeletingThisUser || isUpdatingThisUser}
+            >
               Reject
             </Button>
           </Group>
