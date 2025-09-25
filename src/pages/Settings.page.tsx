@@ -1,19 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Group, Select, Stack } from '@mantine/core';
 import { Link } from '@tanstack/react-router';
-import { useOrganizations, useUserInfo, useUserRole } from '../api';
+import { useOrganizations, useUserInfo } from '../api';
 import { ColorSchemeToggle } from '../components/ColorSchemeToggle/ColorSchemeToggle';
 
 export function UserSettingsPage() {
   const { data: userInfo } = useUserInfo();
   const isUserLoggedIn = userInfo?.id !== undefined && userInfo?.id !== null;
-  const { data: userRole } = useUserRole({ enabled: isUserLoggedIn });
-  const canManageOrganizations = userRole?.role === 'LEAD' || userRole?.role === 'ADMIN';
-  const {
-    data: organizations,
-    isLoading,
-    isError,
-  } = useOrganizations({ enabled: isUserLoggedIn && canManageOrganizations });
+  const { data: organizations, isLoading, isError } = useOrganizations({ enabled: isUserLoggedIn });
   const [selectedUserOrganizationId, setSelectedUserOrganizationId] = useState<string | null>(null);
   const [hasUserSelectedOrganization, setHasUserSelectedOrganization] = useState(false);
 
@@ -27,12 +21,7 @@ export function UserSettingsPage() {
   );
 
   const defaultUserOrganizationId = useMemo(() => {
-    if (
-      !isUserLoggedIn ||
-      !canManageOrganizations ||
-      !organizations ||
-      organizations.length === 0
-    ) {
+    if (!isUserLoggedIn || !organizations || organizations.length === 0) {
       return null;
     }
 
@@ -63,7 +52,7 @@ export function UserSettingsPage() {
   }, [organizations, userInfo]);
 
   useEffect(() => {
-    if (!isUserLoggedIn || !canManageOrganizations || hasUserSelectedOrganization) {
+    if (!isUserLoggedIn || hasUserSelectedOrganization) {
       return;
     }
 
@@ -72,7 +61,6 @@ export function UserSettingsPage() {
     defaultUserOrganizationId,
     hasUserSelectedOrganization,
     isUserLoggedIn,
-    canManageOrganizations,
   ]);
 
   const handleOrganizationChange = (value: string | null) => {
@@ -83,7 +71,7 @@ export function UserSettingsPage() {
   return (
     <Stack gap="xl" p="md" align="center">
       <Group gap="sm" align="flex-end" wrap="wrap">
-        {isUserLoggedIn && canManageOrganizations && (
+        {isUserLoggedIn && (
           <>
             <Select
               label="Organization"
@@ -97,7 +85,7 @@ export function UserSettingsPage() {
               style={{ flex: 1, minWidth: 260 }}
               searchable
               allowDeselect
-              />
+            />
             <Button component={Link} to="/organizations/apply">
               Apply to an Organization
             </Button>
