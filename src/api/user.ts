@@ -1,5 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from './httpClient';
+import { organizationsQueryKey } from './organizations';
 
 export interface UserInfoResponse {
   id: string | number;
@@ -26,6 +27,24 @@ export const useUserInfo = () =>
     queryKey: userInfoQueryKey,
     queryFn: fetchUserInfo,
   });
+
+export const updateUserOrganization = (userOrganizationId: number | null) =>
+  apiFetch<void>('user/organization', {
+    method: 'PATCH',
+    json: { user_organization_id: userOrganizationId },
+  });
+
+export const useUpdateUserOrganization = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateUserOrganization,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: userInfoQueryKey });
+      void queryClient.invalidateQueries({ queryKey: organizationsQueryKey });
+    },
+  });
+};
 
 export interface UserRoleResponse {
   role: string | null;
