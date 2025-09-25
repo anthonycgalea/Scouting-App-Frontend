@@ -110,13 +110,13 @@ export function MatchSchedulePage() {
       <Stack gap="md">
         <Suspense
           fallback={
-            <Group justify="space-between" align="center">
-              <Skeleton height={34} width="50%" radius="sm" />
+            <Group justify="center" align="center" gap="sm">
+              <Skeleton height={34} width={200} radius="sm" />
               <Skeleton height={36} width={36} radius="md" />
             </Group>
           }
         >
-          <Group justify="space-between" align="center">
+          <Group justify="center" align="center" gap="sm">
             <EventHeader pageInfo="Match Schedule" />
             <ActionIcon
               aria-label="Sync match schedule"
