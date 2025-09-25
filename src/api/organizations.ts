@@ -18,12 +18,26 @@ export interface OrganizationApplication {
   email: string;
   role: string;
   joined: string;
+  userId: string;
+}
+
+export type OrganizationMemberRole = 'ADMIN' | 'LEAD' | 'MEMBER' | 'GUEST';
+
+export interface UpdateOrganizationMemberInput {
+  userId: string;
+  role: OrganizationMemberRole;
 }
 
 export const fetchOrganizations = () => apiFetch<Organization[]>('user/organizations');
 export const fetchAllOrganizations = () => apiFetch<Organization[]>('organizations');
 export const fetchOrganizationApplications = () =>
   apiFetch<OrganizationApplication[]>('organization/applications');
+
+export const updateOrganizationMember = ({ userId, role }: UpdateOrganizationMemberInput) =>
+  apiFetch<void>('organization/members', {
+    method: 'PATCH',
+    json: { userId, role },
+  });
 
 export const applyToOrganization = (organizationId: number) =>
   apiFetch<void>('user/organization/apply', {
@@ -59,6 +73,17 @@ export const useApplyToOrganization = () => {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: organizationsQueryKey });
       void queryClient.invalidateQueries({ queryKey: allOrganizationsQueryKey });
+    },
+  });
+};
+
+export const useUpdateOrganizationMember = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateOrganizationMember,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: organizationApplicationsQueryKey });
     },
   });
 };
