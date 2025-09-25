@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import {
   IconAdjustments,
   IconBulb,
@@ -11,11 +12,12 @@ import {
 import { Button, Code, Group, ScrollArea } from '@mantine/core';
 import { LinksGroup } from '../NavbarLinksGroup/NavbarLinksGroup';
 import { UserButton } from '../UserButton/UserButton';
+import { useUserInfo, useUserRole } from '@/api';
 import { useAuth } from '../../auth/AuthProvider';
 import { Logo } from './Logo';
 import classes from './NavbarNested.module.css';
 
-const data = [
+const BASE_LINKS_DATA = [
   { label: 'Dashboard', icon: IconGauge },
   { label: 'Matches', icon: IconNotes, to: '/matches' },
   { label: 'Teams', icon: IconUsersGroup, to: '/teams' },
@@ -23,19 +25,33 @@ const data = [
   { label: 'Analytics', icon: IconPresentationAnalytics },
   { label: 'Data Manager', icon: IconFileAnalytics, to: '/dataManager' },
   { label: 'User Settings', icon: IconAdjustments, to: '/userSettings' },
-  {
-    label: 'Organization',
-    icon: IconLock,
-    links: [
-      { label: 'Team Members', link: '/teamMembers' },
-      { label: 'Events', link: '/eventSelect' }
-    ],
-  },
 ];
+
+const ORGANIZATION_LINKS_DATA = {
+  label: 'Organization',
+  icon: IconLock,
+  links: [
+    { label: 'Team Members', link: '/teamMembers' },
+    { label: 'Events', link: '/eventSelect' },
+  ],
+};
 
 export function NavbarNested() {
   const { user, loading, logout } = useAuth();
-  const links = data.map((item) => <LinksGroup {...item} key={item.label} />);
+  const { data: userInfo } = useUserInfo();
+  const isUserLoggedIn = userInfo?.id !== undefined && userInfo?.id !== null;
+  const { data: userRole } = useUserRole({ enabled: isUserLoggedIn });
+  const canManageOrganizations = userRole?.role === 'LEAD' || userRole?.role === 'ADMIN';
+
+  const linksData = useMemo(
+    () =>
+      canManageOrganizations && isUserLoggedIn
+        ? [...BASE_LINKS_DATA, ORGANIZATION_LINKS_DATA]
+        : BASE_LINKS_DATA,
+    [canManageOrganizations, isUserLoggedIn],
+  );
+
+  const links = linksData.map((item) => <LinksGroup {...item} key={item.label} />);
 
   return (
     <nav className={classes.navbar}>
