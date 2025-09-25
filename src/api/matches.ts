@@ -15,8 +15,8 @@ export interface MatchScheduleEntry {
 
 export const matchScheduleQueryKey = (eventCode: string) => ['match-schedule', eventCode] as const;
 
-export const fetchMatchSchedule = (eventCode: string) =>
-  apiFetch<MatchScheduleEntry[]>(`event/${eventCode}/matches`);
+export const fetchMatchSchedule = (_eventCode: string) =>
+  apiFetch<MatchScheduleEntry[]>('event/matches');
 
 export const useMatchSchedule = (eventCode = '2025micmp4') =>
   useQuery({

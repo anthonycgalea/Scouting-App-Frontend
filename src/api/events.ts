@@ -43,8 +43,7 @@ export const useEvents = (year: number) =>
 
 export const eventInfoQueryKey = (eventCode: string) => ['event-info', eventCode] as const;
 
-export const fetchEventInfo = (eventCode: string) =>
-  apiFetch<EventSummary>(`event/${eventCode}/info`);
+export const fetchEventInfo = (_eventCode: string) => apiFetch<EventSummary>('event/info');
 
 export const useEventInfo = (eventCode = '2025micmp4') =>
   useQuery<EventSummary>({
