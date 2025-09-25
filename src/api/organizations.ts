@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from './httpClient';
 
 export interface Organization {
@@ -15,6 +15,12 @@ export const allOrganizationsQueryKey = ['all-organizations'] as const;
 export const fetchOrganizations = () => apiFetch<Organization[]>('user/organizations');
 export const fetchAllOrganizations = () => apiFetch<Organization[]>('organizations');
 
+export const applyToOrganization = (organizationId: number) =>
+  apiFetch<void>('user/organization/apply', {
+    method: 'POST',
+    json: { organization_id: organizationId },
+  });
+
 export const useOrganizations = () =>
   useQuery<Organization[]>({
     queryKey: organizationsQueryKey,
@@ -26,3 +32,15 @@ export const useAllOrganizations = () =>
     queryKey: allOrganizationsQueryKey,
     queryFn: fetchAllOrganizations,
   });
+
+export const useApplyToOrganization = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: applyToOrganization,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: organizationsQueryKey });
+      void queryClient.invalidateQueries({ queryKey: allOrganizationsQueryKey });
+    },
+  });
+};
