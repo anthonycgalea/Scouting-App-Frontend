@@ -1,9 +1,11 @@
 import {
   useOrganizationApplications,
   useOrganizationEvents,
+  useUpdateOrganizationMember,
   useUserInfo,
   useUserOrganization,
   useUserRole,
+  type OrganizationMemberRole,
 } from '@/api';
 import { Badge, Button, Group, Select, Stack, Table, Text, TextInput } from '@mantine/core';
 import { IconCheck, IconX } from '@tabler/icons-react';
@@ -78,6 +80,29 @@ export function TeamMembersTable() {
   );
 
   const [guestAssignments, setGuestAssignments] = useState<Record<string, string | null>>({});
+  const { mutateAsync: updateOrganizationMember, isPending: isUpdatingOrganizationMember } =
+    useUpdateOrganizationMember();
+  const [pendingMemberUpdateUserId, setPendingMemberUpdateUserId] = useState<string | null>(null);
+
+  const roleButtonOptions: Array<{
+    label: string;
+    role: OrganizationMemberRole;
+    requiresAdmin?: boolean;
+  }> = [
+    { label: 'Guest', role: 'GUEST' },
+    { label: 'Member', role: 'MEMBER' },
+    { label: 'Lead', role: 'LEAD', requiresAdmin: true },
+    { label: 'Team Admin', role: 'ADMIN', requiresAdmin: true },
+  ];
+
+  const handleRoleUpdate = async (userId: string, role: OrganizationMemberRole) => {
+    setPendingMemberUpdateUserId(userId);
+    try {
+      await updateOrganizationMember({ userId, role });
+    } finally {
+      setPendingMemberUpdateUserId((current) => (current === userId ? null : current));
+    }
+  };
 
   const rows = data.map((item) => (
     <Table.Tr key={item.name}>
@@ -148,8 +173,11 @@ export function TeamMembersTable() {
       ? '—'
       : joinedDate.toLocaleString();
 
+    const isUpdatingThisUser =
+      isUpdatingOrganizationMember && pendingMemberUpdateUserId === application.userId;
+
     return (
-      <Table.Tr key={application.email}>
+      <Table.Tr key={application.userId}>
         <Table.Td>
           <Group gap="sm">
             <div>
@@ -168,38 +196,23 @@ export function TeamMembersTable() {
         <Table.Td>{joinedLabel}</Table.Td>
         <Table.Td>
           <Group gap="xs" wrap="wrap">
-            <Button
-              color="green"
-              leftSection={<IconCheck size={16} />}
-              variant="light"
-            >
-              Guest
-            </Button>
-            <Button
-              color="green"
-              leftSection={<IconCheck size={16} />}
-              variant="light"
-            >
-              Member
-            </Button>
-            {isAdmin && (
-              <Button
-                color="green"
-                leftSection={<IconCheck size={16} />}
-                variant="light"
-              >
-                Lead
-              </Button>
-            )}
-            {isAdmin && (
-              <Button
-                color="green"
-                leftSection={<IconCheck size={16} />}
-                variant="light"
-              >
-                Team Admin
-              </Button>
-            )}
+            {roleButtonOptions
+              .filter((option) => !option.requiresAdmin || isAdmin)
+              .map((option) => (
+                <Button
+                  key={option.role}
+                  color="green"
+                  leftSection={<IconCheck size={16} />}
+                  variant="light"
+                  loading={isUpdatingThisUser}
+                  onClick={() => {
+                    void handleRoleUpdate(application.userId, option.role);
+                  }}
+                  disabled={isUpdatingThisUser}
+                >
+                  {option.label}
+                </Button>
+              ))}
             <Button color="red" leftSection={<IconX size={16} />} variant="light">
               Reject
             </Button>
