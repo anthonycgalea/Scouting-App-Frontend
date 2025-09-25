@@ -23,7 +23,14 @@ const BASE_LINKS_DATA = [
   { label: 'Teams', icon: IconUsersGroup, to: '/teams' },
   { label: 'SuperScout', icon: IconBulb, to: '/superScout' },
   { label: 'Analytics', icon: IconPresentationAnalytics },
-  { label: 'Data Manager', icon: IconFileAnalytics, to: '/dataManager' },
+  {
+    label: 'Data Manager',
+    icon: IconFileAnalytics,
+    links: [
+      { label: 'Data Validation', link: '/dataValidation' },
+      { label: 'Data Import', link: '/dataImport' },
+    ],
+  },
   { label: 'User Settings', icon: IconAdjustments, to: '/userSettings' },
 ];
 

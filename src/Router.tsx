@@ -16,7 +16,8 @@ import { theme } from './theme';
 import { TeamMembersPage } from './pages/TeamMembers.page';
 import { TeamDirectoryPage } from './pages/TeamDirectory.page';
 import { TeamDetailPage } from './pages/TeamDetailPage.page';
-import { DataManagerPage } from './pages/DataManager.page';
+import { DataValidationPage } from './pages/DataValidation.page';
+import { DataImportPage } from './pages/DataImport.page';
 import { SuperScoutPage } from './pages/SuperScout.page';
 import { OrganizationEventSelectPage } from './pages/OrganizationEventSelect.page';
 import { AddEventPage } from './pages/AddEvent.page';
@@ -73,10 +74,16 @@ const teamDetailRoute = createRoute({
   component: TeamDetailPage,
 });
 
-const dataManagerRoute = createRoute({
+const dataValidationRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/dataManager',
-  component: DataManagerPage,
+  path: '/dataValidation',
+  component: DataValidationPage,
+});
+
+const dataImportRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/dataImport',
+  component: DataImportPage,
 });
 
 const superScoutRoute = createRoute({
@@ -121,7 +128,8 @@ const routeTree = rootRoute.addChildren([
   matchScheduleRoute.addChildren([]),
   teamDirectoryRoute.addChildren([]),
   teamDetailRoute.addChildren([]),
-  dataManagerRoute.addChildren([]),
+  dataValidationRoute.addChildren([]),
+  dataImportRoute.addChildren([]),
   superScoutRoute.addChildren([]),
   settingsRoute.addChildren([]),
   teamMembersRoute.addChildren([]),
