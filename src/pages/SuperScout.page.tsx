@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Box, Center, Loader, Stack, Text } from '@mantine/core';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { Box, Center, Loader, Skeleton, Stack, Text } from '@mantine/core';
 import { useMatchSchedule } from '@/api';
 import { groupMatchesBySection, SECTION_DEFINITIONS } from '@/components/MatchSchedule/matchSections';
 import {
@@ -7,6 +7,10 @@ import {
   MatchScheduleToggle,
 } from '@/components/MatchSchedule/MatchScheduleToggle';
 import { SuperScout } from '@/components/SuperScout/SuperScout';
+
+const EventHeader = lazy(async () => ({
+  default: (await import('@/components/EventHeader/EventHeader')).EventHeader,
+}));
 
 export function SuperScoutPage() {
   const { data: scheduleData = [], isLoading, isError } = useMatchSchedule();
@@ -78,6 +82,9 @@ export function SuperScoutPage() {
   return (
     <Box p="md">
       <Stack gap="md">
+        <Suspense fallback={<Skeleton height={34} width="50%" radius="sm" />}>
+          <EventHeader pageInfo="Super Scout" />
+        </Suspense>
         <MatchScheduleToggle
           value={activeSection}
           options={toggleOptions}
