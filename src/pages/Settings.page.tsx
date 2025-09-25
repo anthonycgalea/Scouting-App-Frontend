@@ -21,31 +21,43 @@ export function UserSettingsPage() {
   );
 
   const defaultUserOrganizationId = useMemo(() => {
-    if (!isUserLoggedIn || !organizations || organizations.length === 0) {
+    if (!organizations || organizations.length === 0) {
       return null;
     }
 
-    const userOrganizationId =
-      userInfo?.user_org;
+    const resolvedUserOrganizationId =
+      userInfo?.userOrgId ??
+      userInfo?.user_org_id ??
+      userInfo?.user_org?.user_organization_id ??
+      null;
 
-    if (userOrganizationId === null || userOrganizationId === undefined) {
-      return null;
+    if (resolvedUserOrganizationId !== null && resolvedUserOrganizationId !== undefined) {
+      const matchingOrganization = organizations.find(
+        (organization) => organization.user_organization_id === resolvedUserOrganizationId
+      );
+
+      if (matchingOrganization) {
+        return matchingOrganization.user_organization_id.toString();
+      }
     }
 
-    const matchingOrganization = organizations.find(
-      (organization) => organization.user_organization_id === userOrganizationId
-    );
+    const dataViewerOrganization = organizations.find((organization) => {
+      const normalizedRole = organization.role.trim().toLowerCase();
+      const normalizedName = organization.name.trim().toLowerCase();
 
-    return matchingOrganization ? matchingOrganization.user_organization_id.toString() : null;
-  }, [isUserLoggedIn, organizations, userInfo]);
+      return normalizedRole === 'data viewer' || normalizedName === 'data viewer';
+    });
+
+    return dataViewerOrganization ? dataViewerOrganization.user_organization_id.toString() : null;
+  }, [organizations, userInfo]);
 
   useEffect(() => {
-    if (!isUserLoggedIn || hasUserSelectedOrganization) {
+    if (hasUserSelectedOrganization) {
       return;
     }
 
     setSelectedUserOrganizationId(defaultUserOrganizationId);
-  }, [defaultUserOrganizationId, hasUserSelectedOrganization, isUserLoggedIn]);
+  }, [defaultUserOrganizationId, hasUserSelectedOrganization]);
 
   const handleOrganizationChange = (value: string | null) => {
     setHasUserSelectedOrganization(true);
