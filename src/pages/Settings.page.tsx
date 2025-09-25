@@ -8,7 +8,7 @@ export function UserSettingsPage() {
   const { data: organizations, isLoading, isError } = useOrganizations();
   const { data: userInfo } = useUserInfo();
   const isUserLoggedIn = userInfo?.id !== undefined && userInfo?.id !== null;
-  const [selectedOrganizationId, setSelectedOrganizationId] = useState<string | null>(null);
+  const [selectedUserOrganizationId, setSelectedUserOrganizationId] = useState<string | null>(null);
   const [hasUserSelectedOrganization, setHasUserSelectedOrganization] = useState(false);
 
   const organizationOptions = useMemo(
@@ -20,13 +20,13 @@ export function UserSettingsPage() {
     [organizations]
   );
 
-  const defaultOrganizationId = useMemo(() => {
+  const defaultUserOrganizationId = useMemo(() => {
     if (!isUserLoggedIn || !organizations || organizations.length === 0) {
       return null;
     }
 
     const userOrganizationId =
-      userInfo?.userOrgId ?? userInfo?.user_org_id ?? userInfo?.user_org?.user_organization_id;
+      userInfo?.user_org;
 
     if (userOrganizationId === null || userOrganizationId === undefined) {
       return null;
@@ -44,12 +44,12 @@ export function UserSettingsPage() {
       return;
     }
 
-    setSelectedOrganizationId(defaultOrganizationId);
-  }, [defaultOrganizationId, hasUserSelectedOrganization, isUserLoggedIn]);
+    setSelectedUserOrganizationId(defaultUserOrganizationId);
+  }, [defaultUserOrganizationId, hasUserSelectedOrganization, isUserLoggedIn]);
 
   const handleOrganizationChange = (value: string | null) => {
     setHasUserSelectedOrganization(true);
-    setSelectedOrganizationId(value);
+    setSelectedUserOrganizationId(value);
   };
 
   return (
@@ -61,7 +61,7 @@ export function UserSettingsPage() {
               label="Organization"
               placeholder="Select an organization"
               data={organizationOptions}
-              value={selectedOrganizationId}
+              value={selectedUserOrganizationId}
               onChange={handleOrganizationChange}
               nothingFoundMessage="No organizations available"
               disabled={isLoading || isError}
