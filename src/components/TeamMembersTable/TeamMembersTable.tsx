@@ -1,5 +1,12 @@
-import { useOrganizationEvents, useUserInfo, useUserOrganization } from '@/api';
-import { Badge, Group, Select, Table, Text, TextInput } from '@mantine/core';
+import {
+  useOrganizationApplications,
+  useOrganizationEvents,
+  useUserInfo,
+  useUserOrganization,
+  useUserRole,
+} from '@/api';
+import { Badge, Button, Group, Select, Stack, Table, Text, TextInput } from '@mantine/core';
+import { IconCheck, IconX } from '@tabler/icons-react';
 import { useMemo, useState } from 'react';
 
 const data = [
@@ -45,6 +52,7 @@ const rolesData = ['Team Admin', 'Lead Scout', 'Member', 'Guest'];
 export function TeamMembersTable() {
   const { data: userInfo } = useUserInfo();
   const isUserLoggedIn = userInfo?.id !== undefined && userInfo?.id !== null;
+  const { data: userRole } = useUserRole({ enabled: isUserLoggedIn });
   const {
     data: userOrganization,
     isLoading: isUserOrganizationLoading,
@@ -54,8 +62,11 @@ export function TeamMembersTable() {
     organizationId,
     { enabled: isUserLoggedIn && !!organizationId }
   );
+  const { data: organizationApplications = [], isLoading: isOrganizationApplicationsLoading } =
+    useOrganizationApplications({ enabled: isUserLoggedIn && !!organizationId });
 
   const isLoadingEvents = isUserOrganizationLoading || isOrganizationEventsLoading;
+  const isAdmin = userRole?.role === 'ADMIN';
 
   const eventOptions = useMemo(
     () =>
@@ -131,20 +142,124 @@ export function TeamMembersTable() {
     </Table.Tr>
   ));
 
+  const pendingRows = organizationApplications.map((application) => {
+    const joinedDate = new Date(application.joined);
+    const joinedLabel = Number.isNaN(joinedDate.getTime())
+      ? '—'
+      : joinedDate.toLocaleString();
+
+    return (
+      <Table.Tr key={application.email}>
+        <Table.Td>
+          <Group gap="sm">
+            <div>
+              <Text fz="sm" fw={500}>
+                {application.displayName}
+              </Text>
+              <Text fz="xs" c="dimmed">
+                {application.email}
+              </Text>
+            </div>
+          </Group>
+        </Table.Td>
+        <Table.Td>
+          <Badge variant="light">{application.role}</Badge>
+        </Table.Td>
+        <Table.Td>{joinedLabel}</Table.Td>
+        <Table.Td>
+          <Group gap="xs" wrap="wrap">
+            <Button
+              color="green"
+              leftSection={<IconCheck size={16} />}
+              variant="light"
+            >
+              Guest
+            </Button>
+            <Button
+              color="green"
+              leftSection={<IconCheck size={16} />}
+              variant="light"
+            >
+              Member
+            </Button>
+            {isAdmin && (
+              <Button
+                color="green"
+                leftSection={<IconCheck size={16} />}
+                variant="light"
+              >
+                Lead
+              </Button>
+            )}
+            {isAdmin && (
+              <Button
+                color="green"
+                leftSection={<IconCheck size={16} />}
+                variant="light"
+              >
+                Team Admin
+              </Button>
+            )}
+            <Button color="red" leftSection={<IconX size={16} />} variant="light">
+              Reject
+            </Button>
+          </Group>
+        </Table.Td>
+      </Table.Tr>
+    );
+  });
+
   return (
-    <Table.ScrollContainer minWidth={800}>
-      <Table verticalSpacing="sm">
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th>Team Member</Table.Th>
-            <Table.Th>Role</Table.Th>
-            <Table.Th>Guest Event</Table.Th>
-            <Table.Th>Last active</Table.Th>
-            <Table.Th>Status</Table.Th>
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>{rows}</Table.Tbody>
-      </Table>
-    </Table.ScrollContainer>
+    <Stack gap="lg">
+      <Table.ScrollContainer minWidth={800}>
+        <Table verticalSpacing="sm">
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>Team Member</Table.Th>
+              <Table.Th>Role</Table.Th>
+              <Table.Th>Guest Event</Table.Th>
+              <Table.Th>Last active</Table.Th>
+              <Table.Th>Status</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>{rows}</Table.Tbody>
+        </Table>
+      </Table.ScrollContainer>
+
+      <div>
+        <Text fw={600} mb="sm">
+          Pending Users
+        </Text>
+        <Table.ScrollContainer minWidth={800}>
+          <Table verticalSpacing="sm">
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>User</Table.Th>
+                <Table.Th>Requested Role</Table.Th>
+                <Table.Th>Applied</Table.Th>
+                <Table.Th>Actions</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {isOrganizationApplicationsLoading ? (
+                <Table.Tr>
+                  <Table.Td colSpan={4}>
+                    <Text c="dimmed">Loading pending users…</Text>
+                  </Table.Td>
+                </Table.Tr>
+              ) : pendingRows.length > 0 ? (
+                pendingRows
+              ) : (
+                <Table.Tr>
+                  <Table.Td colSpan={4}>
+                    <Text c="dimmed">No pending users</Text>
+                  </Table.Td>
+                </Table.Tr>
+              )}
+            </Table.Tbody>
+          </Table>
+        </Table.ScrollContainer>
+      </div>
+    </Stack>
   );
 }
