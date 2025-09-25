@@ -1,4 +1,4 @@
-import { useOrganizationEvents } from '@/api';
+import { useOrganizationEvents, useUserInfo, useUserOrganization } from '@/api';
 import { Badge, Group, Select, Table, Text, TextInput } from '@mantine/core';
 import { useMemo, useState } from 'react';
 
@@ -42,18 +42,28 @@ const data = [
 
 const rolesData = ['Team Admin', 'Lead Scout', 'Member', 'Guest'];
 
-const ORGANIZATION_ID = 4;
-
 export function TeamMembersTable() {
-  const { data: organizationEvents = [] } = useOrganizationEvents(ORGANIZATION_ID);
+  const { data: userInfo } = useUserInfo();
+  const isUserLoggedIn = userInfo?.id !== undefined && userInfo?.id !== null;
+  const {
+    data: userOrganization,
+    isLoading: isUserOrganizationLoading,
+  } = useUserOrganization({ enabled: isUserLoggedIn });
+  const organizationId = userOrganization?.organization_id ?? null;
+  const { data: organizationEvents = [], isLoading: isOrganizationEventsLoading } = useOrganizationEvents(
+    organizationId,
+    { enabled: isUserLoggedIn && !!organizationId }
+  );
+
+  const isLoadingEvents = isUserOrganizationLoading || isOrganizationEventsLoading;
 
   const eventOptions = useMemo(
     () =>
-      organizationEvents.map((organizationEvent) => ({
+      (isLoadingEvents ? [] : organizationEvents).map((organizationEvent) => ({
         value: organizationEvent.eventKey,
         label: organizationEvent.short_name ?? organizationEvent.eventName,
       })),
-    [organizationEvents],
+    [isLoadingEvents, organizationEvents],
   );
 
   const [guestAssignments, setGuestAssignments] = useState<Record<string, string | null>>({});
@@ -89,11 +99,12 @@ export function TeamMembersTable() {
             onChange={(value) =>
               setGuestAssignments((current) => ({ ...current, [item.email]: value }))
             }
-            placeholder="Select event"
+            placeholder={isLoadingEvents ? 'Loading events...' : 'Select event'}
             variant="unstyled"
             allowDeselect={false}
             comboboxProps={{ withinPortal: false }}
             aria-label={`Guest event for ${item.name}`}
+            disabled={!organizationId || isLoadingEvents}
           />
         ) : (
           <TextInput

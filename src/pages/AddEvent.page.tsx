@@ -8,6 +8,8 @@ import {
   useCreateOrganizationEvent,
   useEvents,
   useOrganizationEvents,
+  useUserInfo,
+  useUserOrganization,
 } from '../api';
 
 export function AddEventPage() {
@@ -18,13 +20,19 @@ export function AddEventPage() {
     isLoading,
     isError,
   } = useEvents(currentYear);
-
-  const organizationId = 4;
+  const { data: userInfo } = useUserInfo();
+  const isUserLoggedIn = userInfo?.id !== undefined && userInfo?.id !== null;
+  const {
+    data: userOrganization,
+    isLoading: isUserOrganizationLoading,
+    isError: isUserOrganizationError,
+  } = useUserOrganization({ enabled: isUserLoggedIn });
+  const organizationId = userOrganization?.organization_id ?? null;
   const {
     data: organizationEvents,
     isLoading: isOrganizationEventsLoading,
     isError: isOrganizationEventsError,
-  } = useOrganizationEvents(organizationId);
+  } = useOrganizationEvents(organizationId, { enabled: isUserLoggedIn && !!organizationId });
 
   const {
     mutate: createOrganizationEvent,
@@ -92,6 +100,10 @@ export function AddEventPage() {
   }, [eventList, existingEventKeys, searchTerm, selectedWeek]);
 
   const handleAddEvent = (eventKey: string) => {
+    if (!organizationId) {
+      return;
+    }
+
     setPendingEventKey(eventKey);
     createOrganizationEvent(
       { OrganizationId: organizationId, EventKey: eventKey },
@@ -125,7 +137,7 @@ export function AddEventPage() {
             leftSection={<IconPlus stroke={1.5} />}
             onClick={() => handleAddEvent(event.event_key)}
             loading={isPendingForRow}
-            disabled={isCreatingOrganizationEvent && !isPendingForRow}
+            disabled={!organizationId || (isCreatingOrganizationEvent && !isPendingForRow)}
           >
             Add
           </Button>
@@ -134,8 +146,10 @@ export function AddEventPage() {
     );
   });
 
-  const isLoadingEvents = isLoading || isOrganizationEventsLoading;
-  const isErrorLoadingEvents = isError || isOrganizationEventsError;
+  const isLoadingEvents = isLoading || isUserOrganizationLoading || isOrganizationEventsLoading;
+  const isErrorLoadingEvents = isError || isUserOrganizationError || isOrganizationEventsError;
+  const shouldPromptForOrganization =
+    !isLoadingEvents && !isErrorLoadingEvents && isUserLoggedIn && !organizationId;
 
   return (
     <Box p="md">
@@ -181,6 +195,14 @@ export function AddEventPage() {
                 <Table.Td colSpan={3}>
                   <Text size="sm" c="red">
                     Unable to load events. Please try again later.
+                  </Text>
+                </Table.Td>
+              </Table.Tr>
+            ) : shouldPromptForOrganization ? (
+              <Table.Tr>
+                <Table.Td colSpan={3}>
+                  <Text size="sm" c="dimmed">
+                    Select an organization to manage its events.
                   </Text>
                 </Table.Td>
               </Table.Tr>
