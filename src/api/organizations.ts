@@ -21,10 +21,11 @@ export const applyToOrganization = (organizationId: number) =>
     json: { organization_id: organizationId },
   });
 
-export const useOrganizations = () =>
+export const useOrganizations = ({ enabled }: { enabled?: boolean } = {}) =>
   useQuery<Organization[]>({
     queryKey: organizationsQueryKey,
     queryFn: fetchOrganizations,
+    enabled,
   });
 
 export const useAllOrganizations = () =>

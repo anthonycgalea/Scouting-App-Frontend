@@ -26,3 +26,18 @@ export const useUserInfo = () =>
     queryKey: userInfoQueryKey,
     queryFn: fetchUserInfo,
   });
+
+export interface UserRoleResponse {
+  role: string | null;
+}
+
+export const fetchUserRole = () => apiFetch<UserRoleResponse>('user/role');
+
+export const userRoleQueryKey = ['user', 'role'] as const;
+
+export const useUserRole = ({ enabled }: { enabled?: boolean } = {}) =>
+  useQuery<UserRoleResponse>({
+    queryKey: userRoleQueryKey,
+    queryFn: fetchUserRole,
+    enabled,
+  });
