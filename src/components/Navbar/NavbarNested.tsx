@@ -45,7 +45,7 @@ export function NavbarNested() {
 
   const linksData = useMemo(
     () =>
-      canManageOrganizations && isUserLoggedIn
+      isUserLoggedIn && canManageOrganizations
         ? [...BASE_LINKS_DATA, ORGANIZATION_LINKS_DATA]
         : BASE_LINKS_DATA,
     [canManageOrganizations, isUserLoggedIn],
