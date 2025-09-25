@@ -1,5 +1,13 @@
-import { createRootRoute, createRoute, createRouter, Outlet } from '@tanstack/react-router';
+import {
+  createRootRoute,
+  createRoute,
+  createRouter,
+  Outlet,
+  useNavigate,
+  useRouterState,
+} from '@tanstack/react-router';
 import { MantineProvider } from '@mantine/core';
+import { useEffect } from 'react';
 import { NavbarNested } from './components/Navbar/NavbarNested';
 import { HomePage } from './pages/Home.page';
 import { MatchSchedulePage } from './pages/MatchSchedule.page';
@@ -13,13 +21,24 @@ import { SuperScoutPage } from './pages/SuperScout.page';
 import { OrganizationEventSelectPage } from './pages/OrganizationEventSelect.page';
 import { AddEventPage } from './pages/AddEvent.page';
 import { ApplyToOrganizationPage } from './pages/ApplyToOrganization.page';
+import { useAuth } from './auth/AuthProvider';
 
 const rootRoute = createRootRoute({
   component: function RootLayout() {
+    const { user, loading } = useAuth();
+    const navigate = useNavigate();
+    const location = useRouterState({ select: (state) => state.location });
+
+    useEffect(() => {
+      if (!loading && !user && location.pathname !== '/') {
+        navigate({ to: '/', replace: true });
+      }
+    }, [loading, user, location.pathname, navigate]);
+
     return (
       <MantineProvider theme={theme}>
         <div style={{ display: 'flex', height: '100vh' }}>
-          <NavbarNested />
+          {!loading && user ? <NavbarNested /> : null}
           <div style={{ flex: 1, overflow: 'auto' }}>
             <Outlet />
           </div>
