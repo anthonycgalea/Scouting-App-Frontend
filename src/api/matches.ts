@@ -23,3 +23,6 @@ export const useMatchSchedule = (eventCode = '2025micmp4') =>
     queryKey: matchScheduleQueryKey(eventCode),
     queryFn: () => fetchMatchSchedule(eventCode),
   });
+
+export const syncEventMatches = () =>
+  apiFetch<void>('organization/event/matches/sync', { method: 'POST' });

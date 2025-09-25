@@ -1,6 +1,16 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
-import { Box, Center, Loader, Skeleton, Stack, Text } from '@mantine/core';
-import { useMatchSchedule } from '@/api';
+import {
+  ActionIcon,
+  Box,
+  Center,
+  Group,
+  Loader,
+  Skeleton,
+  Stack,
+  Text,
+} from '@mantine/core';
+import { IconRefresh } from '@tabler/icons-react';
+import { syncEventMatches, useMatchSchedule } from '@/api';
 import { groupMatchesBySection, SECTION_DEFINITIONS } from '@/components/MatchSchedule/matchSections';
 import {
   MatchScheduleSection,
@@ -31,6 +41,19 @@ export function MatchSchedulePage() {
   );
 
   const [activeSection, setActiveSection] = useState<MatchScheduleSection | undefined>();
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const handleSyncMatches = async () => {
+    try {
+      setIsSyncing(true);
+      await syncEventMatches();
+      window.location.reload();
+    } catch (error) {
+      setIsSyncing(false);
+      // eslint-disable-next-line no-console
+      console.error('Failed to sync event matches', error);
+    }
+  };
 
   useEffect(() => {
     if (availableSections.length === 0) {
@@ -85,8 +108,28 @@ export function MatchSchedulePage() {
   return (
     <Box p="md">
       <Stack gap="md">
-        <Suspense fallback={<Skeleton height={34} width="50%" radius="sm" />}>
-          <EventHeader pageInfo="Match Schedule" />
+        <Suspense
+          fallback={
+            <Group justify="space-between" align="center">
+              <Skeleton height={34} width="50%" radius="sm" />
+              <Skeleton height={36} width={36} radius="md" />
+            </Group>
+          }
+        >
+          <Group justify="space-between" align="center">
+            <EventHeader pageInfo="Match Schedule" />
+            <ActionIcon
+              aria-label="Sync match schedule"
+              size="lg"
+              radius="md"
+              variant="default"
+              style={{ backgroundColor: 'var(--mantine-color-body)' }}
+              onClick={handleSyncMatches}
+              disabled={isSyncing}
+            >
+              {isSyncing ? <Loader size="sm" /> : <IconRefresh size={20} />}
+            </ActionIcon>
+          </Group>
         </Suspense>
         <MatchScheduleToggle
           value={activeSection}
