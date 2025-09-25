@@ -24,6 +24,21 @@ import {
 } from '@/api';
 import classes from './EventSelect.module.css';
 
+const sortEventsByWeekDescending = (
+  eventList: OrganizationEventDetail[]
+): OrganizationEventDetail[] => {
+  return [...eventList].sort((eventA, eventB) => {
+    const eventAWeek = eventA.week ?? Number.NEGATIVE_INFINITY;
+    const eventBWeek = eventB.week ?? Number.NEGATIVE_INFINITY;
+
+    if (eventAWeek === eventBWeek) {
+      return eventA.eventName.localeCompare(eventB.eventName);
+    }
+
+    return eventBWeek - eventAWeek;
+  });
+};
+
 export function EventSelect() {
   const { data: userInfo } = useUserInfo();
   const isUserLoggedIn = userInfo?.id !== undefined && userInfo?.id !== null;
@@ -54,8 +69,10 @@ export function EventSelect() {
     }
 
     if (data) {
-      setEvents(data.map((event) => ({ ...event })));
-      setInitialEvents(data.map((event) => ({ ...event })));
+      const sortedEvents = sortEventsByWeekDescending(data);
+
+      setEvents(sortedEvents.map((event) => ({ ...event })));
+      setInitialEvents(sortedEvents.map((event) => ({ ...event })));
     }
   }, [data, organizationId]);
 
@@ -92,6 +109,11 @@ export function EventSelect() {
         <Table.Td>
           <Text size="sm" fw={500}>
             {event.eventName}
+          </Text>
+        </Table.Td>
+        <Table.Td>
+          <Text size="sm" ta="center">
+            {event.week ?? '—'}
           </Text>
         </Table.Td>
         <Table.Td>
@@ -155,21 +177,24 @@ export function EventSelect() {
     <Stack>
       <ScrollArea>
         <Radio.Group value={activeEventId} onChange={setActiveEventId} name="active-event">
-          <Table miw={600} verticalSpacing="sm">
+          <Table miw={650} verticalSpacing="sm">
             <Table.Thead>
               <Table.Tr>
                 <Table.Th w={40}>Active</Table.Th>
-              <Table.Th>Event Name</Table.Th>
-              <Table.Th>Public</Table.Th>
-              <Table.Th w={60}>
-                <VisuallyHidden>Delete</VisuallyHidden>
-              </Table.Th>
+                <Table.Th>Event Name</Table.Th>
+                <Table.Th w={80} ta="center">
+                  Week
+                </Table.Th>
+                <Table.Th>Public</Table.Th>
+                <Table.Th w={60}>
+                  <VisuallyHidden>Delete</VisuallyHidden>
+                </Table.Th>
             </Table.Tr>
           </Table.Thead>
             <Table.Tbody>
               {isLoadingEvents ? (
                 <Table.Tr>
-                  <Table.Td colSpan={4}>
+                  <Table.Td colSpan={5}>
                     <Text size="sm" c="dimmed">
                       Loading events...
                     </Text>
@@ -177,7 +202,7 @@ export function EventSelect() {
                 </Table.Tr>
               ) : isErrorLoadingEvents ? (
                 <Table.Tr>
-                  <Table.Td colSpan={4}>
+                  <Table.Td colSpan={5}>
                     <Text size="sm" c="red">
                       Unable to load events. Please try again later.
                     </Text>
@@ -185,7 +210,7 @@ export function EventSelect() {
                 </Table.Tr>
               ) : shouldPromptForOrganization ? (
                 <Table.Tr>
-                  <Table.Td colSpan={4}>
+                  <Table.Td colSpan={5}>
                     <Text size="sm" c="dimmed">
                       Select an organization to manage its events.
                     </Text>
@@ -195,7 +220,7 @@ export function EventSelect() {
                 rows
               ) : (
                 <Table.Tr>
-                  <Table.Td colSpan={4}>
+                  <Table.Td colSpan={5}>
                     <Text size="sm" c="dimmed">
                       No events have been added yet.
                     </Text>
