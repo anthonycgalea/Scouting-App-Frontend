@@ -235,7 +235,7 @@ export function TeamMembersTable() {
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>User</Table.Th>
-                <Table.Th>Requested Role</Table.Th>
+                <Table.Th>Status</Table.Th>
                 <Table.Th>Applied</Table.Th>
                 <Table.Th>Actions</Table.Th>
               </Table.Tr>
