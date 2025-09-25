@@ -12,6 +12,7 @@ export interface Organization {
 export const organizationsQueryKey = ['organizations'] as const;
 export const allOrganizationsQueryKey = ['all-organizations'] as const;
 export const organizationApplicationsQueryKey = ['organization', 'applications'] as const;
+export const organizationMembersQueryKey = ['organization', 'members'] as const;
 
 export interface OrganizationApplication {
   displayName: string;
@@ -23,6 +24,13 @@ export interface OrganizationApplication {
 
 export type OrganizationMemberRole = 'ADMIN' | 'LEAD' | 'MEMBER' | 'GUEST';
 
+export interface OrganizationMember {
+  userId: string;
+  displayName: string;
+  email: string;
+  role: OrganizationMemberRole;
+}
+
 export interface UpdateOrganizationMemberInput {
   userId: string;
   role: OrganizationMemberRole;
@@ -33,10 +41,19 @@ export const fetchAllOrganizations = () => apiFetch<Organization[]>('organizatio
 export const fetchOrganizationApplications = () =>
   apiFetch<OrganizationApplication[]>('organization/applications');
 
+export const fetchOrganizationMembers = () =>
+  apiFetch<OrganizationMember[]>('organization/members');
+
 export const updateOrganizationMember = ({ userId, role }: UpdateOrganizationMemberInput) =>
   apiFetch<void>('organization/members', {
     method: 'PATCH',
     json: { userId, role },
+  });
+
+export const deleteOrganizationMember = ({ userId }: { userId: string }) =>
+  apiFetch<void>('organization/members', {
+    method: 'DELETE',
+    json: { userId },
   });
 
 export const deleteOrganizationApplication = ({ userId }: { userId: string }) =>
@@ -71,6 +88,13 @@ export const useOrganizationApplications = ({ enabled }: { enabled?: boolean } =
     enabled,
   });
 
+export const useOrganizationMembers = ({ enabled }: { enabled?: boolean } = {}) =>
+  useQuery<OrganizationMember[]>({
+    queryKey: organizationMembersQueryKey,
+    queryFn: fetchOrganizationMembers,
+    enabled,
+  });
+
 export const useApplyToOrganization = () => {
   const queryClient = useQueryClient();
 
@@ -90,6 +114,7 @@ export const useUpdateOrganizationMember = () => {
     mutationFn: updateOrganizationMember,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: organizationApplicationsQueryKey });
+      void queryClient.invalidateQueries({ queryKey: organizationMembersQueryKey });
     },
   });
 };
@@ -101,6 +126,17 @@ export const useDeleteOrganizationApplication = () => {
     mutationFn: deleteOrganizationApplication,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: organizationApplicationsQueryKey });
+    },
+  });
+};
+
+export const useDeleteOrganizationMember = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteOrganizationMember,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: organizationMembersQueryKey });
     },
   });
 };

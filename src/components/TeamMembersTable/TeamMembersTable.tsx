@@ -1,56 +1,32 @@
 import {
+  useDeleteOrganizationApplication,
+  useDeleteOrganizationMember,
   useOrganizationApplications,
   useOrganizationEvents,
-  useDeleteOrganizationApplication,
+  useOrganizationMembers,
   useUpdateOrganizationMember,
   useUserInfo,
   useUserOrganization,
   useUserRole,
   type OrganizationMemberRole,
 } from '@/api';
-import { Badge, Button, Group, Select, Stack, Table, Text, TextInput } from '@mantine/core';
-import { IconCheck, IconX } from '@tabler/icons-react';
+import { Badge, Button, Group, Select, Stack, Table, Text } from '@mantine/core';
+import { IconCancel, IconCheck, IconX } from '@tabler/icons-react';
 import { useMemo, useState } from 'react';
 
-const data = [
-  {
-    name: 'Robert Wolfkisser',
-    email: 'rob_wolf@gmail.com',
-    role: 'Team Admin',
-    lastActive: '2 days ago',
-    active: true,
-  },
-  {
-    name: 'Jill Jailbreaker',
-    email: 'jj@breaker.com',
-    role: 'Member',
-    lastActive: '6 days ago',
-    active: true,
-  },
-  {
-    name: 'Henry Silkeater',
-    email: 'henry@silkeater.io',
-    role: 'Guest',
-    lastActive: '2 days ago',
-    active: false,
-  },
-  {
-    name: 'Bill Horsefighter',
-    email: 'bhorsefighter@gmail.com',
-    role: 'Member',
-    lastActive: '5 days ago',
-    active: true,
-  },
-  {
-    name: 'Jeremy Footviewer',
-    email: 'jeremy@foot.dev',
-    role: 'Lead Scout',
-    lastActive: '3 days ago',
-    active: false,
-  },
-];
+const ROLE_LABELS: Record<OrganizationMemberRole, string> = {
+  ADMIN: 'Team Admin',
+  LEAD: 'Lead',
+  MEMBER: 'Member',
+  GUEST: 'Guest',
+};
 
-const rolesData = ['Team Admin', 'Lead Scout', 'Member', 'Guest'];
+const ROLE_OPTIONS: Array<{ label: string; value: OrganizationMemberRole }> = [
+  { label: 'Team Admin', value: 'ADMIN' },
+  { label: 'Lead', value: 'LEAD' },
+  { label: 'Member', value: 'MEMBER' },
+  { label: 'Guest', value: 'GUEST' },
+];
 
 export function TeamMembersTable() {
   const { data: userInfo } = useUserInfo();
@@ -69,9 +45,14 @@ export function TeamMembersTable() {
     useOrganizationApplications({ enabled: isUserLoggedIn && !!organizationId });
   const { mutateAsync: deleteOrganizationApplication, isPending: isDeletingOrganizationApplication } =
     useDeleteOrganizationApplication();
+  const { data: organizationMembers = [], isLoading: isOrganizationMembersLoading } =
+    useOrganizationMembers({ enabled: isUserLoggedIn });
+  const { mutateAsync: deleteOrganizationMember, isPending: isDeletingOrganizationMember } =
+    useDeleteOrganizationMember();
 
   const isLoadingEvents = isUserOrganizationLoading || isOrganizationEventsLoading;
   const isAdmin = userRole?.role === 'ADMIN';
+  const canManageMembers = isAdmin;
 
   const eventOptions = useMemo(
     () =>
@@ -88,24 +69,41 @@ export function TeamMembersTable() {
   const [pendingMemberUpdateUserId, setPendingMemberUpdateUserId] = useState<string | null>(null);
   const [pendingApplicationDeleteUserId, setPendingApplicationDeleteUserId] =
     useState<string | null>(null);
+  const [pendingMemberDeleteUserId, setPendingMemberDeleteUserId] = useState<string | null>(null);
 
   const roleButtonOptions: Array<{
     label: string;
     role: OrganizationMemberRole;
-    requiresAdmin?: boolean;
   }> = [
     { label: 'Guest', role: 'GUEST' },
     { label: 'Member', role: 'MEMBER' },
-    { label: 'Lead', role: 'LEAD', requiresAdmin: true },
-    { label: 'Team Admin', role: 'ADMIN', requiresAdmin: true },
+    { label: 'Lead', role: 'LEAD' },
+    { label: 'Team Admin', role: 'ADMIN' },
   ];
 
   const handleRoleUpdate = async (userId: string, role: OrganizationMemberRole) => {
+    if (!canManageMembers) {
+      return;
+    }
+
     setPendingMemberUpdateUserId(userId);
     try {
       await updateOrganizationMember({ userId, role });
     } finally {
       setPendingMemberUpdateUserId((current) => (current === userId ? null : current));
+    }
+  };
+
+  const handleRevokeAccess = async (userId: string) => {
+    if (!canManageMembers) {
+      return;
+    }
+
+    setPendingMemberDeleteUserId(userId);
+    try {
+      await deleteOrganizationMember({ userId });
+    } finally {
+      setPendingMemberDeleteUserId((current) => (current === userId ? null : current));
     }
   };
 
@@ -118,68 +116,186 @@ export function TeamMembersTable() {
     }
   };
 
-  const rows = data.map((item) => (
-    <Table.Tr key={item.name}>
-      <Table.Td>
-        <Group gap="sm">
-          <div>
-            <Text fz="sm" fw={500}>
-              {item.name}
-            </Text>
-            <Text fz="xs" c="dimmed">
-              {item.email}
-            </Text>
-          </div>
-        </Group>
-      </Table.Td>
+  const teamMembers = useMemo(
+    () => organizationMembers.filter((member) => member.role !== 'GUEST'),
+    [organizationMembers],
+  );
 
-      <Table.Td>
-        <Select
-          data={rolesData}
-          defaultValue={item.role}
-          variant="unstyled"
-          allowDeselect={false}
-        />
-      </Table.Td>
-      <Table.Td>
-        {item.role === 'Guest' ? (
-          <Select
-            data={eventOptions}
-            value={guestAssignments[item.email] ?? null}
-            onChange={(value) =>
-              setGuestAssignments((current) => ({ ...current, [item.email]: value }))
-            }
-            placeholder={isLoadingEvents ? 'Loading events...' : 'Select event'}
-            variant="unstyled"
-            allowDeselect={false}
-            comboboxProps={{ withinPortal: false }}
-            aria-label={`Guest event for ${item.name}`}
-            disabled={!organizationId || isLoadingEvents}
-          />
-        ) : (
-          <TextInput
-            value=""
-            readOnly
-            disabled
-            variant="unstyled"
-            aria-label={`No guest event for ${item.name}`}
-          />
-        )}
-      </Table.Td>
-      <Table.Td>{item.lastActive}</Table.Td>
-      <Table.Td>
-        {item.active ? (
-          <Badge fullWidth variant="light">
-            Active
-          </Badge>
-        ) : (
-          <Badge color="gray" fullWidth variant="light">
-            Disabled
-          </Badge>
-        )}
-      </Table.Td>
-    </Table.Tr>
-  ));
+  const guestMembers = useMemo(
+    () => organizationMembers.filter((member) => member.role === 'GUEST'),
+    [organizationMembers],
+  );
+
+  const memberColumnCount = canManageMembers ? 3 : 2;
+  const guestColumnCount = canManageMembers ? 3 : 2;
+
+  const renderTeamMemberRows = () => {
+    if (isOrganizationMembersLoading) {
+      return (
+        <Table.Tr>
+          <Table.Td colSpan={memberColumnCount}>
+            <Text c="dimmed">Loading team members…</Text>
+          </Table.Td>
+        </Table.Tr>
+      );
+    }
+
+    if (teamMembers.length === 0) {
+      return (
+        <Table.Tr>
+          <Table.Td colSpan={memberColumnCount}>
+            <Text c="dimmed">No team members</Text>
+          </Table.Td>
+        </Table.Tr>
+      );
+    }
+
+    return teamMembers.map((member) => {
+      const isUpdatingThisUser =
+        isUpdatingOrganizationMember && pendingMemberUpdateUserId === member.userId;
+      const isDeletingThisUser =
+        isDeletingOrganizationMember && pendingMemberDeleteUserId === member.userId;
+
+      return (
+        <Table.Tr key={member.userId}>
+          <Table.Td>
+            <Group gap="sm">
+              <div>
+                <Text fz="sm" fw={500}>
+                  {member.displayName}
+                </Text>
+                <Text fz="xs" c="dimmed">
+                  {member.email}
+                </Text>
+              </div>
+            </Group>
+          </Table.Td>
+          <Table.Td>
+            {canManageMembers ? (
+              <Select
+                data={ROLE_OPTIONS.map(({ label, value }) => ({ label, value }))}
+                value={member.role}
+                onChange={(value) => {
+                  if (!value || value === member.role) {
+                    return;
+                  }
+                  void handleRoleUpdate(member.userId, value as OrganizationMemberRole);
+                }}
+                variant="unstyled"
+                allowDeselect={false}
+                comboboxProps={{ withinPortal: false }}
+                aria-label={`Role for ${member.displayName}`}
+                disabled={isUpdatingThisUser || isDeletingThisUser}
+              />
+            ) : (
+              <Text>{ROLE_LABELS[member.role]}</Text>
+            )}
+          </Table.Td>
+          {canManageMembers && (
+            <Table.Td>
+              <Button
+                color="red"
+                leftSection={<IconCancel size={16} />}
+                variant="light"
+                loading={isDeletingThisUser}
+                onClick={() => {
+                  void handleRevokeAccess(member.userId);
+                }}
+                disabled={isUpdatingThisUser || isDeletingThisUser}
+              >
+                Revoke Access
+              </Button>
+            </Table.Td>
+          )}
+        </Table.Tr>
+      );
+    });
+  };
+
+  const renderGuestRows = () => {
+    if (isOrganizationMembersLoading) {
+      return (
+        <Table.Tr>
+          <Table.Td colSpan={guestColumnCount}>
+            <Text c="dimmed">Loading guest members…</Text>
+          </Table.Td>
+        </Table.Tr>
+      );
+    }
+
+    return guestMembers.map((member) => {
+      const isUpdatingThisUser =
+        isUpdatingOrganizationMember && pendingMemberUpdateUserId === member.userId;
+      const isDeletingThisUser =
+        isDeletingOrganizationMember && pendingMemberDeleteUserId === member.userId;
+
+      return (
+        <Table.Tr key={member.userId}>
+          <Table.Td>
+            <Group gap="sm">
+              <div>
+                <Text fz="sm" fw={500}>
+                  {member.displayName}
+                </Text>
+                <Text fz="xs" c="dimmed">
+                  {member.email}
+                </Text>
+              </div>
+            </Group>
+          </Table.Td>
+          <Table.Td>
+            <Select
+              data={eventOptions}
+              value={guestAssignments[member.userId] ?? null}
+              onChange={(value) =>
+                setGuestAssignments((current) => ({ ...current, [member.userId]: value }))
+              }
+              placeholder={isLoadingEvents ? 'Loading events...' : 'Select event'}
+              variant="unstyled"
+              allowDeselect={false}
+              comboboxProps={{ withinPortal: false }}
+              aria-label={`Guest event for ${member.displayName}`}
+              disabled={!organizationId || isLoadingEvents}
+            />
+          </Table.Td>
+          {canManageMembers && (
+            <Table.Td>
+              <Group gap="xs" wrap="wrap">
+                <Select
+                  data={ROLE_OPTIONS.map(({ label, value }) => ({ label, value }))}
+                  value={member.role}
+                  onChange={(value) => {
+                    if (!value || value === member.role) {
+                      return;
+                    }
+                    void handleRoleUpdate(member.userId, value as OrganizationMemberRole);
+                  }}
+                  placeholder="Change role"
+                  allowDeselect={false}
+                  comboboxProps={{ withinPortal: false }}
+                  aria-label={`Change role for ${member.displayName}`}
+                  disabled={isUpdatingThisUser || isDeletingThisUser}
+                  w={180}
+                />
+                <Button
+                  color="red"
+                  leftSection={<IconCancel size={16} />}
+                  variant="light"
+                  loading={isDeletingThisUser}
+                  onClick={() => {
+                    void handleRevokeAccess(member.userId);
+                  }}
+                  disabled={isUpdatingThisUser || isDeletingThisUser}
+                >
+                  Revoke Access
+                </Button>
+              </Group>
+            </Table.Td>
+          )}
+        </Table.Tr>
+      );
+    });
+  };
 
   const pendingRows = organizationApplications.map((application) => {
     const joinedDate = new Date(application.joined);
@@ -212,9 +328,8 @@ export function TeamMembersTable() {
         <Table.Td>{joinedLabel}</Table.Td>
         <Table.Td>
           <Group gap="xs" wrap="wrap">
-            {roleButtonOptions
-              .filter((option) => !option.requiresAdmin || isAdmin)
-              .map((option) => (
+            {canManageMembers &&
+              roleButtonOptions.map((option) => (
                 <Button
                   key={option.role}
                   color="green"
@@ -229,18 +344,20 @@ export function TeamMembersTable() {
                   {option.label}
                 </Button>
               ))}
-            <Button
-              color="red"
-              leftSection={<IconX size={16} />}
-              variant="light"
-              loading={isDeletingThisUser}
-              onClick={() => {
-                void handleRejectApplication(application.userId);
-              }}
-              disabled={isDeletingThisUser || isUpdatingThisUser}
-            >
-              Reject
-            </Button>
+            {canManageMembers && (
+              <Button
+                color="red"
+                leftSection={<IconX size={16} />}
+                variant="light"
+                loading={isDeletingThisUser}
+                onClick={() => {
+                  void handleRejectApplication(application.userId);
+                }}
+                disabled={isDeletingThisUser || isUpdatingThisUser}
+              >
+                Reject
+              </Button>
+            )}
           </Group>
         </Table.Td>
       </Table.Tr>
@@ -255,49 +372,63 @@ export function TeamMembersTable() {
             <Table.Tr>
               <Table.Th>Team Member</Table.Th>
               <Table.Th>Role</Table.Th>
-              <Table.Th>Guest Event</Table.Th>
-              <Table.Th>Last active</Table.Th>
-              <Table.Th>Status</Table.Th>
+              {canManageMembers && <Table.Th>Actions</Table.Th>}
             </Table.Tr>
           </Table.Thead>
-          <Table.Tbody>{rows}</Table.Tbody>
+          <Table.Tbody>{renderTeamMemberRows()}</Table.Tbody>
         </Table>
       </Table.ScrollContainer>
 
-      <div>
-        <Text fw={600} mb="sm">
-          Pending Users
-        </Text>
-        <Table.ScrollContainer minWidth={800}>
-          <Table verticalSpacing="sm">
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>User</Table.Th>
-                <Table.Th>Status</Table.Th>
-                <Table.Th>Applied</Table.Th>
-                <Table.Th>Actions</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {isOrganizationApplicationsLoading ? (
+      {guestMembers.length > 0 && (
+        <div>
+          <Text fw={600} mb="sm">
+            Guest Members
+          </Text>
+          <Table.ScrollContainer minWidth={800}>
+            <Table verticalSpacing="sm">
+              <Table.Thead>
                 <Table.Tr>
-                  <Table.Td colSpan={4}>
-                    <Text c="dimmed">Loading pending users…</Text>
-                  </Table.Td>
+                  <Table.Th>Guest</Table.Th>
+                  <Table.Th>Guest Event</Table.Th>
+                  {canManageMembers && <Table.Th>Actions</Table.Th>}
                 </Table.Tr>
-              ) : pendingRows.length > 0 ? (
-                pendingRows
-              ) : (
+              </Table.Thead>
+              <Table.Tbody>{renderGuestRows()}</Table.Tbody>
+            </Table>
+          </Table.ScrollContainer>
+        </div>
+      )}
+
+      {(isOrganizationApplicationsLoading || organizationApplications.length > 0) && (
+        <div>
+          <Text fw={600} mb="sm">
+            Pending Users
+          </Text>
+          <Table.ScrollContainer minWidth={800}>
+            <Table verticalSpacing="sm">
+              <Table.Thead>
                 <Table.Tr>
-                  <Table.Td colSpan={4}>
-                    <Text c="dimmed">No pending users</Text>
-                  </Table.Td>
+                  <Table.Th>User</Table.Th>
+                  <Table.Th>Status</Table.Th>
+                  <Table.Th>Applied</Table.Th>
+                  <Table.Th>Actions</Table.Th>
                 </Table.Tr>
-              )}
-            </Table.Tbody>
-          </Table>
-        </Table.ScrollContainer>
-      </div>
+              </Table.Thead>
+              <Table.Tbody>
+                {isOrganizationApplicationsLoading ? (
+                  <Table.Tr>
+                    <Table.Td colSpan={4}>
+                      <Text c="dimmed">Loading pending users…</Text>
+                    </Table.Td>
+                  </Table.Tr>
+                ) : (
+                  pendingRows
+                )}
+              </Table.Tbody>
+            </Table>
+          </Table.ScrollContainer>
+        </div>
+      )}
     </Stack>
   );
 }
