@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Group, Select, Stack } from '@mantine/core';
+import { Link } from '@tanstack/react-router';
 import { useOrganizations, useUserInfo } from '../api';
 import { ColorSchemeToggle } from '../components/ColorSchemeToggle/ColorSchemeToggle';
 
@@ -65,7 +66,9 @@ export function UserSettingsPage() {
           searchable
           allowDeselect
         />
-        <Button>Apply for an Organization</Button>
+        <Button component={Link} to="/organizations/apply">
+          Apply to an Organization
+        </Button>
       </Group>
       <ColorSchemeToggle />
     </Stack>

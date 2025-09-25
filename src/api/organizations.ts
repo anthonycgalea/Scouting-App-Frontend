@@ -10,11 +10,19 @@ export interface Organization {
 }
 
 export const organizationsQueryKey = ['organizations'] as const;
+export const allOrganizationsQueryKey = ['all-organizations'] as const;
 
 export const fetchOrganizations = () => apiFetch<Organization[]>('user/organizations');
+export const fetchAllOrganizations = () => apiFetch<Organization[]>('organizations');
 
 export const useOrganizations = () =>
   useQuery<Organization[]>({
     queryKey: organizationsQueryKey,
     queryFn: fetchOrganizations,
+  });
+
+export const useAllOrganizations = () =>
+  useQuery<Organization[]>({
+    queryKey: allOrganizationsQueryKey,
+    queryFn: fetchAllOrganizations,
   });
