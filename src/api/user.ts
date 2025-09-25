@@ -11,6 +11,9 @@ export interface UserInfoResponse {
   user_name?: string;
   userOrgId?: number | null;
   user_org_id?: number | null;
+  user_org?: {
+    user_organization_id?: number | null;
+  } | null;
 }
 
 export const fetchUserInfo = () => apiFetch<UserInfoResponse>('user/info');
