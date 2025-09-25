@@ -34,6 +34,8 @@ export const updateUserOrganization = (userOrganizationId: number | null) =>
     json: { user_organization_id: userOrganizationId },
   });
 
+export const userRoleQueryKey = ['user', 'role'] as const;
+
 export const useUpdateUserOrganization = () => {
   const queryClient = useQueryClient();
 
@@ -42,6 +44,7 @@ export const useUpdateUserOrganization = () => {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: userInfoQueryKey });
       void queryClient.invalidateQueries({ queryKey: organizationsQueryKey });
+      void queryClient.invalidateQueries({ queryKey: userRoleQueryKey });
     },
   });
 };
@@ -51,8 +54,6 @@ export interface UserRoleResponse {
 }
 
 export const fetchUserRole = () => apiFetch<UserRoleResponse>('user/role');
-
-export const userRoleQueryKey = ['user', 'role'] as const;
 
 export const useUserRole = ({ enabled }: { enabled?: boolean } = {}) =>
   useQuery<UserRoleResponse>({
