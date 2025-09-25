@@ -183,7 +183,7 @@ export function TeamMembersTable() {
                 }}
                 variant="unstyled"
                 allowDeselect={false}
-                comboboxProps={{ withinPortal: false }}
+                comboboxProps={{ withinPortal: true }}
                 aria-label={`Role for ${member.displayName}`}
                 disabled={isUpdatingThisUser || isDeletingThisUser}
               />
@@ -253,7 +253,7 @@ export function TeamMembersTable() {
               placeholder={isLoadingEvents ? 'Loading events...' : 'Select event'}
               variant="unstyled"
               allowDeselect={false}
-              comboboxProps={{ withinPortal: false }}
+              comboboxProps={{ withinPortal: true }}
               aria-label={`Guest event for ${member.displayName}`}
               disabled={!organizationId || isLoadingEvents}
             />
@@ -261,22 +261,6 @@ export function TeamMembersTable() {
           {canManageMembers && (
             <Table.Td>
               <Group gap="xs" wrap="wrap">
-                <Select
-                  data={ROLE_OPTIONS.map(({ label, value }) => ({ label, value }))}
-                  value={member.role}
-                  onChange={(value) => {
-                    if (!value || value === member.role) {
-                      return;
-                    }
-                    void handleRoleUpdate(member.userId, value as OrganizationMemberRole);
-                  }}
-                  placeholder="Change role"
-                  allowDeselect={false}
-                  comboboxProps={{ withinPortal: false }}
-                  aria-label={`Change role for ${member.displayName}`}
-                  disabled={isUpdatingThisUser || isDeletingThisUser}
-                  w={180}
-                />
                 <Button
                   color="red"
                   leftSection={<IconCancel size={16} />}
