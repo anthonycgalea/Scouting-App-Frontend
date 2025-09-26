@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import {
-  IconAdjustments,
+  IconSettings,
   IconBulb,
   IconFileAnalytics,
   IconGauge,
@@ -31,7 +31,7 @@ const BASE_LINKS_DATA = [
       { label: 'Data Import', link: '/dataImport' },
     ],
   },
-  { label: 'User Settings', icon: IconAdjustments, to: '/userSettings' },
+  { label: 'User Settings', icon: IconSettings, to: '/userSettings' },
 ];
 
 const ORGANIZATION_LINKS_DATA = {
