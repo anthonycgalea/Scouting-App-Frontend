@@ -135,7 +135,7 @@ export const eventTbaMatchDataQueryKey = ({
 export const fetchEventTbaMatchData = (body: EventTbaMatchDataRequest) =>
   apiFetch<EventTbaMatchDataResponse>('event/tbaMatchData', {
     method: 'POST',
-    json: body,
+    json: body as unknown as JsonBody,
   });
 
 export const useEventTbaMatchData = (

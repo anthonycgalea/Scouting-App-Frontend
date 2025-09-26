@@ -23,6 +23,108 @@ const ENDGAME_LABELS: Record<Endgame2025, string> = {
   DEEP: 'Deep',
 };
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+const ALLIANCE_TOTAL_FIELD_KEYS = new Set([
+  'al4c',
+  'al3c',
+  'al2c',
+  'al1c',
+  'tl4c',
+  'tl3c',
+  'tl2c',
+  'tl1c',
+  'anet',
+  'aNet',
+  'tnet',
+  'tNet',
+  'net',
+  'aprocessor',
+  'aProcessor',
+  'tprocessor',
+  'tProcessor',
+  'processor',
+  'bot1endgame',
+  'bot2endgame',
+  'bot3endgame',
+  'bot1Endgame',
+  'bot2Endgame',
+  'bot3Endgame',
+]);
+
+const getAllianceTotalsRecord = (raw: unknown): Record<string, unknown> | undefined => {
+  if (!isRecord(raw)) {
+    return undefined;
+  }
+
+  const possibleNestedKeys = ['json', 'data', 'body', 'matchData', 'match_data'];
+  const visited = new Set<Record<string, unknown>>();
+  const queue: Record<string, unknown>[] = [raw];
+
+  while (queue.length > 0) {
+    const candidate = queue.shift();
+
+    if (!candidate || visited.has(candidate)) {
+      continue;
+    }
+
+    visited.add(candidate);
+
+    const hasKnownField = Object.keys(candidate).some((key) => ALLIANCE_TOTAL_FIELD_KEYS.has(key));
+
+    if (hasKnownField) {
+      return candidate;
+    }
+
+    possibleNestedKeys.forEach((key) => {
+      const value = candidate[key];
+
+      if (isRecord(value)) {
+        queue.push(value);
+      }
+    });
+  }
+
+  return undefined;
+};
+
+const ALLIANCE_NUMERIC_FIELD_ALIASES: Partial<
+  Record<MatchValidationNumericField, readonly string[]>
+> = {
+  al4c: ['al4c'],
+  al3c: ['al3c'],
+  al2c: ['al2c'],
+  al1c: ['al1c'],
+  tl4c: ['tl4c'],
+  tl3c: ['tl3c'],
+  tl2c: ['tl2c'],
+  tl1c: ['tl1c'],
+  aNet: ['aNet', 'anet'],
+  tNet: ['tNet', 'tnet', 'net'],
+  aProcessor: ['aProcessor', 'aprocessor'],
+  tProcessor: ['tProcessor', 'tprocessor', 'processor'],
+};
+
+const getAllianceNumericValue = (
+  record: Record<string, unknown>,
+  field: MatchValidationNumericField
+) => {
+  const aliases = ALLIANCE_NUMERIC_FIELD_ALIASES[field] ?? [field];
+
+  for (const key of aliases) {
+    if (key in record) {
+      const parsed = parseNumericValue(record[key]);
+
+      if (parsed !== undefined) {
+        return parsed;
+      }
+    }
+  }
+
+  return undefined;
+};
+
 interface TbaTeamEntry {
   teamNumber: number;
   data: Partial<TeamMatchData>;
@@ -371,31 +473,61 @@ export function MatchValidationPage() {
     return entries.filter((entry) => allianceTeamSet.has(entry.teamNumber));
   }, [allianceTeamSet, tbaMatchDataResponse]);
 
+  const allianceTotals = useMemo(
+    () => getAllianceTotalsRecord(tbaMatchDataResponse),
+    [tbaMatchDataResponse]
+  );
+
   const aggregatedTbaData = useMemo(() => {
     const numericSums = new Map<MatchValidationNumericField, number>();
     const endgameMap = new Map<number, string>();
 
-    if (tbaTeamEntries.length === 0) {
-      return { numericSums, endgame: endgameMap };
+    if (tbaTeamEntries.length > 0) {
+      const sumField = (field: MatchValidationNumericField) =>
+        tbaTeamEntries.reduce((total, entry) => total + (parseNumericValue(entry.data[field]) ?? 0), 0);
+
+      MATCH_VALIDATION_NUMERIC_FIELDS.forEach((field) => {
+        numericSums.set(field, sumField(field));
+      });
+
+      tbaTeamEntries.forEach((entry) => {
+        const label = formatEndgameValue(entry.data.endgame);
+
+        if (label) {
+          endgameMap.set(entry.teamNumber, label);
+        }
+      });
     }
 
-    const sumField = (field: MatchValidationNumericField) =>
-      tbaTeamEntries.reduce((total, entry) => total + (parseNumericValue(entry.data[field]) ?? 0), 0);
+    if (allianceTotals) {
+      MATCH_VALIDATION_NUMERIC_FIELDS.forEach((field) => {
+        const value = getAllianceNumericValue(allianceTotals, field);
 
-    MATCH_VALIDATION_NUMERIC_FIELDS.forEach((field) => {
-      numericSums.set(field, sumField(field));
-    });
+        if (value !== undefined) {
+          numericSums.set(field, value);
+        }
+      });
 
-    tbaTeamEntries.forEach((entry) => {
-      const label = formatEndgameValue(entry.data.endgame);
+      allianceTeams.forEach((teamNumber, index) => {
+        if (!isValidNumber(teamNumber)) {
+          return;
+        }
 
-      if (label) {
-        endgameMap.set(entry.teamNumber, label);
-      }
-    });
+        const baseKey = `bot${index + 1}`;
+        const rawValue =
+          allianceTotals[`${baseKey}endgame`] ??
+          allianceTotals[`${baseKey}Endgame`] ??
+          allianceTotals[`${baseKey}_endgame`];
+        const label = formatEndgameValue(rawValue);
+
+        if (label) {
+          endgameMap.set(teamNumber, label);
+        }
+      });
+    }
 
     return { numericSums, endgame: endgameMap };
-  }, [tbaTeamEntries]);
+  }, [allianceTeams, allianceTotals, tbaTeamEntries]);
 
   const getPlaceholderNode = () => (
     <Text c="dimmed" fz="sm">
@@ -582,22 +714,26 @@ export function MatchValidationPage() {
           <Table striped withColumnBorders highlightOnHover>
             <Table.Thead>
               <Table.Tr>
-                <Table.Th />
+                <Table.Th ta="right" />
                 {MATCH_VALIDATION_TEAM_HEADERS.map((header) => (
-                  <Table.Th key={header}>{header}</Table.Th>
+                  <Table.Th key={header} ta="center">
+                    {header}
+                  </Table.Th>
                 ))}
-                <Table.Th>TBA</Table.Th>
+                <Table.Th ta="center">TBA</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
               <Table.Tr>
-                <Table.Th scope="row">Team Number</Table.Th>
+                <Table.Th scope="row" ta="right">
+                  Team Number
+                </Table.Th>
                 {teamQueryStates.map((state, index) => (
-                  <Table.Td key={`team-${state.teamNumber ?? index}`}>
+                  <Table.Td key={`team-${state.teamNumber ?? index}`} ta="center">
                     {renderTeamNumberCell(state.teamNumber)}
                   </Table.Td>
                 ))}
-                <Table.Td>
+                <Table.Td ta="center">
                   {isTbaMatchDataLoading
                     ? getLoaderNode()
                     : isTbaMatchDataError
@@ -611,8 +747,8 @@ export function MatchValidationPage() {
               {MATCH_VALIDATION_TABLE_LAYOUT.map((section) => (
                 <Fragment key={section.id}>
                   <Table.Tr>
-                    <Table.Th scope="row" />
-                    <Table.Th colSpan={4} ta="left">
+                    <Table.Th scope="row" ta="right" />
+                    <Table.Th colSpan={4} ta="center">
                       {section.title}
                     </Table.Th>
                   </Table.Tr>
@@ -621,13 +757,15 @@ export function MatchValidationPage() {
                     if (row.type === 'numeric') {
                       return (
                         <Table.Tr key={`${section.id}-${row.id}`}>
-                          <Table.Th scope="row">{row.label}</Table.Th>
+                          <Table.Th scope="row" ta="right">
+                            {row.label}
+                          </Table.Th>
                           {teamQueryStates.map((state, index) => (
-                            <Table.Td key={`${row.id}-${index}`}>
+                            <Table.Td key={`${row.id}-${index}`} ta="center">
                               {renderTeamNumericValue(state, row.field)}
                             </Table.Td>
                           ))}
-                          <Table.Td>
+                          <Table.Td ta="center">
                             {renderTbaNumericValue(aggregatedTbaData.numericSums.get(row.field))}
                           </Table.Td>
                         </Table.Tr>
@@ -637,15 +775,18 @@ export function MatchValidationPage() {
                     if (row.type === 'paired') {
                       return row.rows.map((entry, entryIndex) => (
                         <Table.Tr key={`${section.id}-${row.id}-${entry.id}`}>
-                          <Table.Th scope="row">{entry.label}</Table.Th>
+                          <Table.Th scope="row" ta="right">
+                            {entry.label}
+                          </Table.Th>
                           {teamQueryStates.map((state, index) => (
-                            <Table.Td key={`${row.id}-${entry.id}-${index}`}>
+                            <Table.Td key={`${row.id}-${entry.id}-${index}`} ta="center">
                               {renderTeamNumericValue(state, entry.field)}
                             </Table.Td>
                           ))}
                           {entryIndex === 0 ? (
                             <Table.Td
                               rowSpan={row.rows.length}
+                              ta="center"
                               style={{ verticalAlign: 'top' }}
                             >
                               {renderTbaStackedValues(row.rows)}
@@ -666,6 +807,7 @@ export function MatchValidationPage() {
                             <Table.Th
                               scope="row"
                               rowSpan={rowSpan}
+                              ta="right"
                               style={{ verticalAlign: 'top' }}
                             >
                               {row.label}
@@ -674,16 +816,21 @@ export function MatchValidationPage() {
                               <Table.Td
                                 key={`${row.id}-team-${index}`}
                                 rowSpan={rowSpan}
+                                ta="center"
                                 style={{ verticalAlign: 'top' }}
                               >
                                 {renderTeamEndgameValue(state)}
                               </Table.Td>
                             ))}
-                            <Table.Td>{renderTbaEndgameValue(firstTeamNumber)}</Table.Td>
+                            <Table.Td ta="center">
+                              {renderTbaEndgameValue(firstTeamNumber)}
+                            </Table.Td>
                           </Table.Tr>
                           {remainingTeamNumbers.map((teamNumber, index) => (
                             <Table.Tr key={`${row.id}-tba-${index + 1}`}>
-                              <Table.Td>{renderTbaEndgameValue(teamNumber)}</Table.Td>
+                              <Table.Td ta="center">
+                                {renderTbaEndgameValue(teamNumber)}
+                              </Table.Td>
                             </Table.Tr>
                           ))}
                         </Fragment>
