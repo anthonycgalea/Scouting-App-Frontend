@@ -47,6 +47,15 @@ const formatMatchIdentifier = (row: TeamMatchData) => {
   return `${level}${row.match_number}`;
 };
 
+const MATCH_LEVEL_PRIORITY: Record<string, number> = {
+  QM: 0,
+  SF: 1,
+  F: 2,
+};
+
+const getMatchLevelPriority = (level: string) =>
+  MATCH_LEVEL_PRIORITY[level] ?? Number.MAX_SAFE_INTEGER;
+
 const SEASON_TABLE_CONFIGS: Record<number, SeasonMatchTableConfig> = {
   1: {
     leadColumns: [
@@ -98,6 +107,23 @@ export function TeamMatchTable({ teamNumber }: TeamMatchTableProps) {
     isLoading,
     isError,
   } = useTeamMatchData(teamNumber);
+
+  const sortedData = useMemo(() => {
+    if (!data) {
+      return [];
+    }
+
+    return [...data].sort((a, b) => {
+      const priorityA = getMatchLevelPriority(String(a.match_level ?? '').trim().toUpperCase());
+      const priorityB = getMatchLevelPriority(String(b.match_level ?? '').trim().toUpperCase());
+
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+      }
+
+      return (a.match_number ?? 0) - (b.match_number ?? 0);
+    });
+  }, [data]);
 
   const season = data?.[0]?.season;
 
@@ -172,7 +198,7 @@ export function TeamMatchTable({ teamNumber }: TeamMatchTableProps) {
     )),
   );
 
-  const rows = data.map((row, index) => (
+  const rows = sortedData.map((row, index) => (
     <Table.Tr key={`${row.match_level}-${row.match_number}-${row.user_id ?? index}`}>
       {seasonConfig.leadColumns.map((column) => (
         <Table.Td key={column.key} style={{ textAlign: column.align ?? 'left', whiteSpace: 'nowrap' }}>
