@@ -11,6 +11,7 @@ import { Notifications } from '@mantine/notifications';
 import { useEffect } from 'react';
 import { NavbarNested } from './components/Navbar/NavbarNested';
 import { HomePage } from './pages/Home.page';
+import { DashboardPage } from './pages/Dashboard.page';
 import { MatchSchedulePage } from './pages/MatchSchedule.page';
 import { UserSettingsPage } from './pages/Settings.page';
 import { theme } from './theme';
@@ -32,8 +33,17 @@ const rootRoute = createRootRoute({
     const location = useRouterState({ select: (state) => state.location });
 
     useEffect(() => {
-      if (!loading && !user && location.pathname !== '/') {
+      if (loading) {
+        return;
+      }
+
+      if (!user && location.pathname !== '/') {
         navigate({ to: '/', replace: true });
+        return;
+      }
+
+      if (user && location.pathname === '/') {
+        navigate({ to: '/dashboard', replace: true });
       }
     }, [loading, user, location.pathname, navigate]);
 
@@ -41,7 +51,7 @@ const rootRoute = createRootRoute({
       <MantineProvider theme={theme}>
         <Notifications position="top-right" />
         <div style={{ display: 'flex', height: '100vh' }}>
-          {!loading && user ? <NavbarNested /> : null}
+          {!loading && location.pathname !== '/' ? <NavbarNested /> : null}
           <div style={{ flex: 1, overflow: 'auto' }}>
             <Outlet />
           </div>
@@ -56,6 +66,12 @@ const homeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
   component: HomePage,
+});
+
+const dashboardRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/dashboard',
+  component: DashboardPage,
 });
 
 const matchScheduleRoute = createRoute({
@@ -127,6 +143,7 @@ const addEventRoute = createRoute({
 // Build the route tree
 const routeTree = rootRoute.addChildren([
   homeRoute.addChildren([]),
+  dashboardRoute.addChildren([]),
   matchScheduleRoute.addChildren([]),
   teamDirectoryRoute.addChildren([]),
   teamDetailRoute.addChildren([]),
