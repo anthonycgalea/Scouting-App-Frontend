@@ -134,10 +134,7 @@ export const useAllianceMatchData = (
   useQuery({
     queryKey: allianceMatchQueryKey(request),
     queryFn: () => fetchAllianceMatchData(request),
-    enabled,
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: 'always',
+    enabled
   });
 
 export const updateMatchDataBatch = (matchData: TeamMatchData[]) =>

@@ -112,9 +112,6 @@ export function MatchValidationPage() {
       } satisfies MatchLineup;
     },
     enabled: hasValidParams,
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: 'always',
   });
 
   const teams = useMemo<number[]>(() => {
