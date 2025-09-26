@@ -1,10 +1,17 @@
-import { useRef } from 'react';
+import { type ComponentProps, useRef } from 'react';
 import { IconCloudUpload, IconDownload, IconX } from '@tabler/icons-react';
 import { Button, Group, Text, useMantineTheme } from '@mantine/core';
 import { Dropzone, MIME_TYPES } from '@mantine/dropzone';
 import classes from './DropzoneButton.module.css';
 
-export function DropzoneButton() {
+type DropzoneOnDrop = ComponentProps<typeof Dropzone>['onDrop'];
+
+export interface DropzoneButtonProps {
+  onDrop?: DropzoneOnDrop;
+  loading?: boolean;
+}
+
+export function DropzoneButton({ onDrop, loading }: DropzoneButtonProps) {
   const theme = useMantineTheme();
   const openRef = useRef<() => void>(null);
 
@@ -12,11 +19,13 @@ export function DropzoneButton() {
     <div className={classes.wrapper}>
       <Dropzone
         openRef={openRef}
-        onDrop={() => {}}
+        onDrop={onDrop}
         className={classes.dropzone}
         radius="md"
-        accept={[MIME_TYPES.pdf]}
-        maxSize={30 * 1024 ** 2}
+        accept={[MIME_TYPES.csv]}
+        maxSize={100 * 1024 ** 2}
+        multiple={false}
+        loading={loading}
       >
         <div style={{ pointerEvents: 'none' }}>
           <Group justify="center">
@@ -32,8 +41,8 @@ export function DropzoneButton() {
           </Group>
 
           <Text ta="center" fw={700} fz="lg" mt="xl">
-            <Dropzone.Accept>Drop files here</Dropzone.Accept>
-            <Dropzone.Reject>Csv file less than 100mb</Dropzone.Reject>
+            <Dropzone.Accept>Drop your CSV here</Dropzone.Accept>
+            <Dropzone.Reject>Only CSV files less than 100mb</Dropzone.Reject>
             <Dropzone.Idle>Upload match data</Dropzone.Idle>
           </Text>
 
@@ -44,7 +53,14 @@ export function DropzoneButton() {
         </div>
       </Dropzone>
 
-      <Button className={classes.control} size="md" radius="xl" onClick={() => openRef.current?.()}>
+      <Button
+        className={classes.control}
+        size="md"
+        radius="xl"
+        onClick={() => openRef.current?.()}
+        loading={loading}
+        disabled={loading}
+      >
         Select files
       </Button>
     </div>
