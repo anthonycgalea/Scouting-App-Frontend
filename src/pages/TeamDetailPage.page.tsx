@@ -34,7 +34,7 @@ export function TeamDetailPage() {
       case 'pit-scouting':
         return <TeamPitScout />;
       default:
-        return <TeamMatchTable />;
+        return <TeamMatchTable teamNumber={teamNumber} />;
     }
   };
 
