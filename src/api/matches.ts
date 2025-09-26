@@ -21,7 +21,7 @@ export const fetchMatchSchedule = (_eventCode: string) =>
 export type MatchExportType = 'csv' | 'json' | 'xls';
 
 export const exportMatches = (fileType: MatchExportType) =>
-  apiFetchResponse('event/matches/export', {
+  apiFetchResponse('organization/downloadData', {
     method: 'POST',
     json: { file_type: fileType },
   });
