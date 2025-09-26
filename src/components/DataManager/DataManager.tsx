@@ -37,6 +37,7 @@ import { SECTION_DEFINITIONS, groupMatchesBySection } from '../MatchSchedule/mat
 
 interface RowData {
   matchNumber: number;
+  matchLevel: string;
   red1: number;
   red2: number;
   red3: number;
@@ -150,6 +151,7 @@ export function DataManager() {
     () =>
       activeMatches.map((match) => ({
         matchNumber: match.match_number,
+        matchLevel: match.match_level,
         red1: match.red1_id,
         red2: match.red2_id,
         red3: match.red3_id,
@@ -164,7 +166,10 @@ export function DataManager() {
     const entries = new Map<string, TeamMatchValidationStatus>();
 
     validationData.forEach((entry) => {
-      entries.set(`${entry.match_number}-${entry.team_number}`, entry.validation_status);
+      entries.set(
+        `${entry.match_level}-${entry.match_number}-${entry.team_number}`,
+        entry.validation_status
+      );
     });
 
     return entries;
@@ -220,8 +225,13 @@ export function DataManager() {
     }
   };
 
-  const renderTeamCell = (matchNumber: number, teamNumber: number, className: string) => {
-    const status = validationLookup.get(`${matchNumber}-${teamNumber}`);
+  const renderTeamCell = (
+    matchNumber: number,
+    matchLevel: string,
+    teamNumber: number,
+    className: string
+  ) => {
+    const status = validationLookup.get(`${matchLevel}-${matchNumber}-${teamNumber}`);
 
     return (
       <Table.Td className={className}>
@@ -257,12 +267,12 @@ export function DataManager() {
       <Table.Td>
         <DataManagerButtonMenu matchNumber={row.matchNumber} />
       </Table.Td>
-      {renderTeamCell(row.matchNumber, row.red1, classes.redCell)}
-      {renderTeamCell(row.matchNumber, row.red2, classes.redCell)}
-      {renderTeamCell(row.matchNumber, row.red3, classes.redCell)}
-      {renderTeamCell(row.matchNumber, row.blue1, classes.blueCell)}
-      {renderTeamCell(row.matchNumber, row.blue2, classes.blueCell)}
-      {renderTeamCell(row.matchNumber, row.blue3, classes.blueCell)}
+      {renderTeamCell(row.matchNumber, row.matchLevel, row.red1, classes.redCell)}
+      {renderTeamCell(row.matchNumber, row.matchLevel, row.red2, classes.redCell)}
+      {renderTeamCell(row.matchNumber, row.matchLevel, row.red3, classes.redCell)}
+      {renderTeamCell(row.matchNumber, row.matchLevel, row.blue1, classes.blueCell)}
+      {renderTeamCell(row.matchNumber, row.matchLevel, row.blue2, classes.blueCell)}
+      {renderTeamCell(row.matchNumber, row.matchLevel, row.blue3, classes.blueCell)}
     </Table.Tr>
   ));
 
