@@ -174,6 +174,64 @@ const isValidNumber = (value: number | undefined): value is number =>
 const formatMatchLevel = (level: string) => level.toUpperCase();
 const formatAlliance = (value: string) => value.toUpperCase();
 
+const SCOUT_MATCH_DATA_SOURCE_KEYS = ['matchData', 'match_data', 'data'] as const;
+
+const parseEndgameKey = (value: unknown): Endgame2025 | undefined => {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  const normalized = value.trim().toUpperCase();
+
+  if ((normalized as Endgame2025) in ENDGAME_LABELS) {
+    return normalized as Endgame2025;
+  }
+
+  return undefined;
+};
+
+const extractScoutMatchData = (candidate: unknown): Partial<TeamMatchData> | undefined => {
+  if (!candidate || typeof candidate !== 'object') {
+    return undefined;
+  }
+
+  const record = candidate as Record<string, unknown>;
+  const result: Partial<TeamMatchData> = {};
+
+  MATCH_VALIDATION_NUMERIC_FIELDS.forEach((field) => {
+    const numericValue = parseNumericValue(record[field]);
+
+    if (numericValue !== undefined) {
+      result[field] = numericValue;
+    }
+  });
+
+  const endgameValue = parseEndgameKey(record.endgame);
+
+  if (endgameValue) {
+    result.endgame = endgameValue;
+  }
+
+  if (Object.keys(result).length > 0) {
+    return result;
+  }
+
+  for (const key of SCOUT_MATCH_DATA_SOURCE_KEYS) {
+    if (record[key] !== undefined) {
+      const nested = extractScoutMatchData(record[key]);
+
+      if (nested) {
+        return nested;
+      }
+    }
+  }
+
+  return undefined;
+};
+
+const getTeamMatchData = (candidate: unknown): Partial<TeamMatchData> | undefined =>
+  extractScoutMatchData(candidate);
+
 export function MatchValidationPage() {
   const params = useParams({ from: '/dataValidation/matches/$matchLevel/$matchNumber/$alliance' });
 
@@ -353,7 +411,7 @@ export function MatchValidationPage() {
       return getErrorNode();
     }
 
-    const data = state.query.data as Partial<TeamMatchData> | undefined;
+    const data = getTeamMatchData(state.query.data);
     const numericValue = data ? parseNumericValue(data[field]) : undefined;
 
     return numericValue ?? 0;
@@ -372,7 +430,7 @@ export function MatchValidationPage() {
       return getErrorNode();
     }
 
-    const data = state.query.data as Partial<TeamMatchData> | undefined;
+    const data = getTeamMatchData(state.query.data);
     const label = data ? formatEndgameValue(data.endgame) ?? ENDGAME_LABELS.NONE : ENDGAME_LABELS.NONE;
 
     return label;
