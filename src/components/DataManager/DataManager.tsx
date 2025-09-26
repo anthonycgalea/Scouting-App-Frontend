@@ -4,7 +4,7 @@ import {
   IconChevronUp,
   IconCircle,
   IconCircleCheck,
-  IconDotsCircleHorizontal,
+  IconCircleFilled,
   IconExclamationCircle,
   IconSearch,
 } from '@tabler/icons-react';
@@ -178,7 +178,7 @@ export function DataManager() {
 
   const buildValidationIcon = (status?: TeamMatchValidationStatus) => {
     if (isValidationLoading) {
-      return wrapIcon(<Loader size="sm" color="gray.5" />, 'Loading validation status');
+      return wrapIcon(<Loader size="md" color="gray-1" />, 'Loading validation status');
     }
 
     if (isValidationError) {
@@ -191,9 +191,9 @@ export function DataManager() {
     switch (status) {
       case 'PENDING':
         return wrapIcon(
-          <IconDotsCircleHorizontal
-            size={20}
-            color="var(--mantine-color-gray-5)"
+          <IconCircleFilled
+            size={15}
+            color="var(--mantine-color-yellow-5)"
             stroke={1.5}
           />,
           'Validation pending'
@@ -201,20 +201,20 @@ export function DataManager() {
       case 'NEEDS_REVIEW':
         return wrapIcon(
           <IconExclamationCircle
-            size={20}
-            color="var(--mantine-color-yellow-6)"
+            size={25}
+            color="var(--mantine-color-orange-6)"
             stroke={1.5}
           />,
           'Needs review'
         );
       case 'VALID':
         return wrapIcon(
-          <IconCircleCheck size={20} color="var(--mantine-color-green-6)" stroke={1.5} />,
+          <IconCircleCheck size={25} color="var(--mantine-color-green-6)" stroke={1.5} />,
           'Validated'
         );
       default:
         return wrapIcon(
-          <IconCircle size={20} color="var(--mantine-color-gray-5)" stroke={1.5} />,
+          <IconCircle size={15} color="var(--mantine-color-gray-5)" stroke={1.5} />,
           'Validation status missing'
         );
     }

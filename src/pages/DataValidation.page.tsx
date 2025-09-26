@@ -45,9 +45,9 @@ export function DataValidationPage() {
   }, [scheduleData, validationData]);
 
   return (
-    <Box p="md">
+    <Box p="sm">
       <Box pos="relative">
-        <Box pos="absolute" top={0} right={0} p={{ base: 'sm', sm: 'md' }}>
+        <Box pos="absolute" top={0} right={0} p={{ base: 'md', sm: 'sm' }}>
           <StatsRing data={statsData} />
         </Box>
         <DataManager />

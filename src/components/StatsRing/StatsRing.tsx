@@ -36,16 +36,16 @@ export function StatsRing({ data }: StatsRingProps) {
     const displayCurrent = stat.current.toLocaleString();
 
     return (
-      <Paper withBorder radius="md" p="xs" key={stat.label}>
-        <Group gap="md" align="center" wrap="nowrap">
+      <Paper withBorder radius="xs" p="xs" key={stat.label}>
+        <Group gap="sm" align="center" wrap="nowrap">
           <RingProgress
-            size={80}
+            size={60}
             roundCaps
             thickness={8}
             sections={[{ value: progress, color: stat.color }]}
             label={
               <Center>
-                <Text fw={700}>{`${progress}%`}</Text>
+                <Text fw={700} size="xs">{`${progress}%`}</Text>
               </Center>
             }
           />
@@ -54,7 +54,7 @@ export function StatsRing({ data }: StatsRingProps) {
             <Text c="dimmed" size="xs" tt="uppercase" fw={700}>
               {stat.label}
             </Text>
-            <Text fw={700} size="lg">
+            <Text fw={700} size="sm">
               {displayCurrent} / {displayTotal}
             </Text>
           </div>
@@ -64,7 +64,10 @@ export function StatsRing({ data }: StatsRingProps) {
   });
 
   return (
-    <SimpleGrid cols={{ base: 1, sm: Math.min(2, data.length), md: data.length }}>
+    <SimpleGrid
+      cols={{ base: 1, sm: Math.min(2, data.length), md: data.length }}
+      spacing="sm"
+    >
       {stats}
     </SimpleGrid>
   );
