@@ -51,7 +51,7 @@ export const scoutMatchQueryKey = ({ matchNumber, matchLevel, teamNumber }: Scou
 
 export const fetchScoutMatch = ({ matchNumber, matchLevel, teamNumber }: ScoutMatchRequest) =>
   apiFetch<ScoutMatchResponse>('scout/matches', {
-    method: 'GET',
+    method: 'POST',
     json: {
       matchNumber,
       matchLevel,
