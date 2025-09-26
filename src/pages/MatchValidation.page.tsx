@@ -1,6 +1,7 @@
+import { useMemo } from 'react';
 import { Alert, Box, Center, Loader, Stack, Table, Text, Title } from '@mantine/core';
-import { useQueries } from '@tanstack/react-query';
-import { useParams, useSearch } from '@tanstack/react-router';
+import { useQueries, useQuery } from '@tanstack/react-query';
+import { useParams } from '@tanstack/react-router';
 import {
   useAllianceMatchData,
   fetchScoutMatchData,
@@ -9,12 +10,9 @@ import {
   type TeamMatchData,
   type AllianceMatchIdentifierRequest,
   type Endgame2025,
+  fetchMatchSchedule,
 } from '@/api';
 import classes from './MatchValidation.module.css';
-
-interface MatchValidationSearch {
-  teams?: number[];
-}
 
 type NumericFieldKey =
   | 'al4c'
@@ -66,36 +64,71 @@ const ENDGAME_OPTIONS: { value: Endgame2025; label: string }[] = [
 const formatAllianceTitle = (alliance: string, matchLevel: string, matchNumber: number) =>
   `${alliance} Alliance - ${matchLevel}${matchNumber}`;
 
-const sanitizeTeams = (teams?: number[]): number[] => {
-  if (!Array.isArray(teams)) {
-    return [];
-  }
-
-  return teams
-    .map((team) => Number.parseInt(String(team), 10))
-    .filter((value) => Number.isFinite(value));
-};
-
 const formatEndgameLabel = (value: Endgame2025 | undefined) =>
   ENDGAME_OPTIONS.find((option) => option.value === value)?.label ?? '—';
 
+const matchLineupQueryKey = (matchLevel: string, matchNumber: number) =>
+  ['match-lineup', matchLevel, matchNumber] as const;
+
+interface MatchLineup {
+  RED: [number, number, number];
+  BLUE: [number, number, number];
+}
+
 export function MatchValidationPage() {
   const params = useParams({ from: '/dataValidation/matches/$matchLevel/$matchNumber/$alliance' });
-  const search = useSearch({
-    from: '/dataValidation/matches/$matchLevel/$matchNumber/$alliance',
-  }) as MatchValidationSearch;
 
   const matchLevelParam = params.matchLevel ?? '';
   const matchNumberParam = Number.parseInt(params.matchNumber ?? '', 10);
   const allianceParam = (params.alliance ?? '').toUpperCase();
-  const teams = sanitizeTeams(search.teams);
 
   const matchLevel = matchLevelParam.toUpperCase();
   const alliance = allianceParam === 'RED' || allianceParam === 'BLUE' ? allianceParam : undefined;
   const matchNumber = Number.isFinite(matchNumberParam) ? matchNumberParam : undefined;
+
+  const hasValidParams = Boolean(matchLevel && alliance && matchNumber !== undefined);
+
+  const lineupQuery = useQuery({
+    queryKey: matchLineupQueryKey(matchLevel, matchNumber ?? 0),
+    queryFn: async (): Promise<MatchLineup> => {
+      if (matchNumber === undefined) {
+        throw new Error('Invalid match number');
+      }
+
+      const schedule = await fetchMatchSchedule('2025micmp4');
+
+      const matchEntry = schedule.find(
+        (entry) =>
+          entry.match_level.toUpperCase() === matchLevel && entry.match_number === matchNumber
+      );
+
+      if (!matchEntry) {
+        throw new Error('Match not found');
+      }
+
+      return {
+        RED: [matchEntry.red1_id, matchEntry.red2_id, matchEntry.red3_id],
+        BLUE: [matchEntry.blue1_id, matchEntry.blue2_id, matchEntry.blue3_id],
+      } satisfies MatchLineup;
+    },
+    enabled: hasValidParams,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: 'always',
+  });
+
+  const teams = useMemo<number[]>(() => {
+    if (!alliance || !lineupQuery.data) {
+      return [];
+    }
+
+    const lineup = lineupQuery.data[alliance as keyof MatchLineup];
+    return [...lineup];
+  }, [alliance, lineupQuery.data]);
+
   const hasValidTeams = teams.length === 3;
 
-  const isRequestValid = Boolean(matchLevel && alliance && Number.isFinite(matchNumberParam) && hasValidTeams);
+  const isRequestReady = hasValidParams && hasValidTeams;
 
   const teamQueries = useQueries({
     queries: teams.map((teamNumber) => {
@@ -108,7 +141,7 @@ export function MatchValidationPage() {
       return {
         queryKey: scoutMatchQueryKey(request),
         queryFn: () => fetchScoutMatchData(request),
-        enabled: isRequestValid,
+        enabled: isRequestReady,
         staleTime: 0,
         gcTime: 0,
         refetchOnMount: 'always' as const,
@@ -122,7 +155,7 @@ export function MatchValidationPage() {
     alliance: alliance ?? 'RED',
   };
 
-  const allianceQuery = useAllianceMatchData(allianceRequest, Boolean(alliance && matchNumber && isRequestValid));
+  const allianceQuery = useAllianceMatchData(allianceRequest, hasValidParams);
   const allianceMatchData = allianceQuery.data;
   const allianceQueryLoading = allianceQuery.isLoading;
   const allianceQueryError = allianceQuery.isError;
@@ -134,7 +167,7 @@ export function MatchValidationPage() {
     teams.map((teamNumber, index) => [teamNumber, teamQueries[index]?.data])
   );
 
-  const hasLoadedTeams = teams.every((teamNumber) => Boolean(teamData[teamNumber]));
+  const hasLoadedTeams = hasValidTeams && teams.every((teamNumber) => Boolean(teamData[teamNumber]));
 
   const renderAllianceValue = (field: FieldConfig) => {
     if (field.type === 'select') {
@@ -160,7 +193,7 @@ export function MatchValidationPage() {
     return <Text>{baseValue}</Text>;
   };
 
-  if (!isRequestValid) {
+  if (!hasValidParams) {
     return (
       <Box p="md">
         <Alert color="red" title="Invalid validation request">
@@ -170,7 +203,12 @@ export function MatchValidationPage() {
     );
   }
 
-  if (isAnyTeamError || allianceQueryError) {
+  if (
+    lineupQuery.isError ||
+    (lineupQuery.isSuccess && !hasValidTeams) ||
+    isAnyTeamError ||
+    allianceQueryError
+  ) {
     return (
       <Box p="md">
         <Alert color="red" title="Unable to load match data">
@@ -180,7 +218,7 @@ export function MatchValidationPage() {
     );
   }
 
-  if (isAnyTeamLoading || allianceQueryLoading || !hasLoadedTeams) {
+  if (lineupQuery.isLoading || isAnyTeamLoading || allianceQueryLoading || !hasLoadedTeams) {
     return (
       <Center mih={240}>
         <Loader />
