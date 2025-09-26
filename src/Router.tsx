@@ -8,7 +8,7 @@ import {
 } from '@tanstack/react-router';
 import { MantineProvider } from '@mantine/core';
 import { Notifications } from '@mantine/notifications';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { NavbarNested } from './components/Navbar/NavbarNested';
 import { HomePage } from './pages/Home.page';
 import { DashboardPage } from './pages/Dashboard.page';
@@ -31,27 +31,49 @@ const rootRoute = createRootRoute({
     const { user, loading } = useAuth();
     const navigate = useNavigate();
     const location = useRouterState({ select: (state) => state.location });
+    const [hasRedirectedToHome, setHasRedirectedToHome] = useState(true);
 
     useEffect(() => {
       if (loading) {
         return;
       }
 
-      if (!user && location.pathname !== '/') {
-        navigate({ to: '/', replace: true });
+      if (user) {
+        if (hasRedirectedToHome) {
+          setHasRedirectedToHome(false);
+        }
+
+        if (location.pathname === '/') {
+          navigate({ to: '/dashboard', replace: true });
+        }
+
         return;
       }
 
-      if (user && location.pathname === '/') {
-        navigate({ to: '/dashboard', replace: true });
+      if (!hasRedirectedToHome) {
+        setHasRedirectedToHome(true);
       }
-    }, [loading, user, location.pathname, navigate]);
+
+      if (location.pathname !== '/') {
+        navigate({ to: '/', replace: true });
+      }
+
+    }, [
+      loading,
+      user,
+      location.pathname,
+      navigate,
+      hasRedirectedToHome,
+    ]);
+
+    const shouldShowNavbar =
+      !loading && !( !user && location.pathname === '/' && hasRedirectedToHome );
 
     return (
       <MantineProvider theme={theme}>
         <Notifications position="top-right" />
         <div style={{ display: 'flex', height: '100vh' }}>
-          {!loading && location.pathname !== '/' ? <NavbarNested /> : null}
+          {shouldShowNavbar ? <NavbarNested /> : null}
           <div style={{ flex: 1, overflow: 'auto' }}>
             <Outlet />
           </div>
