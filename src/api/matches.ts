@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { apiFetch } from './httpClient';
+import { apiFetch, apiFetchResponse } from './httpClient';
 
 export interface MatchScheduleEntry {
   event_key: string;
@@ -17,6 +17,14 @@ export const matchScheduleQueryKey = (eventCode: string) => ['match-schedule', e
 
 export const fetchMatchSchedule = (_eventCode: string) =>
   apiFetch<MatchScheduleEntry[]>('event/matches');
+
+export type MatchExportType = 'csv' | 'json' | 'xls';
+
+export const exportMatches = (fileType: MatchExportType) =>
+  apiFetchResponse('event/matches/export', {
+    method: 'POST',
+    json: { file_type: fileType },
+  });
 
 export const useMatchSchedule = (eventCode = '2025micmp4') =>
   useQuery({

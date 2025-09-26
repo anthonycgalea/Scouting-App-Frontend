@@ -7,6 +7,7 @@ import {
   useRouterState,
 } from '@tanstack/react-router';
 import { MantineProvider } from '@mantine/core';
+import { Notifications } from '@mantine/notifications';
 import { useEffect } from 'react';
 import { NavbarNested } from './components/Navbar/NavbarNested';
 import { HomePage } from './pages/Home.page';
@@ -38,6 +39,7 @@ const rootRoute = createRootRoute({
 
     return (
       <MantineProvider theme={theme}>
+        <Notifications position="top-right" />
         <div style={{ display: 'flex', height: '100vh' }}>
           {!loading && user ? <NavbarNested /> : null}
           <div style={{ flex: 1, overflow: 'auto' }}>

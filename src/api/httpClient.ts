@@ -72,12 +72,18 @@ const handleError = async (response: Response): Promise<never> => {
   });
 };
 
-export const apiFetch = async <TResponse = unknown>(path: string, options?: RequestOptions): Promise<TResponse> => {
+export const apiFetchResponse = async (path: string, options?: RequestOptions) => {
   const response = await fetch(createApiUrl(path), buildRequestInit(options));
 
   if (!response.ok) {
     await handleError(response);
   }
+
+  return response;
+};
+
+export const apiFetch = async <TResponse = unknown>(path: string, options?: RequestOptions): Promise<TResponse> => {
+  const response = await apiFetchResponse(path, options);
 
   return (await parseResponse(response)) as TResponse;
 };
