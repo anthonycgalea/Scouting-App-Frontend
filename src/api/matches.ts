@@ -78,17 +78,12 @@ const buildMatchRequestPayload = (request: MatchIdentifierRequest) => ({
   matchNumber: request.matchNumber,
   matchLevel: request.matchLevel,
   teamNumber: request.teamNumber,
-  match_number: request.matchNumber,
-  match_level: request.matchLevel,
-  team_number: request.teamNumber,
 });
 
 const buildAllianceRequestPayload = (request: AllianceMatchIdentifierRequest) => ({
-  ...request,
   matchNumber: request.matchNumber,
   matchLevel: request.matchLevel,
-  match_number: request.matchNumber,
-  match_level: request.matchLevel,
+  alliance: request.alliance,
 });
 
 export const scoutMatchQueryKey = (request: MatchIdentifierRequest) =>
@@ -96,7 +91,7 @@ export const scoutMatchQueryKey = (request: MatchIdentifierRequest) =>
 
 export const fetchScoutMatchData = (request: MatchIdentifierRequest) =>
   apiFetch<TeamMatchData>('scout/matches', {
-    method: 'POST',
+    method: 'GET',
     json: buildMatchRequestPayload(request),
   });
 
@@ -128,7 +123,7 @@ export const allianceMatchQueryKey = (request: AllianceMatchIdentifierRequest) =
 
 export const fetchAllianceMatchData = (request: AllianceMatchIdentifierRequest) =>
   apiFetch<AllianceMatchData>('event/tbaMatchData', {
-    method: 'POST',
+    method: 'GET',
     json: buildAllianceRequestPayload(request),
   });
 
