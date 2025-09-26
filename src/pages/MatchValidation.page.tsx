@@ -92,6 +92,19 @@ export function MatchValidationPage() {
     return [matchEntry.blue1_id, matchEntry.blue2_id, matchEntry.blue3_id];
   }, [allianceParam, hasAlliance, matchEntry]);
 
+  const tbaMatchDataRequestBody = useMemo(() => {
+    if (!matchEntry || allianceTeams.length === 0) {
+      return undefined;
+    }
+
+    return {
+      matchNumber: matchEntry.match_number,
+      matchLevel: matchEntry.match_level,
+      teamNumber: allianceTeams[0],
+      alliance: allianceParam,
+    };
+  }, [allianceParam, allianceTeams, matchEntry]);
+
   if (!hasMatchLevel || !hasMatchNumber || !hasAlliance) {
     return (
       <Box p="md">
@@ -138,6 +151,29 @@ export function MatchValidationPage() {
           <Text>Match Number: {matchNumberParam}</Text>
           <Text>Alliance: {formatAlliance(allianceParam)}</Text>
           <Text>Teams: {allianceTeams.join(', ')}</Text>
+        </Stack>
+
+        <Stack gap="sm">
+          <Title order={3}>TBA Match Data Request</Title>
+          {tbaMatchDataRequestBody ? (
+            <Paper withBorder p="md" radius="md">
+              <Stack gap="xs">
+                <Text fw={500}>POST /event/tbaMatchData</Text>
+                <Text c="dimmed" fz="sm">
+                  Request Body
+                </Text>
+                <Text
+                  component="pre"
+                  fz="xs"
+                  style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0 }}
+                >
+                  {JSON.stringify(tbaMatchDataRequestBody, null, 2)}
+                </Text>
+              </Stack>
+            </Paper>
+          ) : (
+            <Text c="dimmed">No teams were found for this alliance.</Text>
+          )}
         </Stack>
 
         <Stack gap="sm">
