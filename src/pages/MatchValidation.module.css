@@ -1,15 +1,3 @@
-.matchRowMatch {
-  background-color: var(--mantine-color-green-1);
-}
-
 .metricCell {
   font-weight: 600;
-}
-
-.overrideCell {
-  text-align: center;
-}
-
-.overrideNote {
-  max-width: 480px;
 }
