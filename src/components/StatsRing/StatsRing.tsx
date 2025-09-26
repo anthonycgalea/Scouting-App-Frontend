@@ -1,37 +1,51 @@
-import { IconArrowDownRight, IconArrowUpRight } from '@tabler/icons-react';
 import { Center, Group, Paper, RingProgress, SimpleGrid, Text } from '@mantine/core';
 
-const icons = {
-  up: IconArrowUpRight,
-  down: IconArrowDownRight,
+export interface StatsRingDataItem {
+  label: string;
+  current: number;
+  total: number;
+  color: string;
+}
+
+interface StatsRingProps {
+  data: StatsRingDataItem[];
+}
+
+const formatPercentage = (current: number, total: number) => {
+  if (total <= 0) {
+    return 0;
+  }
+
+  const value = (current / total) * 100;
+
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+
+  return Math.min(100, Math.max(0, Math.round(value)));
 };
 
-const data = [
-  { label: 'Page views', stats: '456,578', progress: 65, color: 'teal', icon: 'up' },
-  { label: 'New users', stats: '2,550', progress: 72, color: 'blue', icon: 'up' },
-  {
-    label: 'Orders',
-    stats: '4,735',
-    progress: 52,
-    color: 'red',
-    icon: 'down',
-  },
-] as const;
+export function StatsRing({ data }: StatsRingProps) {
+  if (data.length === 0) {
+    return null;
+  }
 
-export function StatsRing() {
   const stats = data.map((stat) => {
-    const Icon = icons[stat.icon];
+    const progress = formatPercentage(stat.current, stat.total);
+    const displayTotal = stat.total.toLocaleString();
+    const displayCurrent = stat.current.toLocaleString();
+
     return (
       <Paper withBorder radius="md" p="xs" key={stat.label}>
-        <Group>
+        <Group gap="md" align="center" wrap="nowrap">
           <RingProgress
             size={80}
             roundCaps
             thickness={8}
-            sections={[{ value: stat.progress, color: stat.color }]}
+            sections={[{ value: progress, color: stat.color }]}
             label={
               <Center>
-                <Icon size={20} stroke={1.5} />
+                <Text fw={700}>{`${progress}%`}</Text>
               </Center>
             }
           />
@@ -40,8 +54,8 @@ export function StatsRing() {
             <Text c="dimmed" size="xs" tt="uppercase" fw={700}>
               {stat.label}
             </Text>
-            <Text fw={700} size="xl">
-              {stat.stats}
+            <Text fw={700} size="lg">
+              {displayCurrent} / {displayTotal}
             </Text>
           </div>
         </Group>
@@ -49,5 +63,9 @@ export function StatsRing() {
     );
   });
 
-  return <SimpleGrid cols={{ base: 1, sm: 3 }}>{stats}</SimpleGrid>;
+  return (
+    <SimpleGrid cols={{ base: 1, sm: Math.min(2, data.length), md: data.length }}>
+      {stats}
+    </SimpleGrid>
+  );
 }
