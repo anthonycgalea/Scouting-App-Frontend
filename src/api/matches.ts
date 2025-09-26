@@ -38,6 +38,27 @@ export const teamMatchValidationQueryKey = () => ['team-match-validation'] as co
 export const fetchTeamMatchValidation = () =>
   apiFetch<TeamMatchValidationEntry[]>('scout/dataValidation');
 
+export interface ScoutMatchRequest {
+  matchNumber: number;
+  matchLevel: string;
+  teamNumber: number;
+}
+
+export type ScoutMatchResponse = Record<string, unknown>;
+
+export const scoutMatchQueryKey = ({ matchNumber, matchLevel, teamNumber }: ScoutMatchRequest) =>
+  ['scout-match', matchLevel, matchNumber, teamNumber] as const;
+
+export const fetchScoutMatch = ({ matchNumber, matchLevel, teamNumber }: ScoutMatchRequest) =>
+  apiFetch<ScoutMatchResponse>('scout/matches', {
+    method: 'GET',
+    json: {
+      matchNumber,
+      matchLevel,
+      teamNumber,
+    },
+  });
+
 export type MatchExportType = 'csv' | 'json' | 'xls';
 
 export const exportMatches = (fileType: MatchExportType) =>
@@ -56,6 +77,16 @@ export const useTeamMatchValidation = () =>
   useQuery({
     queryKey: teamMatchValidationQueryKey(),
     queryFn: fetchTeamMatchValidation,
+  });
+
+export const useScoutMatch = (params: ScoutMatchRequest) =>
+  useQuery({
+    queryKey: scoutMatchQueryKey(params),
+    queryFn: () => fetchScoutMatch(params),
+    enabled:
+      Number.isFinite(params.matchNumber) &&
+      Number.isFinite(params.teamNumber) &&
+      Boolean(params.matchLevel),
   });
 
 export const syncEventMatches = () =>

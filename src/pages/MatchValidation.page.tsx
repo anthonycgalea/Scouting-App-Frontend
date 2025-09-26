@@ -1,7 +1,54 @@
-import { useMemo } from 'react';
-import { Box, Loader, Stack, Text, Title } from '@mantine/core';
+import { type ReactNode, useMemo } from 'react';
+import { Box, Loader, Paper, Stack, Text, Title } from '@mantine/core';
 import { useParams } from '@tanstack/react-router';
-import { useMatchSchedule } from '@/api';
+import { useMatchSchedule, useScoutMatch } from '@/api';
+
+interface TeamMatchDataCardProps {
+  matchNumber: number;
+  matchLevel: string;
+  teamNumber: number;
+}
+
+function TeamMatchDataCard({ matchNumber, matchLevel, teamNumber }: TeamMatchDataCardProps) {
+  const {
+    data: matchData,
+    isLoading,
+    isError,
+  } = useScoutMatch({ matchNumber, matchLevel, teamNumber });
+
+  let content: ReactNode;
+
+  if (isLoading) {
+    content = <Loader size="sm" />;
+  } else if (isError) {
+    content = (
+      <Text c="red.6" fz="sm">
+        Unable to load scouting data for this team.
+      </Text>
+    );
+  } else {
+    const jsonText = JSON.stringify(matchData ?? {}, null, 2);
+
+    content = (
+      <Text
+        component="pre"
+        fz="xs"
+        style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0 }}
+      >
+        {jsonText}
+      </Text>
+    );
+  }
+
+  return (
+    <Paper withBorder p="md" radius="md">
+      <Stack gap="xs">
+        <Text fw={500}>Team {teamNumber}</Text>
+        {content}
+      </Stack>
+    </Paper>
+  );
+}
 
 const formatMatchLevel = (level: string) => level.toUpperCase();
 const formatAlliance = (value: string) => value.toUpperCase();
@@ -84,12 +131,30 @@ export function MatchValidationPage() {
 
   return (
     <Box p="md">
-      <Stack gap="sm">
-        <Title order={2}>Match Validation</Title>
-        <Text>Match Level: {formatMatchLevel(matchLevelParam)}</Text>
-        <Text>Match Number: {matchNumberParam}</Text>
-        <Text>Alliance: {formatAlliance(allianceParam)}</Text>
-        <Text>Teams: {allianceTeams.join(', ')}</Text>
+      <Stack gap="lg">
+        <Stack gap="xs">
+          <Title order={2}>Match Validation</Title>
+          <Text>Match Level: {formatMatchLevel(matchLevelParam)}</Text>
+          <Text>Match Number: {matchNumberParam}</Text>
+          <Text>Alliance: {formatAlliance(allianceParam)}</Text>
+          <Text>Teams: {allianceTeams.join(', ')}</Text>
+        </Stack>
+
+        <Stack gap="sm">
+          <Title order={3}>Scouting Data</Title>
+          {allianceTeams.length === 0 ? (
+            <Text c="dimmed">No teams were found for this alliance.</Text>
+          ) : (
+            allianceTeams.map((teamNumber) => (
+              <TeamMatchDataCard
+                key={teamNumber}
+                matchNumber={matchEntry.match_number}
+                matchLevel={matchEntry.match_level}
+                teamNumber={teamNumber}
+              />
+            ))
+          )}
+        </Stack>
       </Stack>
     </Box>
   );
