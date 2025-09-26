@@ -1,6 +1,6 @@
 import { type ReactNode, useMemo, useState } from 'react';
 import cx from 'clsx';
-import { Alert, Center, Loader, ScrollArea, Table, Text } from '@mantine/core';
+import { Alert, Center, Loader, ScrollArea, Table } from '@mantine/core';
 import { Endgame2025, TeamMatchData, useTeamMatchData } from '@/api';
 import classes from './TeamMatchTable.module.css';
 
