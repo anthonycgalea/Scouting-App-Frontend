@@ -39,13 +39,13 @@ export function StatsRing({ data }: StatsRingProps) {
       <Paper withBorder radius="xs" p="xs" key={stat.label}>
         <Group gap="sm" align="center" wrap="nowrap">
           <RingProgress
-            size={60}
+            size={50}
             roundCaps
-            thickness={8}
+            thickness={5}
             sections={[{ value: progress, color: stat.color }]}
             label={
               <Center>
-                <Text fw={700} size="xs">{`${progress}%`}</Text>
+                <Text fw={600} size="xs">{`${progress}%`}</Text>
               </Center>
             }
           />
