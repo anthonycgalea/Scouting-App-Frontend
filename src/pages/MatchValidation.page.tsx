@@ -109,6 +109,9 @@ export function MatchValidationPage() {
         queryKey: scoutMatchQueryKey(request),
         queryFn: () => fetchScoutMatchData(request),
         enabled: isRequestValid,
+        staleTime: 0,
+        gcTime: 0,
+        refetchOnMount: 'always' as const,
       };
     }),
   });
