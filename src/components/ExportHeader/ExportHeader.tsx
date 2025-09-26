@@ -3,6 +3,7 @@ import { ActionIcon, Box, Group, Loader, Skeleton } from '@mantine/core';
 import { IconRefresh } from '@tabler/icons-react';
 import { DownloadAsButton } from './DownloadAsButton';
 import { StatsRing, type StatsRingDataItem } from '../StatsRing/StatsRing';
+import classes from './ExportHeader.module.css';
 
 const EventHeader = lazy(async () => ({
   default: (await import('@/components/EventHeader/EventHeader')).EventHeader,
@@ -23,12 +24,7 @@ export function ExportHeader({
   const hasStats = statsData.length > 0;
 
   return (
-    <Group
-      justify={{ base: 'center', md: 'space-between' }}
-      align="flex-start"
-      gap="md"
-      wrap="wrap"
-    >
+    <Group className={classes.container} align="flex-start" gap="md" wrap="wrap">
       <Group gap="sm" align="center" justify="center" wrap="wrap">
         <Suspense
           fallback={

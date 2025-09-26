@@ -19,6 +19,7 @@ import { TeamMembersPage } from './pages/TeamMembers.page';
 import { TeamDirectoryPage } from './pages/TeamDirectory.page';
 import { TeamDetailPage } from './pages/TeamDetailPage.page';
 import { DataValidationPage } from './pages/DataValidation.page';
+import { MatchValidationPage } from './pages/MatchValidation.page';
 import { DataImportPage } from './pages/DataImport.page';
 import { SuperScoutPage } from './pages/SuperScout.page';
 import { OrganizationEventSelectPage } from './pages/OrganizationEventSelect.page';
@@ -120,6 +121,31 @@ const dataValidationRoute = createRoute({
   component: DataValidationPage,
 });
 
+const matchValidationRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/dataValidation/matches/$matchLevel/$matchNumber/$alliance',
+  component: MatchValidationPage,
+  validateSearch: (search: Record<string, unknown>) => {
+    const rawTeams = search.teams;
+
+    let teams: number[] | undefined;
+    if (Array.isArray(rawTeams)) {
+      const parsed = rawTeams
+        .map((team) => Number.parseInt(String(team), 10))
+        .filter((value) => Number.isFinite(value));
+      teams = parsed.length > 0 ? parsed : undefined;
+    } else if (typeof rawTeams === 'string') {
+      const parsed = rawTeams
+        .split(',')
+        .map((value) => Number.parseInt(value, 10))
+        .filter((value) => Number.isFinite(value));
+      teams = parsed.length > 0 ? parsed : undefined;
+    }
+
+    return { teams };
+  },
+});
+
 const dataImportRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/dataImport',
@@ -169,7 +195,7 @@ const routeTree = rootRoute.addChildren([
   matchScheduleRoute.addChildren([]),
   teamDirectoryRoute.addChildren([]),
   teamDetailRoute.addChildren([]),
-  dataValidationRoute.addChildren([]),
+  dataValidationRoute.addChildren([matchValidationRoute]),
   dataImportRoute.addChildren([]),
   superScoutRoute.addChildren([]),
   settingsRoute.addChildren([]),

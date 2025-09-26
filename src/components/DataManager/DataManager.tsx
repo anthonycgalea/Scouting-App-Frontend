@@ -9,6 +9,7 @@ import {
 } from '@tabler/icons-react';
 import {
   Box,
+  Button,
   Center,
   Group,
   Loader,
@@ -19,6 +20,7 @@ import {
   TextInput,
   UnstyledButton,
 } from '@mantine/core';
+import { useNavigate } from '@tanstack/react-router';
 import { DataManagerButtonMenu } from './DataManagerButtonMenu';
 import { ExportHeader } from '../ExportHeader/ExportHeader';
 import classes from './DataManager.module.css';
@@ -119,6 +121,7 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
     isLoading: isValidationLoading,
     isError: isValidationError,
   } = useTeamMatchValidation();
+  const navigate = useNavigate();
   const matchesBySection = useMemo(
     () => groupMatchesBySection(scheduleData),
     [scheduleData]
@@ -301,6 +304,36 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
     setTeamSearch(value);
   };
 
+  const renderAllianceButton = (
+    matchNumber: number,
+    matchLevel: string,
+    alliance: 'RED' | 'BLUE',
+    teamNumbers: number[],
+    className?: string
+  ) => (
+    <Table.Td className={className}>
+      <Button
+        onClick={() =>
+          navigate({
+            to: '/dataValidation/matches/$matchLevel/$matchNumber/$alliance',
+            params: () => ({
+              matchLevel: String(matchLevel ?? ''),
+              matchNumber: String(matchNumber),
+              alliance: alliance.toLowerCase(),
+            }),
+            search: () => ({
+              teams: teamNumbers,
+            }),
+          })
+        }
+        size="xs"
+        variant="light"
+      >
+        {alliance === 'RED' ? 'Validate Red' : 'Validate Blue'}
+      </Button>
+    </Table.Td>
+  );
+
   const rows = sortedData.map((row) => (
     <Table.Tr key={row.matchNumber}>
       <Table.Td>
@@ -309,13 +342,27 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
       {renderTeamCell(row.matchNumber, row.matchLevel, row.red1, classes.redCell)}
       {renderTeamCell(row.matchNumber, row.matchLevel, row.red2, classes.redCell)}
       {renderTeamCell(row.matchNumber, row.matchLevel, row.red3, classes.redCell)}
+      {renderAllianceButton(
+        row.matchNumber,
+        row.matchLevel,
+        'RED',
+        [row.red1, row.red2, row.red3],
+        classes.redCell
+      )}
       {renderTeamCell(row.matchNumber, row.matchLevel, row.blue1, classes.blueCell)}
       {renderTeamCell(row.matchNumber, row.matchLevel, row.blue2, classes.blueCell)}
       {renderTeamCell(row.matchNumber, row.matchLevel, row.blue3, classes.blueCell)}
+      {renderAllianceButton(
+        row.matchNumber,
+        row.matchLevel,
+        'BLUE',
+        [row.blue1, row.blue2, row.blue3],
+        classes.blueCell
+      )}
     </Table.Tr>
   ));
 
-  const totalColumns = 1 + teamNumberKeys.length;
+  const totalColumns = 1 + teamNumberKeys.length + 2;
 
   let tableBody: ReactNode;
   if (isLoading) {
@@ -409,9 +456,11 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
                 <Table.Th>Red 1</Table.Th>
                 <Table.Th>Red 2</Table.Th>
                 <Table.Th>Red 3</Table.Th>
+                <Table.Th>Validate Red</Table.Th>
                 <Table.Th>Blue 1</Table.Th>
                 <Table.Th>Blue 2</Table.Th>
                 <Table.Th>Blue 3</Table.Th>
+                <Table.Th>Validate Blue</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>{tableBody}</Table.Tbody>

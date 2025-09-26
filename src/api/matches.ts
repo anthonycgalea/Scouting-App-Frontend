@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch, apiFetchResponse } from './httpClient';
+import type { BaseTeamMatchData, TeamMatchData } from './teams';
 
 export interface MatchScheduleEntry {
   event_key: string;
@@ -62,3 +63,113 @@ export const syncEventMatches = () =>
 
 export const syncScoutingData = () =>
   apiFetch<void>('scout/data/tbaUpdate', { method: 'POST' });
+
+export interface MatchIdentifierRequest {
+  matchNumber: number;
+  matchLevel: string;
+  teamNumber: number;
+}
+
+export interface AllianceMatchIdentifierRequest extends Omit<MatchIdentifierRequest, 'teamNumber'> {
+  alliance: 'RED' | 'BLUE';
+}
+
+const buildMatchRequestPayload = (request: MatchIdentifierRequest) => ({
+  matchNumber: request.matchNumber,
+  matchLevel: request.matchLevel,
+  teamNumber: request.teamNumber,
+  match_number: request.matchNumber,
+  match_level: request.matchLevel,
+  team_number: request.teamNumber,
+});
+
+const buildAllianceRequestPayload = (request: AllianceMatchIdentifierRequest) => ({
+  ...request,
+  matchNumber: request.matchNumber,
+  matchLevel: request.matchLevel,
+  match_number: request.matchNumber,
+  match_level: request.matchLevel,
+});
+
+export const scoutMatchQueryKey = (request: MatchIdentifierRequest) =>
+  ['scout-match', request.matchLevel, request.matchNumber, request.teamNumber] as const;
+
+export const fetchScoutMatchData = (request: MatchIdentifierRequest) =>
+  apiFetch<TeamMatchData>('scout/matches', {
+    method: 'POST',
+    json: buildMatchRequestPayload(request),
+  });
+
+export const useScoutMatchData = (request: MatchIdentifierRequest, enabled = true) =>
+  useQuery({
+    queryKey: scoutMatchQueryKey(request),
+    queryFn: () => fetchScoutMatchData(request),
+    enabled,
+  });
+
+export interface AllianceMatchData extends BaseTeamMatchData {
+  alliance: 'RED' | 'BLUE';
+  al4c: number;
+  al3c: number;
+  al2c: number;
+  al1c: number;
+  tl4c: number;
+  tl3c: number;
+  tl2c: number;
+  tl1c: number;
+  aNet: number;
+  tNet: number;
+  aProcessor: number;
+  tProcessor: number;
+}
+
+export const allianceMatchQueryKey = (request: AllianceMatchIdentifierRequest) =>
+  ['tba-match-data', request.matchLevel, request.matchNumber, request.alliance] as const;
+
+export const fetchAllianceMatchData = (request: AllianceMatchIdentifierRequest) =>
+  apiFetch<AllianceMatchData>('event/tbaMatchData', {
+    method: 'POST',
+    json: buildAllianceRequestPayload(request),
+  });
+
+export const useAllianceMatchData = (
+  request: AllianceMatchIdentifierRequest,
+  enabled = true
+) =>
+  useQuery({
+    queryKey: allianceMatchQueryKey(request),
+    queryFn: () => fetchAllianceMatchData(request),
+    enabled,
+  });
+
+export const updateMatchDataBatch = (matchData: TeamMatchData[]) =>
+  apiFetch<void>('scout/edit/batch', {
+    method: 'PUT',
+    json: { matchData },
+  });
+
+export interface ValidationStatusUpdate {
+  matchNumber: number;
+  matchLevel: string;
+  teamNumber: number;
+  validationStatus: TeamMatchValidationStatus;
+  notes?: string | null;
+}
+
+const buildValidationPayload = (update: ValidationStatusUpdate) => ({
+  matchNumber: update.matchNumber,
+  matchLevel: update.matchLevel,
+  teamNumber: update.teamNumber,
+  validationStatus: update.validationStatus,
+  notes: update.notes,
+  match_number: update.matchNumber,
+  match_level: update.matchLevel,
+  team_number: update.teamNumber,
+  validation_status: update.validationStatus,
+});
+
+export const updateValidationStatuses = (updates: ValidationStatusUpdate[]) =>
+  apiFetch<void>('scout/dataValidation', {
+    method: 'PATCH',
+    json: { matches: updates.map((update) => buildValidationPayload(update)) },
+  });
