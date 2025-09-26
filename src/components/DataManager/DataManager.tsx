@@ -1,10 +1,32 @@
-import { type ReactNode, useMemo, useState } from 'react';
-import { IconChevronDown, IconChevronUp, IconSearch, IconCheck, IconCircleX  } from '@tabler/icons-react';
-import { Box, Center, Group, Loader, ScrollArea, Stack, Table, Text, TextInput, UnstyledButton } from '@mantine/core';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import {
+  IconChevronDown,
+  IconChevronUp,
+  IconSearch,
+  IconCheck,
+  IconCircleX,
+} from '@tabler/icons-react';
+import {
+  Box,
+  Center,
+  Group,
+  Loader,
+  ScrollArea,
+  Stack,
+  Table,
+  Text,
+  TextInput,
+  UnstyledButton,
+} from '@mantine/core';
 import { DataManagerButtonMenu } from './DataManagerButtonMenu';
 import { ExportHeader } from '../ExportHeader/ExportHeader';
 import classes from './DataManager.module.css';
-import { useMatchSchedule } from '@/api';
+import { useMatchSchedule, type MatchScheduleEntry } from '@/api';
+import {
+  MatchScheduleToggle,
+  type MatchScheduleSection,
+} from '../MatchSchedule/MatchScheduleToggle';
+import { SECTION_DEFINITIONS, groupMatchesBySection } from '../MatchSchedule/matchSections';
 
 interface RowData {
   matchNumber: number;
@@ -78,13 +100,44 @@ function sortData(
 
 export function DataManager() {
   const { data: scheduleData = [], isLoading, isError } = useMatchSchedule();
+  const matchesBySection = useMemo(
+    () => groupMatchesBySection(scheduleData),
+    [scheduleData]
+  );
+  const availableSections = useMemo(
+    () =>
+      SECTION_DEFINITIONS.filter(
+        (section) => matchesBySection[section.value].length > 0
+      ),
+    [matchesBySection]
+  );
+  const [activeSection, setActiveSection] = useState<MatchScheduleSection | undefined>();
   const [matchSearch, setMatchSearch] = useState('');
   const [teamSearch, setTeamSearch] = useState('');
   const [reverseSortDirection, setReverseSortDirection] = useState(false);
 
+  useEffect(() => {
+    if (availableSections.length === 0) {
+      setActiveSection(undefined);
+      return;
+    }
+
+    setActiveSection((current) => {
+      if (current && availableSections.some((section) => section.value === current)) {
+        return current;
+      }
+
+      return availableSections[0]?.value;
+    });
+  }, [availableSections]);
+
+  const activeMatches: MatchScheduleEntry[] = activeSection
+    ? matchesBySection[activeSection]
+    : [];
+
   const schedule = useMemo<RowData[]>(
     () =>
-      scheduleData.map((match) => ({
+      activeMatches.map((match) => ({
         matchNumber: match.match_number,
         red1: match.red1_id,
         red2: match.red2_id,
@@ -94,7 +147,7 @@ export function DataManager() {
         blue3: match.blue3_id,
         fullyScouted: false,
       })),
-    [scheduleData]
+    [activeMatches]
   );
 
   const sortedData = useMemo(
@@ -128,9 +181,11 @@ export function DataManager() {
       <Table.Td className={classes.blueCell}>{row.blue2}</Table.Td>
       <Table.Td className={classes.blueCell}>{row.blue3}</Table.Td>
       <Table.Td>
-        { row.fullyScouted ? 
-        <IconCheck size={30}/> :
-        <IconCircleX size={30}/>}
+        {row.fullyScouted ? (
+          <IconCheck size={30} />
+        ) : (
+          <IconCircleX size={30} />
+        )}
       </Table.Td>
     </Table.Tr>
   ));
@@ -160,7 +215,7 @@ export function DataManager() {
         </Table.Td>
       </Table.Tr>
     );
-  } else if (schedule.length === 0) {
+  } else if (!activeSection || availableSections.length === 0) {
     tableBody = (
       <Table.Tr>
         <Table.Td colSpan={totalColumns}>
@@ -191,6 +246,13 @@ export function DataManager() {
       </Box>
       <ScrollArea>
         <Stack gap="md">
+          {activeSection && availableSections.length > 0 ? (
+            <MatchScheduleToggle
+              value={activeSection}
+              options={availableSections.map(({ label, value }) => ({ label, value }))}
+              onChange={(section) => setActiveSection(section)}
+            />
+          ) : null}
           <Group gap="md" grow>
             <TextInput
               placeholder="Filter by match number"
