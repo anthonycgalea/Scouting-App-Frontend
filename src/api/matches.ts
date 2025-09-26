@@ -59,3 +59,6 @@ export const useTeamMatchValidation = () =>
 
 export const syncEventMatches = () =>
   apiFetch<void>('organization/event/matches/sync', { method: 'POST' });
+
+export const syncScoutingData = () =>
+  apiFetch<void>('scout/data/tbaUpdate', { method: 'POST' });
