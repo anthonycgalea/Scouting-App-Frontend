@@ -114,3 +114,45 @@ export const useUpdateOrganizationEvents = () => {
     },
   });
 };
+
+export interface EventTbaMatchDataRequest {
+  matchNumber: number;
+  matchLevel: string;
+  teamNumber: number;
+  alliance: 'RED' | 'BLUE';
+}
+
+export type EventTbaMatchDataResponse = Record<string, unknown>;
+
+export const eventTbaMatchDataQueryKey = ({
+  matchNumber,
+  matchLevel,
+  teamNumber,
+  alliance,
+}: EventTbaMatchDataRequest) =>
+  ['event-tbaMatchData', matchLevel, matchNumber, teamNumber, alliance] as const;
+
+export const fetchEventTbaMatchData = (body: EventTbaMatchDataRequest) =>
+  apiFetch<EventTbaMatchDataResponse>('event/tbaMatchData', {
+    method: 'POST',
+    json: body,
+  });
+
+export const useEventTbaMatchData = (
+  body: EventTbaMatchDataRequest | undefined,
+  { enabled }: { enabled?: boolean } = {}
+) => {
+  const isEnabled = Boolean(body) && (enabled ?? true);
+
+  return useQuery({
+    queryKey: body ? eventTbaMatchDataQueryKey(body) : ['event-tbaMatchData'],
+    queryFn: () => {
+      if (!body) {
+        throw new Error('Missing request body for event/tbaMatchData');
+      }
+
+      return fetchEventTbaMatchData(body);
+    },
+    enabled: isEnabled,
+  });
+};

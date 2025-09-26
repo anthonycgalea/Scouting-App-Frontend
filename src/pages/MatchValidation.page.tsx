@@ -1,7 +1,7 @@
 import { type ReactNode, useMemo } from 'react';
 import { Box, Loader, Paper, Stack, Text, Title } from '@mantine/core';
 import { useParams } from '@tanstack/react-router';
-import { useMatchSchedule, useScoutMatch } from '@/api';
+import { useEventTbaMatchData, useMatchSchedule, useScoutMatch } from '@/api';
 
 interface TeamMatchDataCardProps {
   matchNumber: number;
@@ -101,9 +101,15 @@ export function MatchValidationPage() {
       matchNumber: matchEntry.match_number,
       matchLevel: matchEntry.match_level,
       teamNumber: allianceTeams[0],
-      alliance: allianceParam,
+      alliance: allianceParam as 'RED' | 'BLUE',
     };
   }, [allianceParam, allianceTeams, matchEntry]);
+
+  const {
+    data: tbaMatchDataResponse,
+    isLoading: isTbaMatchDataLoading,
+    isError: isTbaMatchDataError,
+  } = useEventTbaMatchData(tbaMatchDataRequestBody);
 
   if (!hasMatchLevel || !hasMatchNumber || !hasAlliance) {
     return (
@@ -154,21 +160,29 @@ export function MatchValidationPage() {
         </Stack>
 
         <Stack gap="sm">
-          <Title order={3}>TBA Match Data Request</Title>
+          <Title order={3}>TBA Match Data Response</Title>
           {tbaMatchDataRequestBody ? (
             <Paper withBorder p="md" radius="md">
               <Stack gap="xs">
                 <Text fw={500}>POST /event/tbaMatchData</Text>
                 <Text c="dimmed" fz="sm">
-                  Request Body
+                  Response Body
                 </Text>
-                <Text
-                  component="pre"
-                  fz="xs"
-                  style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0 }}
-                >
-                  {JSON.stringify(tbaMatchDataRequestBody, null, 2)}
-                </Text>
+                {isTbaMatchDataLoading ? (
+                  <Loader size="sm" />
+                ) : isTbaMatchDataError ? (
+                  <Text c="red.6" fz="sm">
+                    Unable to load TBA match data for this context.
+                  </Text>
+                ) : (
+                  <Text
+                    component="pre"
+                    fz="xs"
+                    style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0 }}
+                  >
+                    {JSON.stringify(tbaMatchDataResponse ?? {}, null, 2)}
+                  </Text>
+                )}
               </Stack>
             </Paper>
           ) : (
