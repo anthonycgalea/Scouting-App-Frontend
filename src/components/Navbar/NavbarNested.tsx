@@ -18,7 +18,7 @@ import { Logo } from './Logo';
 import classes from './NavbarNested.module.css';
 
 const BASE_LINKS_DATA = [
-  { label: 'Dashboard', icon: IconGauge },
+  { label: 'Dashboard', icon: IconGauge, to: '/dashboard' },
   { label: 'Matches', icon: IconNotes, to: '/matches' },
   { label: 'Teams', icon: IconUsersGroup, to: '/teams' },
   { label: 'SuperScout', icon: IconBulb, to: '/superScout' },
