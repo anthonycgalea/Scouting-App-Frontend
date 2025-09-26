@@ -125,25 +125,6 @@ const matchValidationRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/dataValidation/matches/$matchLevel/$matchNumber/$alliance',
   component: MatchValidationPage,
-  validateSearch: (search: Record<string, unknown>) => {
-    const rawTeams = search.teams;
-
-    let teams: number[] | undefined;
-    if (Array.isArray(rawTeams)) {
-      const parsed = rawTeams
-        .map((team) => Number.parseInt(String(team), 10))
-        .filter((value) => Number.isFinite(value));
-      teams = parsed.length > 0 ? parsed : undefined;
-    } else if (typeof rawTeams === 'string') {
-      const parsed = rawTeams
-        .split(',')
-        .map((value) => Number.parseInt(value, 10))
-        .filter((value) => Number.isFinite(value));
-      teams = parsed.length > 0 ? parsed : undefined;
-    }
-
-    return { teams };
-  },
 });
 
 const dataImportRoute = createRoute({

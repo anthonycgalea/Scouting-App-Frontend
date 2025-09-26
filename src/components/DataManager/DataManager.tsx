@@ -308,7 +308,6 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
     matchNumber: number,
     matchLevel: string,
     alliance: 'RED' | 'BLUE',
-    teamNumbers: number[],
     className?: string
   ) => (
     <Table.Td className={className}>
@@ -320,9 +319,6 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
               matchLevel: String(matchLevel ?? ''),
               matchNumber: String(matchNumber),
               alliance: alliance.toLowerCase(),
-            }),
-            search: () => ({
-              teams: teamNumbers,
             }),
           })
         }
@@ -346,7 +342,6 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
         row.matchNumber,
         row.matchLevel,
         'RED',
-        [row.red1, row.red2, row.red3],
         classes.redCell
       )}
       {renderTeamCell(row.matchNumber, row.matchLevel, row.blue1, classes.blueCell)}
@@ -356,7 +351,6 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
         row.matchNumber,
         row.matchLevel,
         'BLUE',
-        [row.blue1, row.blue2, row.blue3],
         classes.blueCell
       )}
     </Table.Tr>
