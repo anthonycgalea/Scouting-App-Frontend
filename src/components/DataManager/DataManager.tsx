@@ -1,10 +1,12 @@
-import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { type JSX, type ReactNode, useEffect, useMemo, useState } from 'react';
 import {
   IconChevronDown,
   IconChevronUp,
+  IconCircle,
+  IconCircleCheck,
+  IconDotsCircleHorizontal,
+  IconExclamationCircle,
   IconSearch,
-  IconCheck,
-  IconCircleX,
 } from '@tabler/icons-react';
 import {
   Box,
@@ -21,7 +23,12 @@ import {
 import { DataManagerButtonMenu } from './DataManagerButtonMenu';
 import { ExportHeader } from '../ExportHeader/ExportHeader';
 import classes from './DataManager.module.css';
-import { useMatchSchedule, type MatchScheduleEntry } from '@/api';
+import {
+  useMatchSchedule,
+  useTeamMatchValidation,
+  type MatchScheduleEntry,
+  type TeamMatchValidationStatus,
+} from '@/api';
 import {
   MatchScheduleToggle,
   type MatchScheduleSection,
@@ -36,7 +43,6 @@ interface RowData {
   blue1: number;
   blue2: number;
   blue3: number;
-  fullyScouted: boolean;
 }
 
 interface ThProps {
@@ -100,6 +106,11 @@ function sortData(
 
 export function DataManager() {
   const { data: scheduleData = [], isLoading, isError } = useMatchSchedule();
+  const {
+    data: validationData = [],
+    isLoading: isValidationLoading,
+    isError: isValidationError,
+  } = useTeamMatchValidation();
   const matchesBySection = useMemo(
     () => groupMatchesBySection(scheduleData),
     [scheduleData]
@@ -145,10 +156,82 @@ export function DataManager() {
         blue1: match.blue1_id,
         blue2: match.blue2_id,
         blue3: match.blue3_id,
-        fullyScouted: false,
       })),
     [activeMatches]
   );
+
+  const validationLookup = useMemo(() => {
+    const entries = new Map<string, TeamMatchValidationStatus>();
+
+    validationData.forEach((entry) => {
+      entries.set(`${entry.match_number}-${entry.team_number}`, entry.validation_status);
+    });
+
+    return entries;
+  }, [validationData]);
+
+  const wrapIcon = (icon: JSX.Element, label: string) => (
+    <Box component="span" aria-label={label} role="img" title={label}>
+      {icon}
+    </Box>
+  );
+
+  const buildValidationIcon = (status?: TeamMatchValidationStatus) => {
+    if (isValidationLoading) {
+      return wrapIcon(<Loader size="sm" color="gray.5" />, 'Loading validation status');
+    }
+
+    if (isValidationError) {
+      return wrapIcon(
+        <IconCircle size={20} color="var(--mantine-color-gray-5)" stroke={1.5} />,
+        'Validation status unavailable'
+      );
+    }
+
+    switch (status) {
+      case 'PENDING':
+        return wrapIcon(
+          <IconDotsCircleHorizontal
+            size={20}
+            color="var(--mantine-color-gray-5)"
+            stroke={1.5}
+          />,
+          'Validation pending'
+        );
+      case 'NEEDS_REVIEW':
+        return wrapIcon(
+          <IconExclamationCircle
+            size={20}
+            color="var(--mantine-color-yellow-6)"
+            stroke={1.5}
+          />,
+          'Needs review'
+        );
+      case 'VALID':
+        return wrapIcon(
+          <IconCircleCheck size={20} color="var(--mantine-color-green-6)" stroke={1.5} />,
+          'Validated'
+        );
+      default:
+        return wrapIcon(
+          <IconCircle size={20} color="var(--mantine-color-gray-5)" stroke={1.5} />,
+          'Validation status missing'
+        );
+    }
+  };
+
+  const renderTeamCell = (matchNumber: number, teamNumber: number, className: string) => {
+    const status = validationLookup.get(`${matchNumber}-${teamNumber}`);
+
+    return (
+      <Table.Td className={className}>
+        <Group justify="space-between" align="center" gap="xs" wrap="nowrap">
+          <Text>{teamNumber}</Text>
+          {buildValidationIcon(status)}
+        </Group>
+      </Table.Td>
+    );
+  };
 
   const sortedData = useMemo(
     () => sortData(schedule, { reversed: reverseSortDirection, matchSearch, teamSearch }),
@@ -174,23 +257,16 @@ export function DataManager() {
       <Table.Td>
         <DataManagerButtonMenu matchNumber={row.matchNumber} />
       </Table.Td>
-      <Table.Td className={classes.redCell}>{row.red1}</Table.Td>
-      <Table.Td className={classes.redCell}>{row.red2}</Table.Td>
-      <Table.Td className={classes.redCell}>{row.red3}</Table.Td>
-      <Table.Td className={classes.blueCell}>{row.blue1}</Table.Td>
-      <Table.Td className={classes.blueCell}>{row.blue2}</Table.Td>
-      <Table.Td className={classes.blueCell}>{row.blue3}</Table.Td>
-      <Table.Td>
-        {row.fullyScouted ? (
-          <IconCheck size={30} />
-        ) : (
-          <IconCircleX size={30} />
-        )}
-      </Table.Td>
+      {renderTeamCell(row.matchNumber, row.red1, classes.redCell)}
+      {renderTeamCell(row.matchNumber, row.red2, classes.redCell)}
+      {renderTeamCell(row.matchNumber, row.red3, classes.redCell)}
+      {renderTeamCell(row.matchNumber, row.blue1, classes.blueCell)}
+      {renderTeamCell(row.matchNumber, row.blue2, classes.blueCell)}
+      {renderTeamCell(row.matchNumber, row.blue3, classes.blueCell)}
     </Table.Tr>
   ));
 
-  const totalColumns = 2 + teamNumberKeys.length;
+  const totalColumns = 1 + teamNumberKeys.length;
 
   let tableBody: ReactNode;
   if (isLoading) {
@@ -287,7 +363,6 @@ export function DataManager() {
                 <Table.Th>Blue 1</Table.Th>
                 <Table.Th>Blue 2</Table.Th>
                 <Table.Th>Blue 3</Table.Th>
-                <Table.Th>Fully Scouted?</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>{tableBody}</Table.Tbody>

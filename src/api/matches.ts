@@ -18,6 +18,25 @@ export const matchScheduleQueryKey = (eventCode: string) => ['match-schedule', e
 export const fetchMatchSchedule = (_eventCode: string) =>
   apiFetch<MatchScheduleEntry[]>('event/matches');
 
+export type TeamMatchValidationStatus = 'PENDING' | 'NEEDS_REVIEW' | 'VALID';
+
+export interface TeamMatchValidationEntry {
+  event_key: string;
+  match_number: number;
+  match_level: string;
+  user_id: string;
+  team_number: number;
+  organization_id: number;
+  timestamp: string;
+  validation_status: TeamMatchValidationStatus;
+  notes: string | null;
+}
+
+export const teamMatchValidationQueryKey = () => ['team-match-validation'] as const;
+
+export const fetchTeamMatchValidation = () =>
+  apiFetch<TeamMatchValidationEntry[]>('scout/dataValidation');
+
 export type MatchExportType = 'csv' | 'json' | 'xls';
 
 export const exportMatches = (fileType: MatchExportType) =>
@@ -30,6 +49,12 @@ export const useMatchSchedule = (eventCode = '2025micmp4') =>
   useQuery({
     queryKey: matchScheduleQueryKey(eventCode),
     queryFn: () => fetchMatchSchedule(eventCode),
+  });
+
+export const useTeamMatchValidation = () =>
+  useQuery({
+    queryKey: teamMatchValidationQueryKey(),
+    queryFn: fetchTeamMatchValidation,
   });
 
 export const syncEventMatches = () =>
