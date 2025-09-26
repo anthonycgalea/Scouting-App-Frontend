@@ -4,7 +4,6 @@ import {
   IconChevronUp,
   IconCircle,
   IconCircleCheck,
-  IconCircleFilled,
   IconExclamationCircle,
   IconSearch,
 } from '@tabler/icons-react';
@@ -196,10 +195,11 @@ export function DataManager() {
     switch (status) {
       case 'PENDING':
         return wrapIcon(
-          <IconCircleFilled
-            size={15}
-            color="var(--mantine-color-yellow-5)"
+          <IconCircle
+            size={18}
+            color="var(--mantine-color-dark-5)"
             stroke={1.5}
+            style={{ fill: 'var(--mantine-color-yellow-5)' }}
           />,
           'Validation pending'
         );
