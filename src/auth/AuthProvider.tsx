@@ -11,13 +11,17 @@ import {
 import { ApiError } from '../api/httpClient';
 import { fetchUserInfo, UserInfoResponse } from '../api/user';
 import {
+  TOKEN_REFRESH_BUFFER_MS,
+  TOKENS_CHANGED_EVENT,
   clearStoredAuthUser,
   clearStoredTokens,
-  getStoredAccessToken,
+  ensureValidAccessToken,
   getStoredAuthUser,
+  getStoredTokens,
   persistAuthUser,
   persistTokensFromUrl,
 } from './tokenStorage';
+import { SUPABASE_PROJECT_ID, SUPABASE_STORAGE_KEY_SUFFIX } from './supabaseConfig';
 
 export interface AuthUser {
   displayName: string;
@@ -31,9 +35,6 @@ interface AuthContextValue {
   loginWithGoogle: () => void;
   logout: () => void;
 }
-
-const SUPABASE_PROJECT_ID = 'vjrtjqnvatjfokogdhej';
-const SUPABASE_STORAGE_KEY_SUFFIX = '-auth-token';
 
 const isBrowser = typeof window !== 'undefined';
 
@@ -92,6 +93,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(() => (isBrowser ? getStoredAuthUser() : null));
   const [loading, setLoading] = useState<boolean>(isBrowser);
   const requestIdRef = useRef(0);
+  const refreshTimeoutRef = useRef<number | null>(null);
 
   const refreshUserInfo = useCallback(async () => {
     const nextRequestId = requestIdRef.current + 1;
@@ -103,12 +105,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    const accessToken = getStoredAccessToken();
+    const accessToken = await ensureValidAccessToken();
 
     if (!accessToken) {
       setUser(null);
       clearStoredAuthUser();
       setLoading(false);
+      clearStoredTokens();
+      clearSupabaseSessions();
       return;
     }
 
@@ -144,13 +148,51 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const scheduleTokenRefresh = useCallback(() => {
+    if (!isBrowser) {
+      return;
+    }
+
+    if (refreshTimeoutRef.current !== null) {
+      window.clearTimeout(refreshTimeoutRef.current);
+      refreshTimeoutRef.current = null;
+    }
+
+    const tokens = getStoredTokens();
+
+    if (!tokens?.expiresAt || !tokens.refreshToken) {
+      return;
+    }
+
+    const refreshDelay = Math.max(tokens.expiresAt - TOKEN_REFRESH_BUFFER_MS - Date.now(), 0);
+
+    refreshTimeoutRef.current = window.setTimeout(() => {
+      void (async () => {
+        const accessToken = await ensureValidAccessToken({ forceRefresh: true });
+
+        if (!accessToken) {
+          clearStoredTokens();
+          clearStoredAuthUser();
+          clearSupabaseSessions();
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+
+        scheduleTokenRefresh();
+        void refreshUserInfo();
+      })();
+    }, refreshDelay);
+  }, [refreshUserInfo]);
+
   useEffect(() => {
     if (isBrowser) {
       persistTokensFromUrl();
     }
 
+    scheduleTokenRefresh();
     void refreshUserInfo();
-  }, [refreshUserInfo]);
+  }, [refreshUserInfo, scheduleTokenRefresh]);
 
   useEffect(() => {
     if (!isBrowser) {
@@ -158,17 +200,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     const handleRefresh = () => {
+      scheduleTokenRefresh();
       void refreshUserInfo();
     };
 
     window.addEventListener('storage', handleRefresh);
     window.addEventListener('focus', handleRefresh);
+    window.addEventListener(TOKENS_CHANGED_EVENT, handleRefresh);
 
     return () => {
       window.removeEventListener('storage', handleRefresh);
       window.removeEventListener('focus', handleRefresh);
+      window.removeEventListener(TOKENS_CHANGED_EVENT, handleRefresh);
     };
-  }, [refreshUserInfo]);
+  }, [refreshUserInfo, scheduleTokenRefresh]);
+
+  useEffect(
+    () => () => {
+      if (refreshTimeoutRef.current !== null) {
+        window.clearTimeout(refreshTimeoutRef.current);
+      }
+    },
+    [],
+  );
 
   const loginWithDiscord = useCallback(() => {
     if (!isBrowser) {
@@ -190,6 +244,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     clearStoredTokens();
     clearStoredAuthUser();
     clearSupabaseSessions();
+    if (refreshTimeoutRef.current !== null) {
+      window.clearTimeout(refreshTimeoutRef.current);
+      refreshTimeoutRef.current = null;
+    }
     setUser(null);
     setLoading(false);
   }, []);
