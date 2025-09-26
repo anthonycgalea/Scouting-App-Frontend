@@ -52,7 +52,7 @@ export function EventSelect() {
     data,
     isLoading,
     isError,
-  } = useOrganizationEvents(organizationId, { enabled: isUserLoggedIn && !!organizationId });
+  } = useOrganizationEvents({ enabled: isUserLoggedIn && !!organizationId });
   const [events, setEvents] = useState<OrganizationEventDetail[]>([]);
   const [initialEvents, setInitialEvents] = useState<OrganizationEventDetail[]>([]);
   const { colorScheme } = useMantineColorScheme();
@@ -164,7 +164,7 @@ export function EventSelect() {
     }));
 
     updateOrganizationEventsMutation(
-      { organizationId, events: payload },
+      { events: payload },
       {
         onSuccess: () => {
           setInitialEvents(events.map((event) => ({ ...event })));

@@ -51,31 +51,17 @@ export const useEventInfo = (eventCode = '2025micmp4') =>
     queryFn: () => fetchEventInfo(eventCode),
   });
 
-export const organizationEventsQueryKey = (organizationId: number) =>
-  ['organization-events', organizationId] as const;
+export const organizationEventsQueryKey = () => ['organization-events'] as const;
 
-export const fetchOrganizationEvents = (organizationId: number) =>
-  apiFetch<OrganizationEventDetail[]>(`organization/${organizationId}/events`);
+export const fetchOrganizationEvents = () =>
+  apiFetch<OrganizationEventDetail[]>('organization/events');
 
-export const useOrganizationEvents = (
-  organizationId: number | null | undefined,
-  { enabled }: { enabled?: boolean } = {}
-) => {
-  const shouldEnable = (enabled ?? true) && organizationId != null;
-  const queryKey =
-    organizationId != null
-      ? organizationEventsQueryKey(organizationId)
-      : (['organization-events', 'unknown'] as const);
+export const useOrganizationEvents = ({ enabled }: { enabled?: boolean } = {}) => {
+  const shouldEnable = enabled ?? true;
 
   return useQuery<OrganizationEventDetail[]>({
-    queryKey,
-    queryFn: () => {
-      if (organizationId == null) {
-        throw new Error('Organization ID is required to fetch organization events');
-      }
-
-      return fetchOrganizationEvents(organizationId);
-    },
+    queryKey: organizationEventsQueryKey(),
+    queryFn: fetchOrganizationEvents,
     enabled: shouldEnable,
   });
 };
@@ -97,9 +83,9 @@ export const useCreateOrganizationEvent = () => {
 
   return useMutation({
     mutationFn: createOrganizationEvent,
-    onSuccess: (_data, variables) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: organizationEventsQueryKey(variables.OrganizationId),
+        queryKey: organizationEventsQueryKey(),
       });
     },
   });
@@ -112,7 +98,6 @@ export const updateOrganizationEvents = (body: UpdateOrganizationEventsRequest) 
   });
 
 export interface UpdateOrganizationEventsVariables {
-  organizationId: number;
   events: UpdateOrganizationEventsRequest;
 }
 
@@ -122,9 +107,9 @@ export const useUpdateOrganizationEvents = () => {
   return useMutation({
     mutationFn: ({ events }: UpdateOrganizationEventsVariables) =>
       updateOrganizationEvents(events),
-    onSuccess: (_data, variables) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: organizationEventsQueryKey(variables.organizationId),
+        queryKey: organizationEventsQueryKey(),
       });
     },
   });

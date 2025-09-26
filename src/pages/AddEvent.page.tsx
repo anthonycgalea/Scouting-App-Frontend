@@ -34,7 +34,7 @@ export function AddEventPage() {
     data: organizationEvents,
     isLoading: isOrganizationEventsLoading,
     isError: isOrganizationEventsError,
-  } = useOrganizationEvents(organizationId, { enabled: isUserLoggedIn && !!organizationId });
+  } = useOrganizationEvents({ enabled: isUserLoggedIn && !!organizationId });
 
   const {
     mutate: createOrganizationEvent,
