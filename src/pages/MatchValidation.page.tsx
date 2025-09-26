@@ -617,28 +617,19 @@ export function MatchValidationPage() {
       return getErrorNode();
     }
 
-    const hasValue = entries.some((entry) =>
-      aggregatedTbaData.numericSums.get(entry.field) !== undefined
+    const values = entries.map((entry) =>
+      aggregatedTbaData.numericSums.get(entry.field)
     );
+
+    const hasValue = values.some((value) => value !== undefined);
 
     if (!hasValue) {
       return getPlaceholderNode();
     }
 
-    return (
-      <Stack gap={2} fz="sm">
-        {entries.map((entry) => {
-          const displayLabel = entry.displayLabel ?? entry.label;
-          const value = aggregatedTbaData.numericSums.get(entry.field) ?? 0;
+    const totalValue = values.reduce((total, value) => total + (value ?? 0), 0);
 
-          return (
-            <Text key={entry.id} fz="sm">
-              {displayLabel}: {value}
-            </Text>
-          );
-        })}
-      </Stack>
-    );
+    return <Text fz="sm">{totalValue}</Text>;
   };
 
   const renderTbaEndgameValue = (teamNumber: number | undefined) => {
