@@ -53,6 +53,9 @@ interface ThProps {
 }
 
 const teamNumberKeys: (keyof RowData)[] = ['red1', 'red2', 'red3', 'blue1', 'blue2', 'blue3'];
+const TEAMS_PER_MATCH = 6;
+const isQualificationMatch = (matchLevel?: string | null) =>
+  (matchLevel ?? '').trim().toLowerCase() === 'qm';
 
 function Th({ children, reversed, onSort }: ThProps) {
   const Icon = reversed ? IconChevronDown : IconChevronUp;
@@ -178,6 +181,37 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
 
     return entries;
   }, [validationData]);
+
+  const statsData = useMemo(() => {
+    const qualificationMatches = scheduleData.filter((match) =>
+      isQualificationMatch(match.match_level)
+    );
+    const totalQualificationMatches = qualificationMatches.length;
+    const totalPossibleRecords = totalQualificationMatches * TEAMS_PER_MATCH;
+
+    const qualificationValidation = validationData.filter((entry) =>
+      isQualificationMatch(entry.match_level)
+    );
+    const totalQualificationRecords = qualificationValidation.length;
+    const validatedQualificationRecords = qualificationValidation.filter(
+      (entry) => entry.validation_status === 'VALID'
+    ).length;
+
+    return [
+      {
+        label: 'Team Matches Scouted',
+        current: totalQualificationRecords,
+        total: totalPossibleRecords,
+        color: 'yellow.6',
+      },
+      {
+        label: 'Matches Validated',
+        current: validatedQualificationRecords,
+        total: totalPossibleRecords,
+        color: 'green.6',
+      },
+    ];
+  }, [scheduleData, validationData]);
 
   const wrapIcon = (icon: JSX.Element, label: string) => (
     <Box component="span" aria-label={label} role="img" title={label}>
@@ -333,7 +367,7 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
   return (
     <>
       <Box>
-        <ExportHeader onSync={onSync} isSyncing={isSyncing} />
+        <ExportHeader onSync={onSync} isSyncing={isSyncing} statsData={statsData} />
       </Box>
       <ScrollArea>
         <Stack gap="md">
