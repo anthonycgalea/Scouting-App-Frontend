@@ -18,7 +18,7 @@ export const matchScheduleQueryKey = (eventCode: string) => ['match-schedule', e
 export const fetchMatchSchedule = (_eventCode: string) =>
   apiFetch<MatchScheduleEntry[]>('event/matches');
 
-export type TeamMatchValidationStatus = 'PENDING' | 'NEEDS_REVIEW' | 'VALID';
+export type TeamMatchValidationStatus = 'PENDING' | 'NEEDS REVIEW' | 'VALID';
 
 export interface TeamMatchValidationEntry {
   event_key: string;

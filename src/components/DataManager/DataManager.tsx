@@ -203,7 +203,7 @@ export function DataManager() {
           />,
           'Validation pending'
         );
-      case 'NEEDS_REVIEW':
+      case 'NEEDS REVIEW':
         return wrapIcon(
           <IconExclamationCircle
             size={25}
