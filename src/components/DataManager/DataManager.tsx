@@ -59,6 +59,12 @@ const TEAMS_PER_MATCH = 6;
 const isQualificationMatch = (matchLevel?: string | null) =>
   (matchLevel ?? '').trim().toLowerCase() === 'qm';
 
+const buildValidationKey = (
+  matchLevel: string | null | undefined,
+  matchNumber: number,
+  teamNumber: number
+) => `${(matchLevel ?? '').toLowerCase()}-${matchNumber}-${teamNumber}`;
+
 function Th({ children, reversed, onSort }: ThProps) {
   const Icon = reversed ? IconChevronDown : IconChevronUp;
   return (
@@ -177,7 +183,7 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
 
     validationData.forEach((entry) => {
       entries.set(
-        `${entry.match_level}-${entry.match_number}-${entry.team_number}`,
+        buildValidationKey(entry.match_level, entry.match_number, entry.team_number),
         entry.validation_status
       );
     });
@@ -273,7 +279,7 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
     teamNumber: number,
     className: string
   ) => {
-    const status = validationLookup.get(`${matchLevel}-${matchNumber}-${teamNumber}`);
+    const status = validationLookup.get(buildValidationKey(matchLevel, matchNumber, teamNumber));
 
     return (
       <Table.Td className={className}>

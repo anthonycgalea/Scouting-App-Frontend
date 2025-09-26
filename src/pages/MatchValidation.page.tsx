@@ -65,7 +65,7 @@ const extractTeamEntryFromRecord = (record: Record<string, unknown>): TbaTeamEnt
     record.teamNumber ?? record.team_number ?? record.team ?? record.team_id ?? record.key
   );
 
-  if (!Number.isFinite(teamNumber)) {
+  if (!isValidNumber(teamNumber)) {
     return undefined;
   }
 
@@ -174,7 +174,7 @@ const isValidNumber = (value: number | undefined): value is number =>
 const formatMatchLevel = (level: string) => level.toUpperCase();
 const formatAlliance = (value: string) => value.toUpperCase();
 
-const SCOUT_MATCH_DATA_SOURCE_KEYS = ['matchData', 'match_data', 'data'] as const;
+const SCOUT_MATCH_DATA_SOURCE_KEYS = ['matchData', 'match_data', 'data', 'json'] as const;
 
 const parseEndgameKey = (value: unknown): Endgame2025 | undefined => {
   if (typeof value !== 'string') {
@@ -191,7 +191,23 @@ const parseEndgameKey = (value: unknown): Endgame2025 | undefined => {
 };
 
 const extractScoutMatchData = (candidate: unknown): Partial<TeamMatchData> | undefined => {
-  if (!candidate || typeof candidate !== 'object') {
+  if (!candidate) {
+    return undefined;
+  }
+
+  if (Array.isArray(candidate)) {
+    for (const item of candidate) {
+      const extracted = extractScoutMatchData(item);
+
+      if (extracted) {
+        return extracted;
+      }
+    }
+
+    return undefined;
+  }
+
+  if (typeof candidate !== 'object') {
     return undefined;
   }
 
@@ -628,7 +644,10 @@ export function MatchValidationPage() {
                             </Table.Td>
                           ))}
                           {entryIndex === 0 ? (
-                            <Table.Td rowSpan={row.rows.length} valign="top">
+                            <Table.Td
+                              rowSpan={row.rows.length}
+                              style={{ verticalAlign: 'top' }}
+                            >
                               {renderTbaStackedValues(row.rows)}
                             </Table.Td>
                           ) : null}
@@ -644,11 +663,19 @@ export function MatchValidationPage() {
                       return (
                         <Fragment key={`${section.id}-${row.id}`}>
                           <Table.Tr>
-                            <Table.Th scope="row" rowSpan={rowSpan} valign="top">
+                            <Table.Th
+                              scope="row"
+                              rowSpan={rowSpan}
+                              style={{ verticalAlign: 'top' }}
+                            >
                               {row.label}
                             </Table.Th>
                             {teamQueryStates.map((state, index) => (
-                              <Table.Td key={`${row.id}-team-${index}`} rowSpan={rowSpan} valign="top">
+                              <Table.Td
+                                key={`${row.id}-team-${index}`}
+                                rowSpan={rowSpan}
+                                style={{ verticalAlign: 'top' }}
+                              >
                                 {renderTeamEndgameValue(state)}
                               </Table.Td>
                             ))}
