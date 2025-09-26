@@ -1,6 +1,7 @@
-import { useMemo } from 'react';
-import { Box } from '@mantine/core';
-import { useMatchSchedule, useTeamMatchValidation } from '@/api';
+import { lazy, Suspense, useMemo, useState } from 'react';
+import { ActionIcon, Box, Group, Loader, Skeleton, Stack } from '@mantine/core';
+import { IconRefresh } from '@tabler/icons-react';
+import { useMatchSchedule, useTeamMatchValidation, syncScoutingData } from '@/api';
 import { DataManager } from '@/components/DataManager/DataManager';
 import { StatsRing } from '@/components/StatsRing/StatsRing';
 
@@ -9,9 +10,26 @@ const TEAMS_PER_MATCH = 6;
 const isQualificationMatch = (matchLevel?: string | null) =>
   (matchLevel ?? '').trim().toLowerCase() === 'qm';
 
+const EventHeader = lazy(async () => ({
+  default: (await import('@/components/EventHeader/EventHeader')).EventHeader,
+}));
+
 export function DataValidationPage() {
   const { data: scheduleData = [] } = useMatchSchedule();
   const { data: validationData = [] } = useTeamMatchValidation();
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const handleSyncData = async () => {
+    try {
+      setIsSyncing(true);
+      await syncScoutingData();
+      window.location.reload();
+    } catch (error) {
+      setIsSyncing(false);
+      // eslint-disable-next-line no-console
+      console.error('Failed to sync scouting data', error);
+    }
+  };
 
   const statsData = useMemo(() => {
     const qualificationMatches = scheduleData.filter((match) =>
@@ -46,12 +64,37 @@ export function DataValidationPage() {
 
   return (
     <Box p="sm">
-      <Box pos="relative">
-        <Box pos="absolute" top={0} right={0} p={{ base: 'md', sm: 'sm' }}>
-          <StatsRing data={statsData} />
+      <Stack gap="md">
+        <Suspense
+          fallback={
+            <Group justify="center" align="center" gap="sm">
+              <Skeleton height={34} width={200} radius="sm" />
+              <Skeleton height={36} width={36} radius="md" />
+            </Group>
+          }
+        >
+          <Group justify="center" align="center" gap="sm">
+            <EventHeader pageInfo="Data Validation" />
+            <ActionIcon
+              aria-label="Sync data validation"
+              size="lg"
+              radius="md"
+              variant="default"
+              style={{ backgroundColor: 'var(--mantine-color-body)' }}
+              onClick={handleSyncData}
+              disabled={isSyncing}
+            >
+              {isSyncing ? <Loader size="sm" /> : <IconRefresh size={20} />}
+            </ActionIcon>
+          </Group>
+        </Suspense>
+        <Box pos="relative">
+          <Box pos="absolute" top={0} right={0} p={{ base: 'md', sm: 'sm' }}>
+            <StatsRing data={statsData} />
+          </Box>
+          <DataManager />
         </Box>
-        <DataManager />
-      </Box>
+      </Stack>
     </Box>
   );
 }
