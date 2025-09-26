@@ -104,7 +104,12 @@ function sortData(
   return filterData(sorted, { matchSearch: payload.matchSearch, teamSearch: payload.teamSearch });
 }
 
-export function DataManager() {
+interface DataManagerProps {
+  onSync?: () => Promise<void> | void;
+  isSyncing?: boolean;
+}
+
+export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
   const { data: scheduleData = [], isLoading, isError } = useMatchSchedule();
   const {
     data: validationData = [],
@@ -328,7 +333,7 @@ export function DataManager() {
   return (
     <>
       <Box>
-        <ExportHeader />
+        <ExportHeader onSync={onSync} isSyncing={isSyncing} />
       </Box>
       <ScrollArea>
         <Stack gap="md">
