@@ -225,7 +225,7 @@ export function DataManager() {
 
     return (
       <Table.Td className={className}>
-        <Group justify="space-between" align="center" gap="xs" wrap="nowrap">
+        <Group justify="center" align="center" gap="xs" wrap="nowrap">
           <Text>{teamNumber}</Text>
           {buildValidationIcon(status)}
         </Group>
