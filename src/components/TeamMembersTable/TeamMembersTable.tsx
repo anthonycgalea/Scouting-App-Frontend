@@ -38,10 +38,8 @@ export function TeamMembersTable() {
   } = useUserOrganization({ enabled: isUserLoggedIn });
   const organizationId = userOrganization?.organization_id ?? null;
   const currentUserId = userInfo?.id ?? null;
-  const { data: organizationEvents = [], isLoading: isOrganizationEventsLoading } = useOrganizationEvents(
-    organizationId,
-    { enabled: isUserLoggedIn && !!organizationId }
-  );
+  const { data: organizationEvents = [], isLoading: isOrganizationEventsLoading } =
+    useOrganizationEvents({ enabled: isUserLoggedIn && !!organizationId });
   const { data: organizationApplications = [], isLoading: isOrganizationApplicationsLoading } =
     useOrganizationApplications({ enabled: isUserLoggedIn && !!organizationId });
   const { mutateAsync: deleteOrganizationApplication, isPending: isDeletingOrganizationApplication } =
