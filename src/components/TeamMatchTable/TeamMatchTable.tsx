@@ -48,7 +48,7 @@ const formatMatchIdentifier = (row: TeamMatchData) => {
 };
 
 const SEASON_TABLE_CONFIGS: Record<number, SeasonMatchTableConfig> = {
-  2025: {
+  1: {
     leadColumns: [
       {
         key: 'match',
@@ -64,7 +64,7 @@ const SEASON_TABLE_CONFIGS: Record<number, SeasonMatchTableConfig> = {
       },
       {
         title: 'Autonomous Algae',
-        columns: [numberColumn('aNet', 'Net'), numberColumn('aProcessor', 'Proc')],
+        columns: [numberColumn('aNet', 'Net'), numberColumn('aProcessor', 'Processor')],
       },
       {
         title: 'Teleop Coral',
@@ -72,7 +72,7 @@ const SEASON_TABLE_CONFIGS: Record<number, SeasonMatchTableConfig> = {
       },
       {
         title: 'Teleop Algae',
-        columns: [numberColumn('tNet', 'Net'), numberColumn('tProcessor', 'Proc')],
+        columns: [numberColumn('tNet', 'Net'), numberColumn('tProcessor', 'Processor')],
       },
     ],
     trailingColumns: [
@@ -209,9 +209,6 @@ export function TeamMatchTable({ teamNumber }: TeamMatchTableProps) {
           <Table.Tbody>{rows}</Table.Tbody>
         </Table>
       </ScrollArea>
-      <Text c="dimmed" size="sm" mt="sm">
-        Showing match data for the {season} season.
-      </Text>
     </>
   );
 }
