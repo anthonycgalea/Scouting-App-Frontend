@@ -1,7 +1,7 @@
 import { type ReactNode, useMemo } from 'react';
 import { Box, Loader, Paper, Stack, Text, Title } from '@mantine/core';
 import { useParams } from '@tanstack/react-router';
-import { useMatchSchedule, useScoutMatch } from '@/api';
+import { useEventTbaMatchData, useMatchSchedule, useScoutMatch } from '@/api';
 
 interface TeamMatchDataCardProps {
   matchNumber: number;
@@ -92,6 +92,25 @@ export function MatchValidationPage() {
     return [matchEntry.blue1_id, matchEntry.blue2_id, matchEntry.blue3_id];
   }, [allianceParam, hasAlliance, matchEntry]);
 
+  const tbaMatchDataRequestBody = useMemo(() => {
+    if (!matchEntry || allianceTeams.length === 0) {
+      return undefined;
+    }
+
+    return {
+      matchNumber: matchEntry.match_number,
+      matchLevel: matchEntry.match_level,
+      teamNumber: allianceTeams[0],
+      alliance: allianceParam as 'RED' | 'BLUE',
+    };
+  }, [allianceParam, allianceTeams, matchEntry]);
+
+  const {
+    data: tbaMatchDataResponse,
+    isLoading: isTbaMatchDataLoading,
+    isError: isTbaMatchDataError,
+  } = useEventTbaMatchData(tbaMatchDataRequestBody);
+
   if (!hasMatchLevel || !hasMatchNumber || !hasAlliance) {
     return (
       <Box p="md">
@@ -138,6 +157,37 @@ export function MatchValidationPage() {
           <Text>Match Number: {matchNumberParam}</Text>
           <Text>Alliance: {formatAlliance(allianceParam)}</Text>
           <Text>Teams: {allianceTeams.join(', ')}</Text>
+        </Stack>
+
+        <Stack gap="sm">
+          <Title order={3}>TBA Match Data Response</Title>
+          {tbaMatchDataRequestBody ? (
+            <Paper withBorder p="md" radius="md">
+              <Stack gap="xs">
+                <Text fw={500}>POST /event/tbaMatchData</Text>
+                <Text c="dimmed" fz="sm">
+                  Response Body
+                </Text>
+                {isTbaMatchDataLoading ? (
+                  <Loader size="sm" />
+                ) : isTbaMatchDataError ? (
+                  <Text c="red.6" fz="sm">
+                    Unable to load TBA match data for this context.
+                  </Text>
+                ) : (
+                  <Text
+                    component="pre"
+                    fz="xs"
+                    style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0 }}
+                  >
+                    {JSON.stringify(tbaMatchDataResponse ?? {}, null, 2)}
+                  </Text>
+                )}
+              </Stack>
+            </Paper>
+          ) : (
+            <Text c="dimmed">No teams were found for this alliance.</Text>
+          )}
         </Stack>
 
         <Stack gap="sm">
