@@ -1,4 +1,4 @@
-import { ensureValidAccessToken, getStoredAccessToken } from '../auth/tokenStorage';
+import { getStoredAccessToken } from '../auth/tokenStorage';
 import { createApiUrl } from './config';
 
 export type JsonBody = Record<string, unknown> | Array<unknown>;
@@ -72,28 +72,8 @@ const handleError = async (response: Response): Promise<never> => {
   });
 };
 
-const fetchWithAuthRetry = async (
-  path: string,
-  options: RequestOptions | undefined,
-  attempt: number,
-): Promise<Response> => {
-  const response = await fetch(createApiUrl(path), buildRequestInit(options));
-
-  if (response.status === 401 && attempt === 0) {
-    const refreshedToken = await ensureValidAccessToken({ forceRefresh: true });
-
-    if (refreshedToken) {
-      return fetchWithAuthRetry(path, options, attempt + 1);
-    }
-  }
-
-  return response;
-};
-
 export const apiFetchResponse = async (path: string, options?: RequestOptions) => {
-  await ensureValidAccessToken();
-
-  const response = await fetchWithAuthRetry(path, options, 0);
+  const response = await fetch(createApiUrl(path), buildRequestInit(options));
 
   if (!response.ok) {
     await handleError(response);
