@@ -61,20 +61,20 @@ export const MATCH_VALIDATION_TABLE_LAYOUT: MatchValidationSectionConfig[] = [
     id: 'autonomous-coral',
     title: 'Autonomous Coral',
     rows: [
-      { type: 'numeric', id: 'al4c', label: 'Level 4 al4c', field: 'al4c' },
-      { type: 'numeric', id: 'al3c', label: 'Level 3 al3c', field: 'al3c' },
-      { type: 'numeric', id: 'al2c', label: 'Level 2 al2c', field: 'al2c' },
-      { type: 'numeric', id: 'al1c', label: 'Level 1 al1c', field: 'al1c' },
+      { type: 'numeric', id: 'al4c', label: 'Level 4', field: 'al4c' },
+      { type: 'numeric', id: 'al3c', label: 'Level 3', field: 'al3c' },
+      { type: 'numeric', id: 'al2c', label: 'Level 2', field: 'al2c' },
+      { type: 'numeric', id: 'al1c', label: 'Level 1', field: 'al1c' },
     ],
   },
   {
     id: 'teleop-coral',
     title: 'Teleop Coral',
     rows: [
-      { type: 'numeric', id: 'tl4c', label: 'Level 4 tl4c', field: 'tl4c' },
-      { type: 'numeric', id: 'tl3c', label: 'Level 3 tl3c', field: 'tl3c' },
-      { type: 'numeric', id: 'tl2c', label: 'Level 2 tl2c', field: 'tl2c' },
-      { type: 'numeric', id: 'tl1c', label: 'Level 1 tl1c', field: 'tl1c' },
+      { type: 'numeric', id: 'tl4c', label: 'Level 4', field: 'tl4c' },
+      { type: 'numeric', id: 'tl3c', label: 'Level 3', field: 'tl3c' },
+      { type: 'numeric', id: 'tl2c', label: 'Level 2', field: 'tl2c' },
+      { type: 'numeric', id: 'tl1c', label: 'Level 1', field: 'tl1c' },
     ],
   },
   {
@@ -85,8 +85,8 @@ export const MATCH_VALIDATION_TABLE_LAYOUT: MatchValidationSectionConfig[] = [
         type: 'paired',
         id: 'net-values',
         rows: [
-          { id: 'aNet', label: 'Autonomous aNet', displayLabel: 'Autonomous', field: 'aNet' },
-          { id: 'tNet', label: 'Teleop tNet', displayLabel: 'Teleop', field: 'tNet' },
+          { id: 'aNet', label: 'Autonomous', displayLabel: 'Autonomous', field: 'aNet' },
+          { id: 'tNet', label: 'Teleop', displayLabel: 'Teleop', field: 'tNet' },
         ],
       },
     ],
@@ -101,11 +101,11 @@ export const MATCH_VALIDATION_TABLE_LAYOUT: MatchValidationSectionConfig[] = [
         rows: [
           {
             id: 'aProcessor',
-            label: 'Autonomous aProcessor',
+            label: 'Autonomous',
             displayLabel: 'Autonomous',
             field: 'aProcessor',
           },
-          { id: 'tProcessor', label: 'Teleop tProcessor', displayLabel: 'Teleop', field: 'tProcessor' },
+          { id: 'tProcessor', label: 'Teleop', displayLabel: 'Teleop', field: 'tProcessor' },
         ],
       },
     ],
