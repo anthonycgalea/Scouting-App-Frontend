@@ -14,6 +14,38 @@ export interface TeamInfo {
   rookieYear: number | null;
 }
 
+export type Endgame2025 = 'NONE' | 'PARK' | 'SHALLOW' | 'DEEP';
+
+export interface BaseTeamMatchData {
+  season: number;
+  team_number: number;
+  event_key: string;
+  match_number: number;
+  match_level: string;
+  user_id?: string;
+  organization_id?: number;
+  timestamp?: string;
+  notes?: string | null;
+}
+
+export interface TeamMatchData2025 extends BaseTeamMatchData {
+  al4c: number;
+  al3c: number;
+  al2c: number;
+  al1c: number;
+  tl4c: number;
+  tl3c: number;
+  tl2c: number;
+  tl1c: number;
+  aNet: number;
+  tNet: number;
+  aProcessor: number;
+  tProcessor: number;
+  endgame: Endgame2025;
+}
+
+export type TeamMatchData = TeamMatchData2025;
+
 export const eventTeamsQueryKey = (eventCode: string) =>
   ['event-teams', eventCode] as const;
 
@@ -35,5 +67,18 @@ export const useTeamInfo = (teamNumber: number) =>
   useQuery({
     queryKey: teamInfoQueryKey(teamNumber),
     queryFn: () => fetchTeamInfo(teamNumber),
+    enabled: Number.isFinite(teamNumber),
+  });
+
+export const teamMatchDataQueryKey = (teamNumber: number) =>
+  ['team-match-data', teamNumber] as const;
+
+export const fetchTeamMatchData = (teamNumber: number) =>
+  apiFetch<TeamMatchData[]>(`teams/${teamNumber}/matchData`);
+
+export const useTeamMatchData = (teamNumber: number) =>
+  useQuery({
+    queryKey: teamMatchDataQueryKey(teamNumber),
+    queryFn: () => fetchTeamMatchData(teamNumber),
     enabled: Number.isFinite(teamNumber),
   });

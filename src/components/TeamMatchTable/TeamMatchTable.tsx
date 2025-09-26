@@ -1,184 +1,217 @@
-import { useState } from 'react';
+import { type ReactNode, useMemo, useState } from 'react';
 import cx from 'clsx';
-import { ScrollArea, Table } from '@mantine/core';
+import { Alert, Center, Loader, ScrollArea, Table, Text } from '@mantine/core';
+import { Endgame2025, TeamMatchData, useTeamMatchData } from '@/api';
 import classes from './TeamMatchTable.module.css';
 
-const data = [
-  {
-    name: 'Athena Weissnat',
-    company: 'Little - Rippin',
-    email: 'Elouise.Prohaska@yahoo.com',
-  },
-  {
-    name: 'Deangelo Runolfsson',
-    company: 'Greenfelder - Krajcik',
-    email: 'Kadin_Trantow87@yahoo.com',
-  },
-  {
-    name: 'Danny Carter',
-    company: 'Kohler and Sons',
-    email: 'Marina3@hotmail.com',
-  },
-  {
-    name: 'Trace Tremblay PhD',
-    company: 'Crona, Aufderhar and Senger',
-    email: 'Antonina.Pouros@yahoo.com',
-  },
-  {
-    name: 'Derek Dibbert',
-    company: 'Gottlieb LLC',
-    email: 'Abagail29@hotmail.com',
-  },
-  {
-    name: 'Viola Bernhard',
-    company: 'Funk, Rohan and Kreiger',
-    email: 'Jamie23@hotmail.com',
-  },
-  {
-    name: 'Austin Jacobi',
-    company: 'Botsford - Corwin',
-    email: 'Genesis42@yahoo.com',
-  },
-  {
-    name: 'Hershel Mosciski',
-    company: 'Okuneva, Farrell and Kilback',
-    email: 'Idella.Stehr28@yahoo.com',
-  },
-  {
-    name: 'Mylene Ebert',
-    company: 'Kirlin and Sons',
-    email: 'Hildegard17@hotmail.com',
-  },
-  {
-    name: 'Lou Trantow',
-    company: 'Parisian - Lemke',
-    email: 'Hillard.Barrows1@hotmail.com',
-  },
-  {
-    name: 'Dariana Weimann',
-    company: 'Schowalter - Donnelly',
-    email: 'Colleen80@gmail.com',
-  },
-  {
-    name: 'Dr. Christy Herman',
-    company: 'VonRueden - Labadie',
-    email: 'Lilyan98@gmail.com',
-  },
-  {
-    name: 'Katelin Schuster',
-    company: 'Jacobson - Smitham',
-    email: 'Erich_Brekke76@gmail.com',
-  },
-  {
-    name: 'Melyna Macejkovic',
-    company: 'Schuster LLC',
-    email: 'Kylee4@yahoo.com',
-  },
-  {
-    name: 'Pinkie Rice',
-    company: 'Wolf, Trantow and Zulauf',
-    email: 'Fiona.Kutch@hotmail.com',
-  },
-  {
-    name: 'Brain Kreiger',
-    company: 'Lueilwitz Group',
-    email: 'Rico98@hotmail.com',
-  },
-  {
-    name: 'Myrtice McGlynn',
-    company: 'Feest, Beahan and Johnston',
-    email: 'Julius_Tremblay29@hotmail.com',
-  },
-  {
-    name: 'Chester Carter PhD',
-    company: 'Gaylord - Labadie',
-    email: 'Jensen_McKenzie@hotmail.com',
-  },
-  {
-    name: 'Mrs. Ericka Bahringer',
-    company: 'Conn and Sons',
-    email: 'Lisandro56@hotmail.com',
-  },
-  {
-    name: 'Korbin Buckridge Sr.',
-    company: 'Mraz, Rolfson and Predovic',
-    email: 'Leatha9@yahoo.com',
-  },
-  {
-    name: 'Dr. Daisy Becker',
-    company: 'Carter - Mueller',
-    email: 'Keaton_Sanford27@gmail.com',
-  },
-  {
-    name: 'Derrick Buckridge Sr.',
-    company: "O'Reilly LLC",
-    email: 'Kay83@yahoo.com',
-  },
-  {
-    name: 'Ernie Hickle',
-    company: "Terry, O'Reilly and Farrell",
-    email: 'Americo.Leffler89@gmail.com',
-  },
-  {
-    name: 'Jewell Littel',
-    company: "O'Connell Group",
-    email: 'Hester.Hettinger9@hotmail.com',
-  },
-  {
-    name: 'Cyrus Howell',
-    company: 'Windler, Yost and Fadel',
-    email: 'Rick0@gmail.com',
-  },
-  {
-    name: 'Dr. Orie Jast',
-    company: 'Hilll - Pacocha',
-    email: 'Anna56@hotmail.com',
-  },
-  {
-    name: 'Luisa Murphy',
-    company: 'Turner and Sons',
-    email: 'Christine32@yahoo.com',
-  },
-  {
-    name: 'Lea Witting',
-    company: 'Hodkiewicz Inc',
-    email: 'Ford_Kovacek4@yahoo.com',
-  },
-  {
-    name: 'Kelli Runolfsson',
-    company: "Feest - O'Hara",
-    email: 'Dimitri87@yahoo.com',
-  },
-  {
-    name: 'Brook Gaylord',
-    company: 'Conn, Huel and Nader',
-    email: 'Immanuel77@gmail.com',
-  },
-];
+interface TeamMatchTableProps {
+  teamNumber: number;
+}
 
-export function TeamMatchTable() {
+type ColumnAlignment = 'left' | 'center' | 'right';
+
+interface ColumnDefinition {
+  key: string;
+  title: string;
+  render: (row: TeamMatchData) => ReactNode;
+  align?: ColumnAlignment;
+}
+
+interface ColumnGroupDefinition {
+  title: string;
+  columns: ColumnDefinition[];
+}
+
+interface SeasonMatchTableConfig {
+  leadColumns: ColumnDefinition[];
+  groups: ColumnGroupDefinition[];
+  trailingColumns: ColumnDefinition[];
+}
+
+const ENDGAME_2025_LABELS: Record<Endgame2025, string> = {
+  NONE: 'None',
+  PARK: 'Park',
+  SHALLOW: 'Shallow',
+  DEEP: 'Deep',
+};
+
+const numberColumn = (key: keyof TeamMatchData & string, title: string): ColumnDefinition => ({
+  key,
+  title,
+  align: 'center',
+  render: (row) => row[key] ?? 0,
+});
+
+const formatMatchIdentifier = (row: TeamMatchData) => {
+  const level = typeof row.match_level === 'string' ? row.match_level.toUpperCase() : String(row.match_level ?? '');
+  return `${level}${row.match_number}`;
+};
+
+const SEASON_TABLE_CONFIGS: Record<number, SeasonMatchTableConfig> = {
+  2025: {
+    leadColumns: [
+      {
+        key: 'match',
+        title: 'Match #',
+        align: 'center',
+        render: (row) => formatMatchIdentifier(row),
+      },
+    ],
+    groups: [
+      {
+        title: 'Autonomous Coral',
+        columns: [numberColumn('al4c', 'L4'), numberColumn('al3c', 'L3'), numberColumn('al2c', 'L2'), numberColumn('al1c', 'L1')],
+      },
+      {
+        title: 'Autonomous Algae',
+        columns: [numberColumn('aNet', 'Net'), numberColumn('aProcessor', 'Proc')],
+      },
+      {
+        title: 'Teleop Coral',
+        columns: [numberColumn('tl4c', 'L4'), numberColumn('tl3c', 'L3'), numberColumn('tl2c', 'L2'), numberColumn('tl1c', 'L1')],
+      },
+      {
+        title: 'Teleop Algae',
+        columns: [numberColumn('tNet', 'Net'), numberColumn('tProcessor', 'Proc')],
+      },
+    ],
+    trailingColumns: [
+      {
+        key: 'endgame',
+        title: 'Endgame',
+        align: 'center',
+        render: (row) => ENDGAME_2025_LABELS[row.endgame] ?? row.endgame,
+      },
+      {
+        key: 'notes',
+        title: 'Notes',
+        render: (row) => row.notes?.trim() || '—',
+      },
+    ],
+  },
+};
+
+export function TeamMatchTable({ teamNumber }: TeamMatchTableProps) {
   const [scrolled, setScrolled] = useState(false);
+  const {
+    data,
+    isLoading,
+    isError,
+  } = useTeamMatchData(teamNumber);
 
-  const rows = data.map((row) => (
-    <Table.Tr key={row.name}>
-      <Table.Td>{row.name}</Table.Td>
-      <Table.Td>{row.email}</Table.Td>
-      <Table.Td>{row.company}</Table.Td>
+  const season = data?.[0]?.season;
+
+  const seasonConfig = useMemo(() => {
+    if (season) {
+      return SEASON_TABLE_CONFIGS[season];
+    }
+
+    return undefined;
+  }, [season]);
+
+  if (!Number.isFinite(teamNumber)) {
+    return <Alert color="red" title="Invalid team number" />;
+  }
+
+  if (isLoading) {
+    return (
+      <Center mih={200}>
+        <Loader />
+      </Center>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Alert color="red" title="Unable to load match data">
+        We couldn't retrieve match data for Team {teamNumber}. Please try again later.
+      </Alert>
+    );
+  }
+
+  if (!data || data.length === 0) {
+    return (
+      <Alert color="blue" title="No match data available">
+        We do not have any match data for Team {teamNumber} at this event yet.
+      </Alert>
+    );
+  }
+
+  if (!seasonConfig) {
+    return (
+      <Alert color="yellow" title="Unsupported season">
+        Match data for season {season ?? 'Unknown'} is not configured yet. Please update the table configuration.
+      </Alert>
+    );
+  }
+
+  const renderHeaderRow = (columns: ColumnDefinition[], options?: { rowSpan?: number }) =>
+    columns.map((column) => (
+      <Table.Th
+        key={column.key}
+        rowSpan={options?.rowSpan}
+        style={{ textAlign: column.align ?? 'left', whiteSpace: 'nowrap' }}
+      >
+        {column.title}
+      </Table.Th>
+    ));
+
+  const hasColumnGroups = seasonConfig.groups.length > 0;
+
+  const groupHeaderCells = seasonConfig.groups.map((group) => (
+    <Table.Th key={group.title} colSpan={group.columns.length} style={{ textAlign: 'center' }}>
+      {group.title}
+    </Table.Th>
+  ));
+
+  const groupColumnHeaders = seasonConfig.groups.flatMap((group) =>
+    group.columns.map((column) => (
+      <Table.Th key={`${group.title}-${column.key}`} style={{ textAlign: column.align ?? 'left', whiteSpace: 'nowrap' }}>
+        {column.title}
+      </Table.Th>
+    )),
+  );
+
+  const rows = data.map((row, index) => (
+    <Table.Tr key={`${row.match_level}-${row.match_number}-${row.user_id ?? index}`}>
+      {seasonConfig.leadColumns.map((column) => (
+        <Table.Td key={column.key} style={{ textAlign: column.align ?? 'left', whiteSpace: 'nowrap' }}>
+          {column.render(row)}
+        </Table.Td>
+      ))}
+      {seasonConfig.groups.flatMap((group) =>
+        group.columns.map((column) => (
+          <Table.Td key={`${group.title}-${column.key}`} style={{ textAlign: column.align ?? 'left' }}>
+            {column.render(row)}
+          </Table.Td>
+        )),
+      )}
+      {seasonConfig.trailingColumns.map((column) => (
+        <Table.Td key={column.key} style={{ textAlign: column.align ?? 'left' }}>
+          {column.render(row)}
+        </Table.Td>
+      ))}
     </Table.Tr>
   ));
 
   return (
-    <ScrollArea h={300} onScrollPositionChange={({ y }) => setScrolled(y !== 0)}>
-      <Table miw={700}>
-        <Table.Thead className={cx(classes.header, { [classes.scrolled]: scrolled })}>
-          <Table.Tr>
-            <Table.Th>Name</Table.Th>
-            <Table.Th>Email</Table.Th>
-            <Table.Th>Company</Table.Th>
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>{rows}</Table.Tbody>
-      </Table>
-    </ScrollArea>
+    <>
+      <ScrollArea h={400} onScrollPositionChange={({ y }) => setScrolled(y !== 0)}>
+        <Table miw={900}>
+          <Table.Thead className={cx(classes.header, { [classes.scrolled]: scrolled })}>
+            <Table.Tr>
+              {renderHeaderRow(seasonConfig.leadColumns, hasColumnGroups ? { rowSpan: 2 } : undefined)}
+              {hasColumnGroups ? groupHeaderCells : null}
+              {renderHeaderRow(seasonConfig.trailingColumns, hasColumnGroups ? { rowSpan: 2 } : undefined)}
+            </Table.Tr>
+            {hasColumnGroups ? <Table.Tr>{groupColumnHeaders}</Table.Tr> : null}
+          </Table.Thead>
+          <Table.Tbody>{rows}</Table.Tbody>
+        </Table>
+      </ScrollArea>
+      <Text c="dimmed" size="sm" mt="sm">
+        Showing match data for the {season} season.
+      </Text>
+    </>
   );
 }
