@@ -164,8 +164,13 @@ const buildMatchDataPayload = (update: MatchValidationDataUpdate) => {
   return payload;
 };
 
-export const submitMatchValidationData = (updates: MatchValidationDataUpdate[]) =>
-  apiFetch<void>('scout/dataValidation', {
-    method: 'PUT',
-    json: { matches: updates.map((update) => buildMatchDataPayload(update)) },
-  });
+export const submitMatchValidationData = async (updates: MatchValidationDataUpdate[]) => {
+  await Promise.all(
+    updates.map((update) =>
+      apiFetch<void>('scout/dataValidation', {
+        method: 'PUT',
+        json: buildMatchDataPayload(update),
+      })
+    )
+  );
+};
