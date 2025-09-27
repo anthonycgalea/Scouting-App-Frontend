@@ -2,6 +2,8 @@ import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActionIcon,
   Box,
+  Button,
+  Checkbox,
   Group,
   Loader,
   Select,
@@ -12,6 +14,7 @@ import {
 } from '@mantine/core';
 import { useParams } from '@tanstack/react-router';
 import cx from 'clsx';
+import { IconDeviceFloppy } from '@tabler/icons-react';
 import {
   type TeamMatchData,
   Endgame2025,
@@ -285,7 +288,54 @@ const formatEndgameValue = (value: unknown): string | undefined => {
 const isValidNumber = (value: number | undefined): value is number =>
   typeof value === 'number' && Number.isFinite(value);
 
-const formatAlliance = (value: string) => value.toUpperCase();
+const formatAllianceLabel = (value: string) => {
+  const normalized = value.trim().toUpperCase();
+
+  if (normalized === 'RED') {
+    return 'Red';
+  }
+
+  if (normalized === 'BLUE') {
+    return 'Blue';
+  }
+
+  if (normalized.length === 0) {
+    return '';
+  }
+
+  return normalized.charAt(0) + normalized.slice(1).toLowerCase();
+};
+
+const MATCH_LEVEL_LABELS: Record<string, string> = {
+  QUALIFICATION: 'Qualification',
+  QUARTERFINAL: 'Quarterfinal',
+  QF: 'Quarterfinal',
+  SEMIFINAL: 'Semifinal',
+  SF: 'Semifinal',
+  FINAL: 'Final',
+  F: 'Final',
+  PRACTICE: 'Practice',
+  PR: 'Practice',
+};
+
+const formatMatchLevelLabel = (value: string) => {
+  const normalized = value.trim().toUpperCase();
+
+  if (normalized.length === 0) {
+    return '';
+  }
+
+  if (normalized in MATCH_LEVEL_LABELS) {
+    return MATCH_LEVEL_LABELS[normalized];
+  }
+
+  const cleaned = normalized.replace(/[_-]+/g, ' ');
+
+  return cleaned
+    .split(' ')
+    .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
+    .join(' ');
+};
 
 const SCOUT_MATCH_DATA_SOURCE_KEYS = ['matchData', 'match_data', 'data', 'json'] as const;
 
@@ -461,10 +511,34 @@ export function MatchValidation() {
   ];
 
   const [teamEdits, setTeamEdits] = useState<Record<number, Partial<TeamMatchData>>>({});
+  const [rowOverrides, setRowOverrides] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     setTeamEdits({});
+    setRowOverrides({});
   }, [matchEntry?.match_level, matchEntry?.match_number, allianceParam]);
+
+  const isRowOverridden = useCallback(
+    (rowKey: string) => Boolean(rowOverrides[rowKey]),
+    [rowOverrides]
+  );
+
+  const handleOverrideChange = useCallback((rowKey: string, checked: boolean) => {
+    setRowOverrides((previous) => {
+      if (checked) {
+        return { ...previous, [rowKey]: true };
+      }
+
+      if (!previous[rowKey]) {
+        return previous;
+      }
+
+      const next = { ...previous };
+      delete next[rowKey];
+
+      return next;
+    });
+  }, []);
 
   const allianceTeamSet = useMemo(() => {
     const values = new Set<number>();
@@ -781,8 +855,13 @@ export function MatchValidation() {
 
   const resolveRowHighlightClassName = (
     teamTotals: AggregatedTeamTotals,
-    tbaTotals: TbaTotals
+    tbaTotals: TbaTotals,
+    overrideKey?: string
   ) => {
+    if (overrideKey && isRowOverridden(overrideKey)) {
+      return classes.rowMatch;
+    }
+
     if (
       !teamTotals.hasValue ||
       teamTotals.isLoading ||
@@ -852,7 +931,7 @@ export function MatchValidation() {
     return (
       <Group gap={4} justify="center" wrap="nowrap" className={classes.numericControlGroup}>
         <ActionIcon
-          variant="light"
+          variant="transparent"
           size="sm"
           aria-label="Increase value"
           onClick={handleIncrement}
@@ -864,7 +943,7 @@ export function MatchValidation() {
           {numericValue}
         </Text>
         <ActionIcon
-          variant="light"
+          variant="transparent"
           size="sm"
           aria-label="Decrease value"
           onClick={handleDecrement}
@@ -876,7 +955,10 @@ export function MatchValidation() {
     );
   };
 
-  const getTeamEndgameCell = (state: (typeof teamQueryStates)[number]) => {
+  const getTeamEndgameCell = (
+    state: (typeof teamQueryStates)[number],
+    isOverridden: boolean
+  ) => {
     if (!isValidNumber(state.teamNumber)) {
       return { content: getPlaceholderNode(), className: undefined };
     }
@@ -898,8 +980,9 @@ export function MatchValidation() {
         ? undefined
         : aggregatedTbaData.endgame.get(state.teamNumber);
 
-    const matchClass =
-      tbaLabel !== undefined
+    const matchClass = isOverridden
+      ? classes.cellMatch
+      : tbaLabel !== undefined
         ? label === tbaLabel
           ? classes.cellMatch
           : classes.cellMismatch
@@ -992,6 +1075,21 @@ export function MatchValidation() {
     );
   };
 
+  const renderOverrideCheckbox = (rowKey: string, options?: { rowSpan?: number }) => (
+    <Table.Td
+      rowSpan={options?.rowSpan}
+      ta="center"
+      className={classes.cell}
+    >
+      <Checkbox
+        size="xs"
+        aria-label="Override validation for row"
+        checked={isRowOverridden(rowKey)}
+        onChange={(event) => handleOverrideChange(rowKey, event.currentTarget.checked)}
+      />
+    </Table.Td>
+  );
+
   if (!hasMatchLevel || !hasMatchNumber || !hasAlliance) {
     return (
       <Box p="md">
@@ -1028,10 +1126,17 @@ export function MatchValidation() {
     );
   }
 
+  const teamColumnCount = MATCH_VALIDATION_TEAM_HEADERS.length;
+  const summaryColumnCount = 3;
+  const sectionTitleColSpan = teamColumnCount + summaryColumnCount;
+  const formattedMatchLevel = formatMatchLevelLabel(matchEntry.match_level ?? matchLevelParam);
+  const formattedAlliance = formatAllianceLabel(allianceParam);
+  const pageTitle = `${formattedMatchLevel} Match ${matchEntry.match_number} ${formattedAlliance} Alliance Validation`;
+
   return (
     <Box p="md">
       <Stack gap="lg">
-        <Title order={2}>Match Validation</Title>
+        <Title order={2}>{pageTitle}</Title>
 
         {allianceTeams.length === 0 ? (
           <Text c="dimmed">No teams were found for this alliance.</Text>
@@ -1050,6 +1155,9 @@ export function MatchValidation() {
                 </Table.Th>
                 <Table.Th ta="center" className={classes.cell}>
                   TBA
+                </Table.Th>
+                <Table.Th ta="center" className={classes.cell}>
+                  Override
                 </Table.Th>
               </Table.Tr>
             </Table.Thead>
@@ -1076,8 +1184,11 @@ export function MatchValidation() {
                     : isTbaMatchDataError
                       ? getErrorNode()
                       : tbaMatchDataRequestBody
-                        ? `${formatAlliance(allianceParam)} Alliance`
+                        ? `${formatAllianceLabel(allianceParam)} Alliance`
                         : getPlaceholderNode()}
+                </Table.Td>
+                <Table.Td ta="center" className={classes.cell}>
+                  {getPlaceholderNode()}
                 </Table.Td>
               </Table.Tr>
 
@@ -1085,7 +1196,7 @@ export function MatchValidation() {
                 <Fragment key={section.id}>
                   <Table.Tr>
                     <Table.Th scope="row" ta="right" className={classes.cell} />
-                    <Table.Th colSpan={5} ta="center" className={classes.cell}>
+                    <Table.Th colSpan={sectionTitleColSpan} ta="center" className={classes.cell}>
                       {section.title}
                     </Table.Th>
                   </Table.Tr>
@@ -1094,7 +1205,12 @@ export function MatchValidation() {
                     if (row.type === 'numeric') {
                       const teamTotals = aggregateTeamFieldValues([row.field]);
                       const tbaTotals = getTbaTotalsForFields([row.field]);
-                      const rowHighlightClass = resolveRowHighlightClassName(teamTotals, tbaTotals);
+                      const overrideKey = `${section.id}-${row.id}`;
+                      const rowHighlightClass = resolveRowHighlightClassName(
+                        teamTotals,
+                        tbaTotals,
+                        overrideKey
+                      );
 
                       return (
                         <Table.Tr
@@ -1119,6 +1235,7 @@ export function MatchValidation() {
                           <Table.Td ta="center" className={classes.cell}>
                             {renderTbaNumericValue(aggregatedTbaData.numericSums.get(row.field))}
                           </Table.Td>
+                          {renderOverrideCheckbox(overrideKey)}
                         </Table.Tr>
                       );
                     }
@@ -1127,7 +1244,12 @@ export function MatchValidation() {
                       const fields = row.rows.map((entry) => entry.field);
                       const teamTotals = aggregateTeamFieldValues(fields);
                       const tbaTotals = getTbaTotalsForFields(fields);
-                      const rowHighlightClass = resolveRowHighlightClassName(teamTotals, tbaTotals);
+                      const overrideKey = `${section.id}-${row.id}`;
+                      const rowHighlightClass = resolveRowHighlightClassName(
+                        teamTotals,
+                        tbaTotals,
+                        overrideKey
+                      );
 
                       return row.rows.map((entry, entryIndex) => (
                         <Table.Tr
@@ -1164,6 +1286,7 @@ export function MatchValidation() {
                               {renderTbaStackedValues(row.rows)}
                             </Table.Td>
                           ) : null}
+                          {entryIndex === 0 ? renderOverrideCheckbox(overrideKey, { rowSpan: row.rows.length }) : null}
                         </Table.Tr>
                       ));
                     }
@@ -1172,6 +1295,8 @@ export function MatchValidation() {
                       const endgameTeamNumbers = teamQueryStates.map((state) => state.teamNumber);
                       const rowSpan = Math.max(1, endgameTeamNumbers.length);
                       const [firstTeamNumber, ...remainingTeamNumbers] = endgameTeamNumbers;
+                      const overrideKey = `${section.id}-${row.id}`;
+                      const overrideChecked = isRowOverridden(overrideKey);
 
                       return (
                         <Fragment key={`${section.id}-${row.id}`}>
@@ -1185,7 +1310,10 @@ export function MatchValidation() {
                               {row.label}
                             </Table.Th>
                             {teamQueryStates.map((state, index) => {
-                              const { content, className } = getTeamEndgameCell(state);
+                              const { content, className } = getTeamEndgameCell(
+                                state,
+                                overrideChecked
+                              );
 
                               return (
                                 <Table.Td
@@ -1204,6 +1332,7 @@ export function MatchValidation() {
                             <Table.Td ta="center" className={classes.cell}>
                               {renderTbaEndgameValue(firstTeamNumber)}
                             </Table.Td>
+                            {renderOverrideCheckbox(overrideKey, { rowSpan })}
                           </Table.Tr>
                           {remainingTeamNumbers.map((teamNumber, index) => (
                             <Table.Tr key={`${row.id}-tba-${index + 1}`}>
@@ -1223,6 +1352,8 @@ export function MatchValidation() {
             </Table.Tbody>
           </Table>
         )}
+
+        <Button leftSection={<IconDeviceFloppy size={16} />}>Save Changes and Submit</Button>
       </Stack>
     </Box>
   );
