@@ -936,6 +936,7 @@ export function MatchValidation() {
           aria-label="Increase value"
           onClick={handleIncrement}
           disabled={numericValue >= MAX_NUMERIC_FIELD_VALUE}
+          className={classes.numericControlButton}
         >
           +
         </ActionIcon>
@@ -948,6 +949,7 @@ export function MatchValidation() {
           aria-label="Decrease value"
           onClick={handleDecrement}
           disabled={numericValue <= 0}
+          className={classes.numericControlButton}
         >
           −
         </ActionIcon>
