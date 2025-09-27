@@ -118,6 +118,7 @@ export interface MatchValidationDataUpdate {
   userId?: string;
   organizationId?: number;
   matchData: TeamMatchData;
+  notes?: string | null;
 }
 
 const buildValidationPayload = (update: ValidationStatusUpdate) => ({
@@ -136,25 +137,32 @@ export const updateValidationStatuses = (updates: ValidationStatusUpdate[]) =>
   apiFetch<void>('scout/dataValidation', {
     method: 'PATCH',
     json: { matches: updates.map((update) => buildValidationPayload(update)) },
-  });
-
-const buildMatchDataPayload = (update: MatchValidationDataUpdate) => ({
-  season: update.season,
-  eventKey: update.eventKey,
-  matchNumber: update.matchNumber,
-  matchLevel: update.matchLevel,
-  teamNumber: update.teamNumber,
-  userId: update.userId,
-  organizationId: update.organizationId,
-  matchData: update.matchData,
-  event_key: update.eventKey,
-  match_number: update.matchNumber,
-  match_level: update.matchLevel,
-  team_number: update.teamNumber,
-  user_id: update.userId,
-  organization_id: update.organizationId,
-  match_data: update.matchData,
 });
+
+const buildMatchDataPayload = (update: MatchValidationDataUpdate) => {
+  const payload: TeamMatchData & { notes?: string | null } = {
+    ...update.matchData,
+    season: update.season,
+    event_key: update.eventKey,
+    match_number: update.matchNumber,
+    match_level: update.matchLevel,
+    team_number: update.teamNumber,
+  };
+
+  if (update.userId !== undefined) {
+    payload.user_id = update.userId;
+  }
+
+  if (update.organizationId !== undefined) {
+    payload.organization_id = update.organizationId;
+  }
+
+  if (update.notes !== undefined) {
+    payload.notes = update.notes;
+  }
+
+  return payload;
+};
 
 export const submitMatchValidationData = (updates: MatchValidationDataUpdate[]) =>
   apiFetch<void>('scout/dataValidation', {
