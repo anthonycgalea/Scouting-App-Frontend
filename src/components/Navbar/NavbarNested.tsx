@@ -8,6 +8,7 @@ import {
   IconNotes,
   IconPresentationAnalytics,
   IconUsersGroup,
+  IconNumber123,
 } from '@tabler/icons-react';
 import { Button, Code, Group, ScrollArea } from '@mantine/core';
 import { LinksGroup } from '../NavbarLinksGroup/NavbarLinksGroup';
@@ -23,6 +24,12 @@ const BASE_LINKS_DATA = [
   { label: 'Teams', icon: IconUsersGroup, to: '/teams' },
   { label: 'SuperScout', icon: IconBulb, to: '/superScout' },
   { label: 'Analytics', icon: IconPresentationAnalytics },
+   { label: 'Picking', icon: IconNumber123, 
+    links: [
+      { label: 'Pick Lists'},
+      { label: 'Alliance Selection'}
+    ]
+   },
   {
     label: 'Data Manager',
     icon: IconFileAnalytics,
