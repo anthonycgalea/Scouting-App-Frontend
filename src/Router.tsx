@@ -19,7 +19,7 @@ import { TeamMembersPage } from './pages/TeamMembers.page';
 import { TeamDirectoryPage } from './pages/TeamDirectory.page';
 import { TeamDetailPage } from './pages/TeamDetailPage.page';
 import { DataValidationPage } from './pages/DataValidation.page';
-import { MatchValidationPage } from './pages/MatchValidation.page';
+import { MatchValidation } from './components/MatchValidation/MatchValidation';
 import { DataImportPage } from './pages/DataImport.page';
 import { SuperScoutPage } from './pages/SuperScout.page';
 import { OrganizationEventSelectPage } from './pages/OrganizationEventSelect.page';
@@ -124,7 +124,7 @@ const dataValidationRoute = createRoute({
 const matchValidationRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/dataValidation/matches/$matchLevel/$matchNumber/$alliance',
-  component: MatchValidationPage,
+  component: MatchValidation,
 });
 
 const dataImportRoute = createRoute({
