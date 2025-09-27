@@ -314,27 +314,42 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
     matchNumber: number,
     matchLevel: string,
     alliance: 'RED' | 'BLUE',
+    teamNumbers: [number, number, number],
     className?: string
-  ) => (
-    <Table.Td className={className}>
-      <Button
-        onClick={() =>
-          navigate({
-            to: '/dataValidation/matches/$matchLevel/$matchNumber/$alliance',
-            params: () => ({
-              matchLevel: String(matchLevel ?? ''),
-              matchNumber: String(matchNumber),
-              alliance: alliance.toLowerCase(),
-            }),
-          })
-        }
-        size="xs"
-        variant="light"
-      >
-        {alliance === 'RED' ? 'Validate Red' : 'Validate Blue'}
-      </Button>
-    </Table.Td>
-  );
+  ) => {
+    const statuses = teamNumbers.map((teamNumber) =>
+      validationLookup.get(buildValidationKey(matchLevel, matchNumber, teamNumber))
+    );
+
+    const hasPending = statuses.some((status) => status === 'PENDING');
+    const hasMissingRecord = statuses.some((status) => status === undefined);
+    const allValid =
+      statuses.length > 0 && statuses.every((status) => status === 'VALID');
+    const isDisabled = hasPending || hasMissingRecord || allValid;
+
+    return (
+      <Table.Td className={className}>
+        <Button
+          onClick={() =>
+            navigate({
+              to: '/dataValidation/matches/$matchLevel/$matchNumber/$alliance',
+              params: () => ({
+                matchLevel: String(matchLevel ?? ''),
+                matchNumber: String(matchNumber),
+                alliance: alliance.toLowerCase(),
+              }),
+            })
+          }
+          size="xs"
+          variant="light"
+          color={alliance === 'RED' ? 'red' : undefined}
+          disabled={isDisabled}
+        >
+          {alliance === 'RED' ? 'Validate Red' : 'Validate Blue'}
+        </Button>
+      </Table.Td>
+    );
+  };
 
   const rows = sortedData.map((row) => (
     <Table.Tr key={row.matchNumber}>
@@ -348,6 +363,7 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
         row.matchNumber,
         row.matchLevel,
         'RED',
+        [row.red1, row.red2, row.red3],
         classes.redCell
       )}
       {renderTeamCell(row.matchNumber, row.matchLevel, row.blue1, classes.blueCell)}
@@ -357,6 +373,7 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
         row.matchNumber,
         row.matchLevel,
         'BLUE',
+        [row.blue1, row.blue2, row.blue3],
         classes.blueCell
       )}
     </Table.Tr>
