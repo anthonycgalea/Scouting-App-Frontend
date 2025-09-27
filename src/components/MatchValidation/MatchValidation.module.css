@@ -1,3 +1,23 @@
 .cell {
   vertical-align: middle;
 }
+
+.rowMatch,
+.rowMatch td,
+.rowMatch th {
+  background-color: var(--mantine-color-green-0) !important;
+}
+
+.rowMismatch,
+.rowMismatch td,
+.rowMismatch th {
+  background-color: var(--mantine-color-red-0) !important;
+}
+
+.cellMatch {
+  background-color: var(--mantine-color-green-1) !important;
+}
+
+.cellMismatch {
+  background-color: var(--mantine-color-red-1) !important;
+}
