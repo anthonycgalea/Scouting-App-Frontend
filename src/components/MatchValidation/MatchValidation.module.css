@@ -35,5 +35,6 @@
 }
 
 .numericControlButton {
-  color: #ffc107;
+  background-color: #ffc107;
+  color: light-dark(var(--mantine-color-gray-2), var(--mantine-color-gray-8)) !important;
 }
