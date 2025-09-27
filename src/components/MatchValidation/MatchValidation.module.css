@@ -21,3 +21,15 @@
 .cellMismatch {
   background-color: var(--mantine-color-red-1) !important;
 }
+
+.numericControlGroup {
+  justify-content: center;
+}
+
+.numericControlValue {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  font-variant-numeric: tabular-nums;
+}
