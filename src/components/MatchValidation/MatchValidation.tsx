@@ -15,6 +15,7 @@ import {
   type MatchValidationNumericField,
   type MatchValidationPairedRowEntry,
 } from './matchValidation.config';
+import classes from './MatchValidation.module.css';
 
 const ENDGAME_LABELS: Record<Endgame2025, string> = {
   NONE: 'None',
@@ -350,7 +351,7 @@ const extractScoutMatchData = (candidate: unknown): Partial<TeamMatchData> | und
 const getTeamMatchData = (candidate: unknown): Partial<TeamMatchData> | undefined =>
   extractScoutMatchData(candidate);
 
-export function MatchValidationPage() {
+export function MatchValidation() {
   const params = useParams({ from: '/dataValidation/matches/$matchLevel/$matchNumber/$alliance' });
 
   const matchLevelParam = (params.matchLevel ?? '').trim();
@@ -705,26 +706,32 @@ export function MatchValidationPage() {
           <Table striped withColumnBorders highlightOnHover>
             <Table.Thead>
               <Table.Tr>
-                <Table.Th ta="right" />
+                <Table.Th ta="right" className={classes.cell} />
                 {MATCH_VALIDATION_TEAM_HEADERS.map((header) => (
-                  <Table.Th key={header} ta="center">
+                  <Table.Th key={header} ta="center" className={classes.cell}>
                     {header}
                   </Table.Th>
                 ))}
-                <Table.Th ta="center">TBA</Table.Th>
+                <Table.Th ta="center" className={classes.cell}>
+                  TBA
+                </Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
               <Table.Tr>
-                <Table.Th scope="row" ta="right">
+                <Table.Th scope="row" ta="right" className={classes.cell}>
                   Team Number
                 </Table.Th>
                 {teamQueryStates.map((state, index) => (
-                  <Table.Td key={`team-${state.teamNumber ?? index}`} ta="center">
+                  <Table.Td
+                    key={`team-${state.teamNumber ?? index}`}
+                    ta="center"
+                    className={classes.cell}
+                  >
                     {renderTeamNumberCell(state.teamNumber)}
                   </Table.Td>
                 ))}
-                <Table.Td ta="center">
+                <Table.Td ta="center" className={classes.cell}>
                   {isTbaMatchDataLoading
                     ? getLoaderNode()
                     : isTbaMatchDataError
@@ -738,8 +745,8 @@ export function MatchValidationPage() {
               {MATCH_VALIDATION_TABLE_LAYOUT.map((section) => (
                 <Fragment key={section.id}>
                   <Table.Tr>
-                    <Table.Th scope="row" ta="right" />
-                    <Table.Th colSpan={4} ta="center">
+                    <Table.Th scope="row" ta="right" className={classes.cell} />
+                    <Table.Th colSpan={4} ta="center" className={classes.cell}>
                       {section.title}
                     </Table.Th>
                   </Table.Tr>
@@ -748,15 +755,19 @@ export function MatchValidationPage() {
                     if (row.type === 'numeric') {
                       return (
                         <Table.Tr key={`${section.id}-${row.id}`}>
-                          <Table.Th scope="row" ta="right">
+                          <Table.Th scope="row" ta="right" className={classes.cell}>
                             {row.label}
                           </Table.Th>
                           {teamQueryStates.map((state, index) => (
-                            <Table.Td key={`${row.id}-${index}`} ta="center">
+                            <Table.Td
+                              key={`${row.id}-${index}`}
+                              ta="center"
+                              className={classes.cell}
+                            >
                               {renderTeamNumericValue(state, row.field)}
                             </Table.Td>
                           ))}
-                          <Table.Td ta="center">
+                          <Table.Td ta="center" className={classes.cell}>
                             {renderTbaNumericValue(aggregatedTbaData.numericSums.get(row.field))}
                           </Table.Td>
                         </Table.Tr>
@@ -766,11 +777,15 @@ export function MatchValidationPage() {
                     if (row.type === 'paired') {
                       return row.rows.map((entry, entryIndex) => (
                         <Table.Tr key={`${section.id}-${row.id}-${entry.id}`}>
-                          <Table.Th scope="row" ta="right">
+                          <Table.Th scope="row" ta="right" className={classes.cell}>
                             {entry.label}
                           </Table.Th>
                           {teamQueryStates.map((state, index) => (
-                            <Table.Td key={`${row.id}-${entry.id}-${index}`} ta="center">
+                            <Table.Td
+                              key={`${row.id}-${entry.id}-${index}`}
+                              ta="center"
+                              className={classes.cell}
+                            >
                               {renderTeamNumericValue(state, entry.field)}
                             </Table.Td>
                           ))}
@@ -778,7 +793,7 @@ export function MatchValidationPage() {
                             <Table.Td
                               rowSpan={row.rows.length}
                               ta="center"
-                              style={{ verticalAlign: 'top' }}
+                              className={classes.cell}
                             >
                               {renderTbaStackedValues(row.rows)}
                             </Table.Td>
@@ -799,7 +814,7 @@ export function MatchValidationPage() {
                               scope="row"
                               rowSpan={rowSpan}
                               ta="right"
-                              style={{ verticalAlign: 'top' }}
+                              className={classes.cell}
                             >
                               {row.label}
                             </Table.Th>
@@ -808,18 +823,18 @@ export function MatchValidationPage() {
                                 key={`${row.id}-team-${index}`}
                                 rowSpan={rowSpan}
                                 ta="center"
-                                style={{ verticalAlign: 'top' }}
+                                className={classes.cell}
                               >
                                 {renderTeamEndgameValue(state)}
                               </Table.Td>
                             ))}
-                            <Table.Td ta="center">
+                            <Table.Td ta="center" className={classes.cell}>
                               {renderTbaEndgameValue(firstTeamNumber)}
                             </Table.Td>
                           </Table.Tr>
                           {remainingTeamNumbers.map((teamNumber, index) => (
                             <Table.Tr key={`${row.id}-tba-${index + 1}`}>
-                              <Table.Td ta="center">
+                              <Table.Td ta="center" className={classes.cell}>
                                 {renderTbaEndgameValue(teamNumber)}
                               </Table.Td>
                             </Table.Tr>
