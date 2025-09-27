@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActionIcon,
   Box,
@@ -684,12 +684,38 @@ export function MatchValidation() {
   const [teamEdits, setTeamEdits] = useState<Record<number, Partial<TeamMatchData>>>({});
   const [rowOverrides, setRowOverrides] = useState<Record<string, boolean>>({});
   const [notes, setNotes] = useState('');
+  const notesInitializedRef = useRef(false);
+  const initialNotesRef = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
     setTeamEdits({});
     setRowOverrides({});
     setNotes('');
+    notesInitializedRef.current = false;
+    initialNotesRef.current = undefined;
   }, [matchEntry?.match_level, matchEntry?.match_number, allianceParam]);
+
+  useEffect(() => {
+    if (notesInitializedRef.current) {
+      return;
+    }
+
+    const metadataCandidates = [team1Query.data, team2Query.data, team3Query.data];
+
+    for (const candidate of metadataCandidates) {
+      const metadata = extractMatchMetadata(candidate);
+
+      if (!isCompleteMetadata(metadata)) {
+        continue;
+      }
+
+      notesInitializedRef.current = true;
+      initialNotesRef.current = metadata.notes ?? null;
+      setNotes(metadata.notes ?? '');
+
+      break;
+    }
+  }, [team1Query.data, team2Query.data, team3Query.data]);
 
   const isRowOverridden = useCallback(
     (rowKey: string) => Boolean(rowOverrides[rowKey]),
@@ -983,6 +1009,20 @@ export function MatchValidation() {
     }
 
     const updates: MatchValidationDataUpdate[] = [];
+    const initialNotes = initialNotesRef.current;
+    const notesForSubmission = (() => {
+      if (initialNotes === undefined) {
+        return notes.length > 0 ? notes : null;
+      }
+
+      const initialValue = initialNotes ?? '';
+
+      if (initialValue === notes) {
+        return undefined;
+      }
+
+      return notes.length > 0 ? notes : null;
+    })();
 
     for (const state of teamQueryStates) {
       if (!isValidNumber(state.teamNumber)) {
@@ -1020,6 +1060,7 @@ export function MatchValidation() {
         userId: metadata.userId,
         organizationId: metadata.organizationId,
         matchData: updatedMatchData,
+        ...(notesForSubmission !== undefined ? { notes: notesForSubmission } : {}),
       });
     }
 
@@ -1047,6 +1088,7 @@ export function MatchValidation() {
     getCurrentEndgameValue,
     getCurrentNumericValue,
     isSubmitting,
+    notes,
     navigate,
     queryClient,
     submitMatchData,
