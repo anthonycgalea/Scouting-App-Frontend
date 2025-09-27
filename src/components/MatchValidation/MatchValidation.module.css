@@ -5,21 +5,21 @@
 .rowMatch,
 .rowMatch td,
 .rowMatch th {
-  background-color: var(--mantine-color-green-0) !important;
+  background-color: light-dark(var(--mantine-color-green-2), var(--mantine-color-green-8)) !important;
 }
 
 .rowMismatch,
 .rowMismatch td,
 .rowMismatch th {
-  background-color: var(--mantine-color-red-0) !important;
+  background-color: light-dark(var(--mantine-color-red-2), var(--mantine-color-red-8)) !important;
 }
 
 .cellMatch {
-  background-color: var(--mantine-color-green-1) !important;
+  background-color: light-dark(var(--mantine-color-green-2), var(--mantine-color-green-8)) !important;
 }
 
 .cellMismatch {
-  background-color: var(--mantine-color-red-1) !important;
+  background-color: light-dark(var(--mantine-color-red-2), var(--mantine-color-red-8)) !important;
 }
 
 .numericControlGroup {
