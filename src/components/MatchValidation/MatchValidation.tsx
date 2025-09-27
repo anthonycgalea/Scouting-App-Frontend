@@ -10,14 +10,20 @@ import {
   Stack,
   Table,
   Text,
+  Textarea,
   Title,
 } from '@mantine/core';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams } from '@tanstack/react-router';
 import cx from 'clsx';
 import { IconDeviceFloppy } from '@tabler/icons-react';
 import {
+  type MatchValidationDataUpdate,
   type TeamMatchData,
   Endgame2025,
+  scoutMatchQueryKey,
+  submitMatchValidationData,
+  teamMatchValidationQueryKey,
   useEventTbaMatchData,
   useMatchSchedule,
   useScoutMatch,
@@ -234,6 +240,170 @@ const normalizeTbaTeamEntries = (candidate: unknown): TbaTeamEntry[] => {
 
   return [];
 };
+
+interface MatchMetadata {
+  season?: number;
+  eventKey?: string;
+  matchNumber?: number;
+  matchLevel?: string;
+  teamNumber?: number;
+  userId?: string;
+  organizationId?: number;
+  notes?: string | null;
+}
+
+const parseIntegerField = (value: unknown): number | undefined => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+
+    if (trimmed.length === 0) {
+      return undefined;
+    }
+
+    const parsed = Number.parseInt(trimmed, 10);
+
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return undefined;
+};
+
+const parseStringField = (value: unknown): string | undefined => {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+
+  return trimmed.length > 0 ? trimmed : undefined;
+};
+
+const mergeMatchMetadata = (primary: MatchMetadata, secondary: MatchMetadata | undefined): MatchMetadata => {
+  if (!secondary) {
+    return primary;
+  }
+
+  return {
+    season: primary.season ?? secondary.season,
+    eventKey: primary.eventKey ?? secondary.eventKey,
+    matchNumber: primary.matchNumber ?? secondary.matchNumber,
+    matchLevel: primary.matchLevel ?? secondary.matchLevel,
+    teamNumber: primary.teamNumber ?? secondary.teamNumber,
+    userId: primary.userId ?? secondary.userId,
+    organizationId: primary.organizationId ?? secondary.organizationId,
+    notes: primary.notes ?? secondary.notes,
+  };
+};
+
+const hasRequiredMatchMetadataFields = (metadata: MatchMetadata | undefined): boolean =>
+  Boolean(
+    metadata &&
+      typeof metadata.season === 'number' &&
+      Number.isFinite(metadata.season) &&
+      typeof metadata.eventKey === 'string' &&
+      metadata.eventKey.length > 0 &&
+      typeof metadata.matchNumber === 'number' &&
+      Number.isFinite(metadata.matchNumber) &&
+      typeof metadata.matchLevel === 'string' &&
+      metadata.matchLevel.length > 0 &&
+      typeof metadata.teamNumber === 'number' &&
+      Number.isFinite(metadata.teamNumber) &&
+      typeof metadata.userId === 'string' &&
+      metadata.userId.length > 0 &&
+      typeof metadata.organizationId === 'number' &&
+      Number.isFinite(metadata.organizationId)
+  );
+
+const extractMatchMetadata = (candidate: unknown): MatchMetadata | undefined => {
+  const visited = new Set<unknown>();
+
+  const helper = (value: unknown): MatchMetadata | undefined => {
+    if (!value || visited.has(value)) {
+      return undefined;
+    }
+
+    visited.add(value);
+
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        const result = helper(item);
+
+        if (result) {
+          return result;
+        }
+      }
+
+      return undefined;
+    }
+
+    if (typeof value !== 'object') {
+      return undefined;
+    }
+
+    const record = value as Record<string, unknown>;
+    const initial: MatchMetadata = {
+      season: parseIntegerField(record.season),
+      eventKey: parseStringField(record.eventKey ?? record.event_key),
+      matchNumber: parseIntegerField(record.matchNumber ?? record.match_number),
+      matchLevel: parseStringField(record.matchLevel ?? record.match_level),
+      teamNumber: parseIntegerField(record.teamNumber ?? record.team_number),
+      userId: parseStringField(record.userId ?? record.user_id),
+      organizationId: parseIntegerField(record.organizationId ?? record.organization_id),
+    };
+
+    const notesValue = record.notes;
+
+    if (notesValue === null || typeof notesValue === 'string') {
+      initial.notes = notesValue;
+    }
+
+    let combined: MatchMetadata = { ...initial };
+
+    if (!hasRequiredMatchMetadataFields(combined)) {
+      for (const nested of Object.values(record)) {
+        if (!nested || typeof nested !== 'object') {
+          continue;
+        }
+
+        const nestedMetadata = helper(nested);
+
+        if (!nestedMetadata) {
+          continue;
+        }
+
+        combined = mergeMatchMetadata(combined, nestedMetadata);
+
+        if (hasRequiredMatchMetadataFields(combined)) {
+          break;
+        }
+      }
+    }
+
+    return Object.values(combined).some((value) => value !== undefined) ? combined : undefined;
+  };
+
+  return helper(candidate);
+};
+
+type CompleteMatchMetadata = MatchMetadata & {
+  season: number;
+  eventKey: string;
+  matchNumber: number;
+  matchLevel: string;
+  teamNumber: number;
+  userId: string;
+  organizationId: number;
+};
+
+const isCompleteMetadata = (
+  metadata: MatchMetadata | undefined
+): metadata is CompleteMatchMetadata => hasRequiredMatchMetadataFields(metadata);
 
 const extractTbaTeamEntries = (raw: unknown): TbaTeamEntry[] => {
   if (!raw || typeof raw !== 'object') {
@@ -512,10 +682,12 @@ export function MatchValidation() {
 
   const [teamEdits, setTeamEdits] = useState<Record<number, Partial<TeamMatchData>>>({});
   const [rowOverrides, setRowOverrides] = useState<Record<string, boolean>>({});
+  const [notes, setNotes] = useState('');
 
   useEffect(() => {
     setTeamEdits({});
     setRowOverrides({});
+    setNotes('');
   }, [matchEntry?.match_level, matchEntry?.match_number, allianceParam]);
 
   const isRowOverridden = useCallback(
@@ -793,6 +965,90 @@ export function MatchValidation() {
     [getBaseEndgameValue]
   );
 
+  const queryClient = useQueryClient();
+  const { mutateAsync: submitMatchData, isPending: isSubmitting } = useMutation({
+    mutationFn: submitMatchValidationData,
+  });
+
+  const handleSubmit = useCallback(async () => {
+    if (isSubmitting) {
+      return;
+    }
+
+    const requiredUpdates = teamQueryStates.filter((state) => isValidNumber(state.teamNumber)).length;
+
+    if (requiredUpdates === 0) {
+      return;
+    }
+
+    const updates: MatchValidationDataUpdate[] = [];
+
+    for (const state of teamQueryStates) {
+      if (!isValidNumber(state.teamNumber)) {
+        continue;
+      }
+
+      const metadata = extractMatchMetadata(state.query.data);
+
+      if (!isCompleteMetadata(metadata)) {
+        return;
+      }
+
+      const updatedMatchData = {
+        season: metadata.season,
+        event_key: metadata.eventKey,
+        match_number: metadata.matchNumber,
+        match_level: metadata.matchLevel,
+        team_number: metadata.teamNumber,
+        user_id: metadata.userId,
+        organization_id: metadata.organizationId,
+        endgame: getCurrentEndgameValue(state),
+      } as TeamMatchData;
+
+      MATCH_VALIDATION_NUMERIC_FIELDS.forEach((field) => {
+        const numericValue = getCurrentNumericValue(state, field);
+        updatedMatchData[field] = numericValue ?? 0;
+      });
+
+      updates.push({
+        season: metadata.season,
+        eventKey: metadata.eventKey,
+        matchNumber: metadata.matchNumber,
+        matchLevel: metadata.matchLevel,
+        teamNumber: metadata.teamNumber,
+        userId: metadata.userId,
+        organizationId: metadata.organizationId,
+        matchData: updatedMatchData,
+      });
+    }
+
+    if (updates.length !== requiredUpdates) {
+      return;
+    }
+
+    await submitMatchData(updates);
+
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: teamMatchValidationQueryKey() }),
+      ...updates.map((update) =>
+        queryClient.invalidateQueries({
+          queryKey: scoutMatchQueryKey({
+            matchNumber: update.matchNumber,
+            matchLevel: update.matchLevel,
+            teamNumber: update.teamNumber,
+          }),
+        })
+      ),
+    ]);
+  }, [
+    getCurrentEndgameValue,
+    getCurrentNumericValue,
+    isSubmitting,
+    queryClient,
+    submitMatchData,
+    teamQueryStates,
+  ]);
+
   const aggregateTeamFieldValues = (
     fields: MatchValidationNumericField[]
   ): AggregatedTeamTotals => {
@@ -962,15 +1218,15 @@ export function MatchValidation() {
     isOverridden: boolean
   ) => {
     if (!isValidNumber(state.teamNumber)) {
-      return { content: getPlaceholderNode(), className: undefined };
+      return { content: getPlaceholderNode(), className: undefined, isMismatch: false };
     }
 
     if (state.query.isLoading) {
-      return { content: getLoaderNode(), className: undefined };
+      return { content: getLoaderNode(), className: undefined, isMismatch: false };
     }
 
     if (state.query.isError) {
-      return { content: getErrorNode(), className: undefined };
+      return { content: getErrorNode(), className: undefined, isMismatch: false };
     }
 
     const teamNumber = state.teamNumber;
@@ -981,6 +1237,8 @@ export function MatchValidation() {
       isTbaMatchDataLoading || isTbaMatchDataError || !isValidNumber(state.teamNumber)
         ? undefined
         : aggregatedTbaData.endgame.get(state.teamNumber);
+
+    const isMismatch = !isOverridden && tbaLabel !== undefined && label !== tbaLabel;
 
     const matchClass = isOverridden
       ? classes.cellMatch
@@ -1001,11 +1259,12 @@ export function MatchValidation() {
             setTeamEndgameValue(teamNumber, resolvedValue);
           }}
           allowDeselect={false}
-          withinPortal
+          comboboxProps={{ withinPortal: true }}
           styles={{ input: { textAlign: 'center' } }}
         />
       ),
       className: matchClass,
+      isMismatch,
     };
   };
 
@@ -1052,7 +1311,7 @@ export function MatchValidation() {
       return getPlaceholderNode();
     }
 
-    const totalValue = values.reduce((total, value) => total + (value ?? 0), 0);
+    const totalValue = values.reduce<number>((total, value) => total + (value ?? 0), 0);
 
     return <Text fz="sm">{totalValue}</Text>;
   };
@@ -1127,6 +1386,42 @@ export function MatchValidation() {
       </Box>
     );
   }
+
+  const teamStatesWithMetadata = teamQueryStates.map((state) => {
+    const metadata = extractMatchMetadata(state.query.data);
+
+    return {
+      ...state,
+      metadata,
+      isMetadataComplete:
+        !state.query.isLoading && !state.query.isError && isCompleteMetadata(metadata),
+    };
+  });
+
+  const hasTeamQueryLoading = teamStatesWithMetadata.some((state) => state.query.isLoading);
+  const hasTeamQueryError = teamStatesWithMetadata.some((state) => state.query.isError);
+  const hasMetadataGap = teamStatesWithMetadata.some(
+    (state) =>
+      isValidNumber(state.teamNumber) &&
+      !state.query.isLoading &&
+      !state.query.isError &&
+      !state.isMetadataComplete
+  );
+  const hasAllAllianceTeamNumbers =
+    allianceTeams.length > 0 && allianceTeams.every((teamNumber) => isValidNumber(teamNumber));
+  const validTeamCount = teamStatesWithMetadata.filter((state) =>
+    isValidNumber(state.teamNumber)
+  ).length;
+  const meetsNonMismatchRequirements =
+    hasAllAllianceTeamNumbers &&
+    validTeamCount === allianceTeams.length &&
+    !hasTeamQueryLoading &&
+    !hasTeamQueryError &&
+    !hasMetadataGap &&
+    !isTbaMatchDataLoading &&
+    !isTbaMatchDataError;
+
+  let isPageValid = meetsNonMismatchRequirements;
 
   const teamColumnCount = MATCH_VALIDATION_TEAM_HEADERS.length;
   const summaryColumnCount = 3;
@@ -1214,6 +1509,10 @@ export function MatchValidation() {
                         overrideKey
                       );
 
+                      if (rowHighlightClass === classes.rowMismatch) {
+                        isPageValid = false;
+                      }
+
                       return (
                         <Table.Tr
                           key={`${section.id}-${row.id}`}
@@ -1252,6 +1551,10 @@ export function MatchValidation() {
                         tbaTotals,
                         overrideKey
                       );
+
+                      if (rowHighlightClass === classes.rowMismatch) {
+                        isPageValid = false;
+                      }
 
                       return row.rows.map((entry, entryIndex) => (
                         <Table.Tr
@@ -1312,19 +1615,20 @@ export function MatchValidation() {
                               {row.label}
                             </Table.Th>
                             {teamQueryStates.map((state, index) => {
-                              const { content, className } = getTeamEndgameCell(
-                                state,
-                                overrideChecked
-                              );
+                              const cell = getTeamEndgameCell(state, overrideChecked);
+
+                              if (cell.isMismatch) {
+                                isPageValid = false;
+                              }
 
                               return (
                                 <Table.Td
                                   key={`${row.id}-team-${index}`}
                                   rowSpan={rowSpan}
                                   ta="center"
-                                  className={cx(classes.cell, className)}
+                                  className={cx(classes.cell, cell.className)}
                                 >
-                                  {content}
+                                  {cell.content}
                                 </Table.Td>
                               );
                             })}
@@ -1355,7 +1659,21 @@ export function MatchValidation() {
           </Table>
         )}
 
-        <Button leftSection={<IconDeviceFloppy size={16} />}>Save Changes and Submit</Button>
+        <Textarea
+          label="Notes"
+          minRows={3}
+          value={notes}
+          onChange={(event) => setNotes(event.currentTarget.value)}
+        />
+
+        <Button
+          leftSection={<IconDeviceFloppy size={16} />}
+          onClick={handleSubmit}
+          disabled={!isPageValid || isSubmitting}
+          loading={isSubmitting}
+        >
+          Save Changes and Submit
+        </Button>
       </Stack>
     </Box>
   );

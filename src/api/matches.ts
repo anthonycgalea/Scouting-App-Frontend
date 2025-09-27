@@ -109,6 +109,17 @@ export interface ValidationStatusUpdate {
   notes?: string | null;
 }
 
+export interface MatchValidationDataUpdate {
+  season: number;
+  eventKey: string;
+  matchNumber: number;
+  matchLevel: string;
+  teamNumber: number;
+  userId?: string;
+  organizationId?: number;
+  matchData: TeamMatchData;
+}
+
 const buildValidationPayload = (update: ValidationStatusUpdate) => ({
   matchNumber: update.matchNumber,
   matchLevel: update.matchLevel,
@@ -125,4 +136,28 @@ export const updateValidationStatuses = (updates: ValidationStatusUpdate[]) =>
   apiFetch<void>('scout/dataValidation', {
     method: 'PATCH',
     json: { matches: updates.map((update) => buildValidationPayload(update)) },
+  });
+
+const buildMatchDataPayload = (update: MatchValidationDataUpdate) => ({
+  season: update.season,
+  eventKey: update.eventKey,
+  matchNumber: update.matchNumber,
+  matchLevel: update.matchLevel,
+  teamNumber: update.teamNumber,
+  userId: update.userId,
+  organizationId: update.organizationId,
+  matchData: update.matchData,
+  event_key: update.eventKey,
+  match_number: update.matchNumber,
+  match_level: update.matchLevel,
+  team_number: update.teamNumber,
+  user_id: update.userId,
+  organization_id: update.organizationId,
+  match_data: update.matchData,
+});
+
+export const submitMatchValidationData = (updates: MatchValidationDataUpdate[]) =>
+  apiFetch<void>('scout/dataValidation', {
+    method: 'PUT',
+    json: { matches: updates.map((update) => buildMatchDataPayload(update)) },
   });
