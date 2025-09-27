@@ -14,7 +14,7 @@ import {
   Title,
 } from '@mantine/core';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useParams } from '@tanstack/react-router';
+import { useNavigate, useParams } from '@tanstack/react-router';
 import cx from 'clsx';
 import { IconDeviceFloppy } from '@tabler/icons-react';
 import {
@@ -589,6 +589,7 @@ const MAX_NUMERIC_FIELD_VALUE = 99;
 
 export function MatchValidation() {
   const params = useParams({ from: '/dataValidation/matches/$matchLevel/$matchNumber/$alliance' });
+  const navigate = useNavigate();
 
   const matchLevelParam = (params.matchLevel ?? '').trim();
   const matchNumberParam = Number.parseInt(params.matchNumber ?? '', 10);
@@ -1040,10 +1041,13 @@ export function MatchValidation() {
         })
       ),
     ]);
+
+    navigate({ to: '/dataValidation' });
   }, [
     getCurrentEndgameValue,
     getCurrentNumericValue,
     isSubmitting,
+    navigate,
     queryClient,
     submitMatchData,
     teamQueryStates,
