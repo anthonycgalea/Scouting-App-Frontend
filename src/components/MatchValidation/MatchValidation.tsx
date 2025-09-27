@@ -1,6 +1,7 @@
 import { Fragment, useMemo } from 'react';
 import { Box, Loader, Stack, Table, Text, Title } from '@mantine/core';
 import { useParams } from '@tanstack/react-router';
+import cx from 'clsx';
 import {
   type TeamMatchData,
   Endgame2025,
@@ -530,6 +531,112 @@ export function MatchValidation() {
     return { numericSums, endgame: endgameMap };
   }, [allianceTeams, allianceTotals, tbaTeamEntries]);
 
+  type AggregatedTeamTotals = {
+    total: number;
+    hasValue: boolean;
+    isLoading: boolean;
+    isError: boolean;
+  };
+
+  type TbaTotals = {
+    total: number;
+    hasValue: boolean;
+  };
+
+  const aggregateTeamFieldValues = (
+    fields: MatchValidationNumericField[]
+  ): AggregatedTeamTotals => {
+    let total = 0;
+    let hasValue = false;
+    let isLoadingRow = false;
+    let isErrorRow = false;
+
+    teamQueryStates.forEach((state) => {
+      if (!isValidNumber(state.teamNumber)) {
+        return;
+      }
+
+      if (state.query.isLoading) {
+        isLoadingRow = true;
+        return;
+      }
+
+      if (state.query.isError) {
+        isErrorRow = true;
+        return;
+      }
+
+      const data = getTeamMatchData(state.query.data);
+
+      if (!data) {
+        return;
+      }
+
+      hasValue = true;
+
+      fields.forEach((field) => {
+        total += parseNumericValue(data[field]) ?? 0;
+      });
+    });
+
+    return {
+      total,
+      hasValue,
+      isLoading: isLoadingRow,
+      isError: isErrorRow,
+    };
+  };
+
+  const getTbaTotalsForFields = (fields: MatchValidationNumericField[]): TbaTotals => {
+    let total = 0;
+    let hasValue = false;
+
+    fields.forEach((field) => {
+      const value = aggregatedTbaData.numericSums.get(field);
+
+      if (value !== undefined) {
+        total += value;
+        hasValue = true;
+      }
+    });
+
+    return { total, hasValue };
+  };
+
+  const resolveRowHighlightClassName = (
+    teamTotals: AggregatedTeamTotals,
+    tbaTotals: TbaTotals
+  ) => {
+    if (
+      !teamTotals.hasValue ||
+      teamTotals.isLoading ||
+      teamTotals.isError ||
+      isTbaMatchDataLoading ||
+      isTbaMatchDataError ||
+      !tbaTotals.hasValue
+    ) {
+      return undefined;
+    }
+
+    return teamTotals.total === tbaTotals.total ? classes.rowMatch : classes.rowMismatch;
+  };
+
+  const renderTotalValue = (totals: AggregatedTeamTotals) => {
+    if (totals.isLoading) {
+      return getLoaderNode();
+    }
+
+    if (totals.isError) {
+      return getErrorNode();
+    }
+
+    if (!totals.hasValue) {
+      return getPlaceholderNode();
+    }
+
+    return totals.total;
+  };
+
   const getPlaceholderNode = () => (
     <Text c="dimmed" fz="sm">
       —
@@ -566,23 +673,35 @@ export function MatchValidation() {
     return numericValue ?? 0;
   };
 
-  const renderTeamEndgameValue = (state: (typeof teamQueryStates)[number]) => {
+  const getTeamEndgameCell = (state: (typeof teamQueryStates)[number]) => {
     if (!isValidNumber(state.teamNumber)) {
-      return getPlaceholderNode();
+      return { content: getPlaceholderNode(), className: undefined };
     }
 
     if (state.query.isLoading) {
-      return getLoaderNode();
+      return { content: getLoaderNode(), className: undefined };
     }
 
     if (state.query.isError) {
-      return getErrorNode();
+      return { content: getErrorNode(), className: undefined };
     }
 
     const data = getTeamMatchData(state.query.data);
     const label = data ? formatEndgameValue(data.endgame) ?? ENDGAME_LABELS.NONE : ENDGAME_LABELS.NONE;
 
-    return label;
+    const tbaLabel =
+      isTbaMatchDataLoading || isTbaMatchDataError || !isValidNumber(state.teamNumber)
+        ? undefined
+        : aggregatedTbaData.endgame.get(state.teamNumber);
+
+    const matchClass =
+      tbaLabel !== undefined
+        ? label === tbaLabel
+          ? classes.cellMatch
+          : classes.cellMismatch
+        : undefined;
+
+    return { content: label, className: matchClass };
   };
 
   const renderTeamNumberCell = (teamNumber: number | undefined) => {
@@ -713,6 +832,9 @@ export function MatchValidation() {
                   </Table.Th>
                 ))}
                 <Table.Th ta="center" className={classes.cell}>
+                  Total
+                </Table.Th>
+                <Table.Th ta="center" className={classes.cell}>
                   TBA
                 </Table.Th>
               </Table.Tr>
@@ -732,6 +854,9 @@ export function MatchValidation() {
                   </Table.Td>
                 ))}
                 <Table.Td ta="center" className={classes.cell}>
+                  {getPlaceholderNode()}
+                </Table.Td>
+                <Table.Td ta="center" className={classes.cell}>
                   {isTbaMatchDataLoading
                     ? getLoaderNode()
                     : isTbaMatchDataError
@@ -746,15 +871,22 @@ export function MatchValidation() {
                 <Fragment key={section.id}>
                   <Table.Tr>
                     <Table.Th scope="row" ta="right" className={classes.cell} />
-                    <Table.Th colSpan={4} ta="center" className={classes.cell}>
+                    <Table.Th colSpan={5} ta="center" className={classes.cell}>
                       {section.title}
                     </Table.Th>
                   </Table.Tr>
 
                   {section.rows.map((row) => {
                     if (row.type === 'numeric') {
+                      const teamTotals = aggregateTeamFieldValues([row.field]);
+                      const tbaTotals = getTbaTotalsForFields([row.field]);
+                      const rowHighlightClass = resolveRowHighlightClassName(teamTotals, tbaTotals);
+
                       return (
-                        <Table.Tr key={`${section.id}-${row.id}`}>
+                        <Table.Tr
+                          key={`${section.id}-${row.id}`}
+                          className={cx(rowHighlightClass)}
+                        >
                           <Table.Th scope="row" ta="right" className={classes.cell}>
                             {row.label}
                           </Table.Th>
@@ -768,6 +900,9 @@ export function MatchValidation() {
                             </Table.Td>
                           ))}
                           <Table.Td ta="center" className={classes.cell}>
+                            {renderTotalValue(teamTotals)}
+                          </Table.Td>
+                          <Table.Td ta="center" className={classes.cell}>
                             {renderTbaNumericValue(aggregatedTbaData.numericSums.get(row.field))}
                           </Table.Td>
                         </Table.Tr>
@@ -775,8 +910,16 @@ export function MatchValidation() {
                     }
 
                     if (row.type === 'paired') {
+                      const fields = row.rows.map((entry) => entry.field);
+                      const teamTotals = aggregateTeamFieldValues(fields);
+                      const tbaTotals = getTbaTotalsForFields(fields);
+                      const rowHighlightClass = resolveRowHighlightClassName(teamTotals, tbaTotals);
+
                       return row.rows.map((entry, entryIndex) => (
-                        <Table.Tr key={`${section.id}-${row.id}-${entry.id}`}>
+                        <Table.Tr
+                          key={`${section.id}-${row.id}-${entry.id}`}
+                          className={cx(rowHighlightClass)}
+                        >
                           <Table.Th scope="row" ta="right" className={classes.cell}>
                             {entry.label}
                           </Table.Th>
@@ -789,6 +932,15 @@ export function MatchValidation() {
                               {renderTeamNumericValue(state, entry.field)}
                             </Table.Td>
                           ))}
+                          {entryIndex === 0 ? (
+                            <Table.Td
+                              rowSpan={row.rows.length}
+                              ta="center"
+                              className={classes.cell}
+                            >
+                              {renderTotalValue(teamTotals)}
+                            </Table.Td>
+                          ) : null}
                           {entryIndex === 0 ? (
                             <Table.Td
                               rowSpan={row.rows.length}
@@ -818,16 +970,23 @@ export function MatchValidation() {
                             >
                               {row.label}
                             </Table.Th>
-                            {teamQueryStates.map((state, index) => (
-                              <Table.Td
-                                key={`${row.id}-team-${index}`}
-                                rowSpan={rowSpan}
-                                ta="center"
-                                className={classes.cell}
-                              >
-                                {renderTeamEndgameValue(state)}
-                              </Table.Td>
-                            ))}
+                            {teamQueryStates.map((state, index) => {
+                              const { content, className } = getTeamEndgameCell(state);
+
+                              return (
+                                <Table.Td
+                                  key={`${row.id}-team-${index}`}
+                                  rowSpan={rowSpan}
+                                  ta="center"
+                                  className={cx(classes.cell, className)}
+                                >
+                                  {content}
+                                </Table.Td>
+                              );
+                            })}
+                            <Table.Td rowSpan={rowSpan} ta="center" className={classes.cell}>
+                              {getPlaceholderNode()}
+                            </Table.Td>
                             <Table.Td ta="center" className={classes.cell}>
                               {renderTbaEndgameValue(firstTeamNumber)}
                             </Table.Td>
