@@ -1,5 +1,15 @@
-import { Fragment, useMemo } from 'react';
-import { Box, Loader, Stack, Table, Text, Title } from '@mantine/core';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  ActionIcon,
+  Box,
+  Group,
+  Loader,
+  Select,
+  Stack,
+  Table,
+  Text,
+  Title,
+} from '@mantine/core';
 import { useParams } from '@tanstack/react-router';
 import cx from 'clsx';
 import {
@@ -275,7 +285,6 @@ const formatEndgameValue = (value: unknown): string | undefined => {
 const isValidNumber = (value: number | undefined): value is number =>
   typeof value === 'number' && Number.isFinite(value);
 
-const formatMatchLevel = (level: string) => level.toUpperCase();
 const formatAlliance = (value: string) => value.toUpperCase();
 
 const SCOUT_MATCH_DATA_SOURCE_KEYS = ['matchData', 'match_data', 'data', 'json'] as const;
@@ -351,6 +360,12 @@ const extractScoutMatchData = (candidate: unknown): Partial<TeamMatchData> | und
 
 const getTeamMatchData = (candidate: unknown): Partial<TeamMatchData> | undefined =>
   extractScoutMatchData(candidate);
+
+const ENDGAME_OPTIONS: Array<{ value: Endgame2025; label: string }> = (
+  Object.entries(ENDGAME_LABELS) as Array<[Endgame2025, string]>
+).map(([value, label]) => ({ value, label }));
+
+const MAX_NUMERIC_FIELD_VALUE = 99;
 
 export function MatchValidation() {
   const params = useParams({ from: '/dataValidation/matches/$matchLevel/$matchNumber/$alliance' });
@@ -444,6 +459,12 @@ export function MatchValidation() {
     { teamNumber: rawTeamNumbers[1], query: team2Query },
     { teamNumber: rawTeamNumbers[2], query: team3Query },
   ];
+
+  const [teamEdits, setTeamEdits] = useState<Record<number, Partial<TeamMatchData>>>({});
+
+  useEffect(() => {
+    setTeamEdits({});
+  }, [matchEntry?.match_level, matchEntry?.match_number, allianceParam]);
 
   const allianceTeamSet = useMemo(() => {
     const values = new Set<number>();
@@ -543,6 +564,161 @@ export function MatchValidation() {
     hasValue: boolean;
   };
 
+  const getBaseNumericValue = useCallback(
+    (teamNumber: number, field: MatchValidationNumericField): number | undefined => {
+      const teamState = teamQueryStates.find((state) => state.teamNumber === teamNumber);
+
+      if (!teamState) {
+        return undefined;
+      }
+
+      const data = getTeamMatchData(teamState.query.data);
+
+      return data ? parseNumericValue(data[field]) : undefined;
+    },
+    [teamQueryStates]
+  );
+
+  const getCurrentNumericValue = useCallback(
+    (state: (typeof teamQueryStates)[number], field: MatchValidationNumericField): number | undefined => {
+      if (!isValidNumber(state.teamNumber)) {
+        return undefined;
+      }
+
+      const overrideValue = teamEdits[state.teamNumber]?.[field];
+
+      if (typeof overrideValue === 'number' && Number.isFinite(overrideValue)) {
+        return overrideValue;
+      }
+
+      const data = getTeamMatchData(state.query.data);
+
+      return data ? parseNumericValue(data[field]) : undefined;
+    },
+    [teamEdits]
+  );
+
+  const clampNumericValue = (value: number) =>
+    Math.max(0, Math.min(MAX_NUMERIC_FIELD_VALUE, Math.round(value)));
+
+  const adjustTeamNumericValue = useCallback(
+    (teamNumber: number, field: MatchValidationNumericField, delta: number) => {
+      if (!isValidNumber(teamNumber) || delta === 0) {
+        return;
+      }
+
+      setTeamEdits((previous) => {
+        const previousEntry = previous[teamNumber];
+        const previousOverride = previousEntry?.[field];
+        const baseValue = getBaseNumericValue(teamNumber, field) ?? 0;
+        const currentValue =
+          typeof previousOverride === 'number' && Number.isFinite(previousOverride)
+            ? previousOverride
+            : baseValue;
+        const nextValue = clampNumericValue(currentValue + delta);
+
+        if (nextValue === currentValue) {
+          return previous;
+        }
+
+        const next = { ...previous };
+        const nextEntry = { ...(previousEntry ?? {}) };
+
+        if (nextValue === baseValue) {
+          delete nextEntry[field];
+
+          if (Object.keys(nextEntry).length === 0) {
+            delete next[teamNumber];
+          } else {
+            next[teamNumber] = nextEntry;
+          }
+
+          return next;
+        }
+
+        nextEntry[field] = nextValue;
+        next[teamNumber] = nextEntry;
+
+        return next;
+      });
+    },
+    [getBaseNumericValue]
+  );
+
+  const getBaseEndgameValue = useCallback(
+    (teamNumber: number): Endgame2025 => {
+      const teamState = teamQueryStates.find((state) => state.teamNumber === teamNumber);
+
+      if (!teamState) {
+        return 'NONE';
+      }
+
+      const data = getTeamMatchData(teamState.query.data);
+      const parsed = data ? parseEndgameKey(data.endgame) : undefined;
+
+      return parsed ?? 'NONE';
+    },
+    [teamQueryStates]
+  );
+
+  const getCurrentEndgameValue = useCallback(
+    (state: (typeof teamQueryStates)[number]): Endgame2025 => {
+      if (!isValidNumber(state.teamNumber)) {
+        return 'NONE';
+      }
+
+      const overrideValue = teamEdits[state.teamNumber]?.endgame;
+
+      if (overrideValue && overrideValue in ENDGAME_LABELS) {
+        return overrideValue;
+      }
+
+      const data = getTeamMatchData(state.query.data);
+      const parsed = data ? parseEndgameKey(data.endgame) : undefined;
+
+      return parsed ?? 'NONE';
+    },
+    [teamEdits]
+  );
+
+  const setTeamEndgameValue = useCallback(
+    (teamNumber: number, value: Endgame2025) => {
+      if (!isValidNumber(teamNumber)) {
+        return;
+      }
+
+      setTeamEdits((previous) => {
+        const baseValue = getBaseEndgameValue(teamNumber);
+
+        if (value === baseValue) {
+          if (!previous[teamNumber]) {
+            return previous;
+          }
+
+          const next = { ...previous };
+          const nextEntry = { ...next[teamNumber] };
+          delete nextEntry.endgame;
+
+          if (Object.keys(nextEntry).length === 0) {
+            delete next[teamNumber];
+          } else {
+            next[teamNumber] = nextEntry;
+          }
+
+          return next;
+        }
+
+        const next = { ...previous };
+        const nextEntry = { ...(next[teamNumber] ?? {}) };
+        nextEntry.endgame = value;
+        next[teamNumber] = nextEntry;
+
+        return next;
+      });
+    },
+    [getBaseEndgameValue]
+  );
+
   const aggregateTeamFieldValues = (
     fields: MatchValidationNumericField[]
   ): AggregatedTeamTotals => {
@@ -567,15 +743,15 @@ export function MatchValidation() {
       }
 
       const data = getTeamMatchData(state.query.data);
+      const overrideEntry = state.teamNumber ? teamEdits[state.teamNumber] : undefined;
 
-      if (!data) {
-        return;
+      if (data || (overrideEntry && fields.some((field) => typeof overrideEntry[field] === 'number'))) {
+        hasValue = true;
       }
 
-      hasValue = true;
-
       fields.forEach((field) => {
-        total += parseNumericValue(data[field]) ?? 0;
+        const value = getCurrentNumericValue(state, field);
+        total += value ?? 0;
       });
     });
 
@@ -667,10 +843,37 @@ export function MatchValidation() {
       return getErrorNode();
     }
 
-    const data = getTeamMatchData(state.query.data);
-    const numericValue = data ? parseNumericValue(data[field]) : undefined;
+    const teamNumber = state.teamNumber;
+    const numericValue = getCurrentNumericValue(state, field) ?? 0;
 
-    return numericValue ?? 0;
+    const handleIncrement = () => adjustTeamNumericValue(teamNumber, field, 1);
+    const handleDecrement = () => adjustTeamNumericValue(teamNumber, field, -1);
+
+    return (
+      <Group gap={4} justify="center" wrap="nowrap" className={classes.numericControlGroup}>
+        <ActionIcon
+          variant="light"
+          size="sm"
+          aria-label="Increase value"
+          onClick={handleIncrement}
+          disabled={numericValue >= MAX_NUMERIC_FIELD_VALUE}
+        >
+          +
+        </ActionIcon>
+        <Text fz="sm" fw={500} className={classes.numericControlValue}>
+          {numericValue}
+        </Text>
+        <ActionIcon
+          variant="light"
+          size="sm"
+          aria-label="Decrease value"
+          onClick={handleDecrement}
+          disabled={numericValue <= 0}
+        >
+          −
+        </ActionIcon>
+      </Group>
+    );
   };
 
   const getTeamEndgameCell = (state: (typeof teamQueryStates)[number]) => {
@@ -686,8 +889,9 @@ export function MatchValidation() {
       return { content: getErrorNode(), className: undefined };
     }
 
-    const data = getTeamMatchData(state.query.data);
-    const label = data ? formatEndgameValue(data.endgame) ?? ENDGAME_LABELS.NONE : ENDGAME_LABELS.NONE;
+    const teamNumber = state.teamNumber;
+    const currentValue = getCurrentEndgameValue(state);
+    const label = ENDGAME_LABELS[currentValue] ?? ENDGAME_LABELS.NONE;
 
     const tbaLabel =
       isTbaMatchDataLoading || isTbaMatchDataError || !isValidNumber(state.teamNumber)
@@ -701,7 +905,23 @@ export function MatchValidation() {
           : classes.cellMismatch
         : undefined;
 
-    return { content: label, className: matchClass };
+    return {
+      content: (
+        <Select
+          size="xs"
+          value={currentValue}
+          data={ENDGAME_OPTIONS}
+          onChange={(value) => {
+            const resolvedValue = (value ?? 'NONE') as Endgame2025;
+            setTeamEndgameValue(teamNumber, resolvedValue);
+          }}
+          allowDeselect={false}
+          withinPortal
+          styles={{ input: { textAlign: 'center' } }}
+        />
+      ),
+      className: matchClass,
+    };
   };
 
   const renderTeamNumberCell = (teamNumber: number | undefined) => {
@@ -811,13 +1031,7 @@ export function MatchValidation() {
   return (
     <Box p="md">
       <Stack gap="lg">
-        <Stack gap="xs">
-          <Title order={2}>Match Validation</Title>
-          <Text>Match Level: {formatMatchLevel(matchLevelParam)}</Text>
-          <Text>Match Number: {matchNumberParam}</Text>
-          <Text>Alliance: {formatAlliance(allianceParam)}</Text>
-          <Text>Teams: {allianceTeams.join(', ')}</Text>
-        </Stack>
+        <Title order={2}>Match Validation</Title>
 
         {allianceTeams.length === 0 ? (
           <Text c="dimmed">No teams were found for this alliance.</Text>
