@@ -1,4 +1,5 @@
 import '@mantine/core/styles.css';
+import '@mantine/charts/styles.css';
 
 import { RouterProvider } from '@tanstack/react-router';
 import { AuthProvider } from './auth/AuthProvider';
