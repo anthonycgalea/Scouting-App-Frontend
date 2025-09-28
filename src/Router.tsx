@@ -29,6 +29,7 @@ import { useAuth } from './auth/AuthProvider';
 import { AnalyticsPage } from './pages/Analytics.page';
 import { PickListsPage } from './pages/PickLists.page';
 import { AllianceSelectionPage } from './pages/AllianceSelection.page';
+import { ListGeneratorPage } from './pages/ListGenerator.page';
 
 const rootRoute = createRootRoute({
   component: function RootLayout() {
@@ -190,6 +191,12 @@ const addEventRoute = createRoute({
   component: AddEventPage,
 });
 
+const listGeneratorRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/picking/listGenerators',
+  component: ListGeneratorPage,
+})
+
 // Build the route tree
 const routeTree = rootRoute.addChildren([
   homeRoute.addChildren([]),
@@ -203,6 +210,7 @@ const routeTree = rootRoute.addChildren([
   analyticsRoute.addChildren([]),
   settingsRoute.addChildren([]),
   pickListsRoute.addChildren([]),
+  listGeneratorRoute.addChildren([]),
   allianceSelectionRoute.addChildren([]),
   teamMembersRoute.addChildren([]),
   organizationEventSelectRoute.addChildren([]),

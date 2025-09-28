@@ -30,6 +30,7 @@ const BASE_LINKS_DATA = [
     links: [
       { label: 'Pick Lists', link: '/picking/pickLists' },
       { label: 'Alliance Selection', link: '/picking/allianceSelection' },
+      { label: 'List Generators', link: '/picking/listGenerators' },
     ],
   },
   {
