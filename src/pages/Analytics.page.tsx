@@ -1,4 +1,7 @@
-import { ScatterChart2025 } from '@/components/ScatterChart2025/ScatterChart2025';
+import {
+  DEFAULT_TEAMS,
+  ScatterChart2025,
+} from '@/components/ScatterChart2025/ScatterChart2025';
 import { Box, Stack, Text, Title } from '@mantine/core';
 
 export function AnalyticsPage() {
@@ -11,7 +14,7 @@ export function AnalyticsPage() {
           update.
         </Text>
         <Box>
-          <ScatterChart2025/>
+          <ScatterChart2025 teams={DEFAULT_TEAMS} />
         </Box>
       </Stack>
     </Box>
