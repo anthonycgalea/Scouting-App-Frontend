@@ -1,0 +1,48 @@
+:global(:root) {
+  --scatter2025-bg: #ffffff;
+  --scatter2025-border: #e1e5ee;
+  --scatter2025-grid: #e9ecf3;
+  --scatter2025-axis: #2f3a4a;
+  --scatter2025-text: #1f2933;
+  --scatter2025-label: #1a202c;
+  --scatter2025-tooltip-bg: #ffffff;
+  --scatter2025-tooltip-shadow: rgba(15, 23, 42, 0.12);
+  --scatter2025-point: #8884d8;
+}
+
+:global(:root[data-mantine-color-scheme='dark']) {
+  --scatter2025-bg: #1a1b1e;
+  --scatter2025-border: #2a2c31;
+  --scatter2025-grid: #2f3136;
+  --scatter2025-axis: #f1f3f5;
+  --scatter2025-text: #f8f9fa;
+  --scatter2025-label: #f1f3f5;
+  --scatter2025-tooltip-bg: #26272b;
+  --scatter2025-tooltip-shadow: rgba(0, 0, 0, 0.45);
+  --scatter2025-point: #91a7ff;
+}
+
+.wrapper {
+  width: 100%;
+  height: 400px;
+  background-color: var(--scatter2025-bg);
+  border: 1px solid var(--scatter2025-border);
+  border-radius: 12px;
+  padding: 1rem;
+  box-sizing: border-box;
+  box-shadow: 0 1px 2px var(--scatter2025-tooltip-shadow);
+  display: flex;
+  flex-direction: column;
+}
+
+.chart {
+  width: 100%;
+  height: 100%;
+  color: var(--scatter2025-text);
+}
+
+.pointLabel {
+  paint-order: stroke;
+  stroke: var(--scatter2025-bg);
+  stroke-width: 3px;
+}

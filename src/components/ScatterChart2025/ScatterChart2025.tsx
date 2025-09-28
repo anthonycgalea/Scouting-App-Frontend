@@ -1,8 +1,17 @@
-import { ScatterChart } from '@mantine/charts';
-import type {
-  ScatterChartProps,
-  ScatterChartTooltipPayload,
-} from '@mantine/charts';
+import {
+  CartesianGrid,
+  LabelList,
+  ResponsiveContainer,
+  Scatter,
+  ScatterChart,
+  Tooltip,
+  XAxis,
+  YAxis,
+  type LabelProps,
+  type TooltipProps,
+} from 'recharts';
+
+import classes from './ScatterChart2025.module.css';
 
 export type TeamPerformancePoint = {
   teamNumber: number;
@@ -32,62 +41,124 @@ type ChartPoint = {
 
 type ScatterChart2025Props = {
   teams?: TeamPerformancePoint[];
-  color?: ScatterChartProps['data'][number]['color'];
+  color?: string;
 };
 
-const tooltipProps = {
-  labelFormatter: (_label: unknown, payload: ScatterChartTooltipPayload<ChartPoint>[]) => {
-    const point = payload?.[0]?.payload;
-    return point ? `Team ${point.teamNumber}` : '';
-  },
-  formatter: (_value: unknown, name: string, entry: ScatterChartTooltipPayload<ChartPoint>) => {
-    const point = entry?.payload;
-    if (!point) {
-      return ['', name];
-    }
+type ChartTooltipProps = TooltipProps<number, string>;
 
-    if (name === 'teleopAverage') {
-      return [`${point.teleopAverage.toFixed(1)} pts`, 'Teleop avg'];
-    }
+const tooltipLabelFormatter: NonNullable<ChartTooltipProps['labelFormatter']> = (
+  _label,
+  payload,
+) => {
+  const point = payload?.[0]?.payload as ChartPoint | undefined;
+  return point ? `Team ${point.teamNumber}` : '';
+};
 
-    if (name === 'autoEndgameAverage') {
-      return [`${point.autoEndgameAverage.toFixed(1)} pts`, 'Auto & endgame avg'];
-    }
+const tooltipFormatter: NonNullable<ChartTooltipProps['formatter']> = (
+  value,
+  name,
+  item,
+) => {
+  const point = (item?.payload ?? {}) as ChartPoint;
 
-    const fallbackValue = point[name as keyof ChartPoint];
+  if (name === 'teleopAverage') {
+    return [`${point.teleopAverage.toFixed(1)} pts`, 'Teleop avg'];
+  }
 
-    return [
-      typeof fallbackValue === 'number'
-        ? fallbackValue.toString()
-        : (fallbackValue as string | undefined) ?? '',
-      name,
-    ];
-  },
-} satisfies NonNullable<ScatterChartProps<ChartPoint>['tooltipProps']>;
+  if (name === 'autoEndgameAverage') {
+    return [`${point.autoEndgameAverage.toFixed(1)} pts`, 'Auto & endgame avg'];
+  }
 
-export function ScatterChart2025({ teams = DEFAULT_TEAMS, color }: ScatterChart2025Props) {
-  const series = [
-    {
-      name: 'Teleop vs Auto/Endgame averages',
-      color: color ?? 'blue.5',
-      data: teams.map<ChartPoint>((team) => ({
-        teamNumber: team.teamNumber,
-        teamLabel: `#${team.teamNumber}`,
-        teleopAverage: team.teleopAverage,
-        autoEndgameAverage: team.autoEndgameAverage,
-      })),
-    },
-  ] satisfies ScatterChartProps['data'];
+  return [value, name];
+};
+
+const renderTeamLabel = (props: LabelProps) => {
+  const { x, y, value } = props;
+
+  if (typeof x !== 'number' || typeof y !== 'number' || value == null) {
+    return null;
+  }
 
   return (
-    <ScatterChart
-      h={350}
-      data={series}
-      dataKey={{ x: 'teleopAverage', y: 'autoEndgameAverage' }}
-      xAxisLabel="Teleop average"
-      yAxisLabel="Auto & endgame average"
-      pointLabels="teamLabel"
-      tooltipProps={tooltipProps}
-    />
+    <text
+      x={x}
+      y={y + 14}
+      textAnchor="middle"
+      fill="var(--scatter2025-label)"
+      fontSize={12}
+      className={classes.pointLabel}
+    >
+      {value}
+    </text>
+  );
+};
+
+export function ScatterChart2025({ teams = DEFAULT_TEAMS, color }: ScatterChart2025Props) {
+  const data = teams.map<ChartPoint>((team) => ({
+    teamNumber: team.teamNumber,
+    teamLabel: `#${team.teamNumber}`,
+    teleopAverage: team.teleopAverage,
+    autoEndgameAverage: team.autoEndgameAverage,
+  }));
+
+  const pointFill = color ?? 'var(--scatter2025-point)';
+  const axisTickStyle = { fill: 'var(--scatter2025-axis)', fontSize: 12 };
+
+  return (
+    <div
+      className={classes.wrapper}
+      role="figure"
+      aria-label="Teleop versus auto and endgame averages scatter chart"
+    >
+      <ResponsiveContainer width="100%" height="100%" className={classes.chart}>
+        <ScatterChart margin={{ top: 20, right: 32, bottom: 48, left: 48 }}>
+          <CartesianGrid stroke="var(--scatter2025-grid)" strokeDasharray="3 3" />
+          <XAxis
+            type="number"
+            dataKey="teleopAverage"
+            name="Teleop average"
+            tick={axisTickStyle}
+            axisLine={{ stroke: 'var(--scatter2025-axis)' }}
+            tickLine={{ stroke: 'var(--scatter2025-axis)' }}
+            label={{
+              value: 'Teleop average',
+              position: 'insideBottomRight',
+              offset: -10,
+              fill: 'var(--scatter2025-axis)',
+            }}
+          />
+          <YAxis
+            type="number"
+            dataKey="autoEndgameAverage"
+            name="Auto & endgame average"
+            tick={axisTickStyle}
+            axisLine={{ stroke: 'var(--scatter2025-axis)' }}
+            tickLine={{ stroke: 'var(--scatter2025-axis)' }}
+            label={{
+              value: 'Auto & endgame average',
+              angle: -90,
+              position: 'insideLeft',
+              fill: 'var(--scatter2025-axis)',
+            }}
+          />
+          <Tooltip
+            cursor={{ strokeDasharray: '3 3', stroke: 'var(--scatter2025-axis)' }}
+            labelFormatter={tooltipLabelFormatter}
+            formatter={tooltipFormatter}
+            contentStyle={{
+              backgroundColor: 'var(--scatter2025-tooltip-bg)',
+              borderColor: 'var(--scatter2025-border)',
+              color: 'var(--scatter2025-text)',
+              boxShadow: `0 4px 12px var(--scatter2025-tooltip-shadow)`,
+            }}
+            itemStyle={{ color: 'var(--scatter2025-text)', fontSize: 12 }}
+            labelStyle={{ color: 'var(--scatter2025-label)', fontWeight: 600 }}
+          />
+          <Scatter name="Teleop vs Auto/Endgame averages" data={data} fill={pointFill}>
+            <LabelList dataKey="teamLabel" content={renderTeamLabel} />
+          </Scatter>
+        </ScatterChart>
+      </ResponsiveContainer>
+    </div>
   );
 }
