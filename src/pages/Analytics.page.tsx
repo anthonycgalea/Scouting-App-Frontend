@@ -1,3 +1,4 @@
+import { ScatterChart2025 } from '@/components/ScatterChart2025/ScatterChart2025';
 import { Box, Stack, Text, Title } from '@mantine/core';
 
 export function AnalyticsPage() {
@@ -9,6 +10,9 @@ export function AnalyticsPage() {
           Analytics dashboards and visualizations will appear here in a future
           update.
         </Text>
+        <Box>
+          <ScatterChart2025/>
+        </Box>
       </Stack>
     </Box>
   );
