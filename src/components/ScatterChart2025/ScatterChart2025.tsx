@@ -96,7 +96,7 @@ const renderTeamLabel = (props: LabelProps) => {
 export function ScatterChart2025({ teams = DEFAULT_TEAMS, color }: ScatterChart2025Props) {
   const data = teams.map<ChartPoint>((team) => ({
     teamNumber: team.teamNumber,
-    teamLabel: `#${team.teamNumber}`,
+    teamLabel: `${team.teamNumber}`,
     teleopAverage: team.teleopAverage,
     autoEndgameAverage: team.autoEndgameAverage,
   }));
