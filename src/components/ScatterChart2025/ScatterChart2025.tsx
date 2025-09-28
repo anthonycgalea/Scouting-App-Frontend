@@ -81,9 +81,10 @@ const renderTeamLabel = (props: LabelProps) => {
 
   return (
     <text
-      x={x}
-      y={y + 14}
+      x={x + 4}
+      y={y + 12}
       textAnchor="middle"
+      dominantBaseline="hanging"
       fill="var(--scatter2025-label)"
       fontSize={12}
       className={classes.pointLabel}
@@ -122,9 +123,11 @@ export function ScatterChart2025({ teams = DEFAULT_TEAMS, color }: ScatterChart2
             tickLine={{ stroke: 'var(--scatter2025-axis)' }}
             label={{
               value: 'Teleop average',
-              position: 'insideBottomRight',
-              offset: -10,
+              position: 'insideBottom',
+              offset: -12,
               fill: 'var(--scatter2025-axis)',
+              style: { textAnchor: 'middle' },
+              className: classes.axisLabel,
             }}
           />
           <YAxis
@@ -138,7 +141,10 @@ export function ScatterChart2025({ teams = DEFAULT_TEAMS, color }: ScatterChart2
               value: 'Auto & endgame average',
               angle: -90,
               position: 'insideLeft',
+              offset: -36,
               fill: 'var(--scatter2025-axis)',
+              style: { textAnchor: 'middle' },
+              className: classes.axisLabel,
             }}
           />
           <Tooltip
