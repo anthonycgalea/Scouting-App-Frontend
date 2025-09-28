@@ -23,13 +23,15 @@ const BASE_LINKS_DATA = [
   { label: 'Matches', icon: IconNotes, to: '/matches' },
   { label: 'Teams', icon: IconUsersGroup, to: '/teams' },
   { label: 'SuperScout', icon: IconBulb, to: '/superScout' },
-  { label: 'Analytics', icon: IconPresentationAnalytics },
-   { label: 'Picking', icon: IconNumber123, 
+  { label: 'Analytics', icon: IconPresentationAnalytics, to: '/analytics' },
+  {
+    label: 'Picking',
+    icon: IconNumber123,
     links: [
-      { label: 'Pick Lists'},
-      { label: 'Alliance Selection'}
-    ]
-   },
+      { label: 'Pick Lists', link: '/picking/pickLists' },
+      { label: 'Alliance Selection', link: '/picking/allianceSelection' },
+    ],
+  },
   {
     label: 'Data Manager',
     icon: IconFileAnalytics,

@@ -26,6 +26,9 @@ import { OrganizationEventSelectPage } from './pages/OrganizationEventSelect.pag
 import { AddEventPage } from './pages/AddEvent.page';
 import { ApplyToOrganizationPage } from './pages/ApplyToOrganization.page';
 import { useAuth } from './auth/AuthProvider';
+import { AnalyticsPage } from './pages/Analytics.page';
+import { PickListsPage } from './pages/PickLists.page';
+import { AllianceSelectionPage } from './pages/AllianceSelection.page';
 
 const rootRoute = createRootRoute({
   component: function RootLayout() {
@@ -139,10 +142,28 @@ const superScoutRoute = createRoute({
   component: SuperScoutPage,
 });
 
+const analyticsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/analytics',
+  component: AnalyticsPage,
+});
+
 const settingsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/userSettings',
   component: UserSettingsPage,
+});
+
+const pickListsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/picking/pickLists',
+  component: PickListsPage,
+});
+
+const allianceSelectionRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/picking/allianceSelection',
+  component: AllianceSelectionPage,
 });
 
 const teamMembersRoute = createRoute({
@@ -179,7 +200,10 @@ const routeTree = rootRoute.addChildren([
   dataValidationRoute.addChildren([matchValidationRoute]),
   dataImportRoute.addChildren([]),
   superScoutRoute.addChildren([]),
+  analyticsRoute.addChildren([]),
   settingsRoute.addChildren([]),
+  pickListsRoute.addChildren([]),
+  allianceSelectionRoute.addChildren([]),
   teamMembersRoute.addChildren([]),
   organizationEventSelectRoute.addChildren([]),
   addEventRoute.addChildren([]),
