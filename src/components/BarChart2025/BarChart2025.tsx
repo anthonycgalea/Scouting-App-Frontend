@@ -161,10 +161,11 @@ const BarChart2025 = ({ teams = [] }: BarChart2025Props) => {
         <XAxis
           type="number"
           tick={{ fill: colors.label }}
+          height={40}
           label={{
             value: 'Average points per match',
             position: 'insideBottom',
-            offset: -10,
+           // offset: -10,
             fill: colors.label,
           }}
         />

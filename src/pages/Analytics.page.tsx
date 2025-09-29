@@ -171,11 +171,11 @@ export function AnalyticsPage() {
               <AnalyticsViewToggle value={view} onChange={setView} />
             </Box>
             {view === 'scatter' ? (
-                  <Box w="100%" maw={1200} h={420} mx="auto">
+                  <Box w="100%" maw={1200} h={600} mx="auto">
                     <ScatterChart2025 teams={filteredTeams} />
                   </Box>
                   ) : (
-                  <Box w="100%" maw={1200} h={420} mx="auto" style={{ overflowY: 'auto' }}>
+                  <Box w="100%" maw={1200} h={600} mx="auto" style={{ overflowY: 'auto' }}>
                     <BarChart2025 teams={filteredTeams} />
                   </Box>
                   )}
@@ -198,7 +198,7 @@ export function AnalyticsPage() {
                   indeterminate={!allTeamsSelected && hasSomeSelected}
                   onChange={handleToggleAll}
                 />
-                <ScrollArea h={320} type="auto">
+                <ScrollArea h={600} type="auto">
                   <Stack gap="xs" pr="sm">
                     {teams.map((team) => {
                       const label = team.teamName
