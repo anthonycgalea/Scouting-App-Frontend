@@ -15,7 +15,7 @@ import {
 import { type TeamPerformanceSummary } from '@/types/analytics';
 
 
-const BAR_SIZE = 24;
+const BAR_SIZE = 18;
 const LABEL_FONT_SIZE = 12;
 const CATEGORY_GAP = 6;
 const MIN_CHART_HEIGHT = 320;
