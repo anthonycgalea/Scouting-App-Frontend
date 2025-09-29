@@ -14,10 +14,10 @@ export function AnalyticsPage() {
           Analytics dashboards and visualizations will appear here in a future
           update.
         </Text>
-        <Box>
+        <Box w={1100} h={600}>
           <ScatterChart2025 teams={DEFAULT_TEAMS} />
         </Box>
-        <Box>
+        <Box w={1100} h={600}>
           <BarChart2025/>
         </Box>
       </Stack>
