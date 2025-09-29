@@ -13,11 +13,7 @@ import {
 } from 'recharts';
 
 import classes from './ScatterChart2025.module.css';
-import { useMemo } from 'react';
-
 export type TeamPerformancePoint = TeamPerformanceSummary;
-
-const MIN_CHART_HEIGHT = 320;
 
 type ChartPoint = TeamPerformancePoint & {
   teamLabel: string;

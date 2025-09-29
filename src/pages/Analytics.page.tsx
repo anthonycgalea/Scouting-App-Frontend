@@ -1,7 +1,11 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 import { useTeamAnalytics, type TeamAnalyticsResponse } from '@/api';
 import BarChart2025 from '@/components/BarChart2025/BarChart2025';
+import {
+  AnalyticsViewToggle,
+  type AnalyticsView,
+} from '@/components/AnalyticsViewToggle/AnalyticsViewToggle';
 import { ScatterChart2025 } from '@/components/ScatterChart2025/ScatterChart2025';
 import { type TeamPerformanceSummary } from '@/types/analytics';
 import { Box, Center, Loader, Stack, Text, Title } from '@mantine/core';
@@ -35,6 +39,7 @@ export function AnalyticsPage() {
   const hasTeams = teams.length > 0;
   const showLoadError = isError && !isLoading;
   const showNoDataMessage = !isLoading && !showLoadError && !hasTeams;
+  const [view, setView] = useState<AnalyticsView>('scatter');
 
   return (
     <Box p="md">
@@ -65,12 +70,18 @@ export function AnalyticsPage() {
         )}
         {hasTeams && (
           <>
-            <Box w="100%" maw={1200} h={420} mx="auto">
-              <ScatterChart2025 teams={teams} />
+            <Box w="100%" maw={520} mx="auto">
+              <AnalyticsViewToggle value={view} onChange={setView} />
             </Box>
-            <Box w="100%" maw={1200} h={420} mx="auto"  style={{ overflowY: 'auto' }}>
-              <BarChart2025 teams={teams} />
-            </Box>
+            {view === 'scatter' ? (
+              <Box w="100%" maw={1200} h={420} mx="auto">
+                <ScatterChart2025 teams={teams} />
+              </Box>
+            ) : (
+              <Box w="100%" maw={1200} h={420} mx="auto" style={{ overflowY: 'auto' }}>
+                <BarChart2025 teams={teams} />
+              </Box>
+            )}
           </>
         )}
       </Stack>
