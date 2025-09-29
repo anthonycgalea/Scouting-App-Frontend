@@ -10,6 +10,7 @@ import {
   useMantineTheme,
   rgba,
 } from '@mantine/core';
+import { Link } from '@tanstack/react-router';
 
 import { type TeamDistributionSummary } from '@/types/analytics';
 
@@ -263,8 +264,17 @@ const BoxWhiskerChart2025 = ({ teams = [], metric }: BoxWhiskerChart2025Props) =
           return (
             <Flex key={team.teamNumber} align="center" gap="md">
               <Box w={LABEL_WIDTH}>
-                <Text fw={600} c={colors.text}>
-                  {team.teamName ? `${team.teamNumber} — ${team.teamName}` : `Team ${team.teamNumber}`}
+                <Text
+                  fw={600}
+                  c={colors.text}
+                  component={Link}
+                  to={`/teams/${team.teamNumber}`}
+                  style={{ textDecoration: 'none', cursor: 'pointer' }}
+                  aria-label={`View Team ${team.teamNumber} details`}
+                >
+                  {team.teamName
+                    ? `Team ${team.teamNumber} — ${team.teamName}`
+                    : `Team ${team.teamNumber}`}
                 </Text>
                 <Text size="xs" c={colors.dimmed}>
                   {team.matchesPlayed} matches played

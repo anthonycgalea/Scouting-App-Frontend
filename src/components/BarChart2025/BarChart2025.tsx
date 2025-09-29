@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
+import type { KeyboardEvent } from 'react';
 import { useMantineColorScheme, useMantineTheme, rgba } from '@mantine/core';
 import {
   Bar,
@@ -11,6 +12,7 @@ import {
   YAxis,
   type TooltipProps,
 } from 'recharts';
+import { useNavigate } from '@tanstack/react-router';
 
 import { type TeamPerformanceSummary } from '@/types/analytics';
 
@@ -95,6 +97,14 @@ const sortByTotalDescending = (a: ChartDatum, b: ChartDatum) => b.totalAverage -
 const BarChart2025 = ({ teams = [] }: BarChart2025Props) => {
   const theme = useMantineTheme();
   const { colorScheme } = useMantineColorScheme();
+  const navigate = useNavigate();
+
+  const navigateToTeam = useCallback(
+    (teamNumber: number) => {
+      navigate({ to: `/teams/${teamNumber}` });
+    },
+    [navigate]
+  );
 
   const cursorFill = useMemo(
     () =>
@@ -133,10 +143,65 @@ const BarChart2025 = ({ teams = [] }: BarChart2025Props) => {
       teams
         .map<ChartDatum>((team) => ({
           ...team,
-          teamLabel: `${team.teamNumber}`,
+          teamLabel: `Team ${team.teamNumber}`,
         }))
         .sort(sortByTotalDescending),
     [teams]
+  );
+
+  const renderYAxisTick = useCallback(
+    ({
+      x = 0,
+      y = 0,
+      payload,
+    }: {
+      x?: number;
+      y?: number;
+      payload?: { value: string; payload?: ChartDatum };
+    }) => {
+      const datum = payload?.payload;
+
+      if (!datum) {
+        return null;
+      }
+
+      const handleClick = () => navigateToTeam(datum.teamNumber);
+
+      const handleKeyDown = (event: KeyboardEvent<SVGTextElement>) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          handleClick();
+        }
+      };
+
+      const labelText = datum.teamLabel;
+      const accessibleLabel = datum.teamName
+        ? `View Team ${datum.teamNumber} — ${datum.teamName} details`
+        : `View Team ${datum.teamNumber} details`;
+
+      return (
+        <g transform={`translate(${x},${y})`}>
+          <text
+            x={-6}
+            y={0}
+            dy={4}
+            textAnchor="end"
+            fill={colors.label}
+            fontSize={LABEL_FONT_SIZE}
+            style={{ cursor: 'pointer' }}
+            role="link"
+            tabIndex={0}
+            onClick={handleClick}
+            onKeyDown={handleKeyDown}
+            aria-label={accessibleLabel}
+            title={datum.teamName ? `${datum.teamNumber} — ${datum.teamName}` : labelText}
+          >
+            {labelText}
+          </text>
+        </g>
+      );
+    },
+    [colors.label, navigateToTeam]
   );
 
   const chartHeight = useMemo(() => {
@@ -174,7 +239,7 @@ const BarChart2025 = ({ teams = [] }: BarChart2025Props) => {
           type="category"
           width={120}
           interval={0}
-          tick={{ fill: colors.label, fontSize: LABEL_FONT_SIZE }}
+          tick={renderYAxisTick}
         />
         <Tooltip
           cursor={{ fill: cursorFill }}
