@@ -157,9 +157,12 @@ const BarChart2025 = ({ teams = [] }: BarChart2025Props) => {
     }: {
       x?: number;
       y?: number;
-      payload?: { value: string; payload?: ChartDatum };
+      payload?: { value?: string; index?: number; payload?: ChartDatum };
     }) => {
-      const datum = payload?.payload;
+      const datum =
+        payload?.payload ??
+        (payload && typeof payload.index === 'number' ? data[payload.index] : undefined) ??
+        (payload?.value ? data.find((item) => item.teamLabel === payload.value) : undefined);
 
       if (!datum) {
         return null;
@@ -201,7 +204,7 @@ const BarChart2025 = ({ teams = [] }: BarChart2025Props) => {
         </g>
       );
     },
-    [colors.label, navigateToTeam]
+    [colors.label, data, navigateToTeam]
   );
 
   const chartHeight = useMemo(() => {
