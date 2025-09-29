@@ -23,7 +23,12 @@ const BASE_LINKS_DATA = [
   { label: 'Matches', icon: IconNotes, to: '/matches' },
   { label: 'Teams', icon: IconUsersGroup, to: '/teams' },
   { label: 'SuperScout', icon: IconBulb, to: '/superScout' },
-  { label: 'Analytics', icon: IconPresentationAnalytics, to: '/analytics' },
+  { label: 'Analytics', icon: IconPresentationAnalytics,
+    links: [
+      { label: 'Summary', link: '/analytics'},
+      { label: 'Compare', link: '/analytics/compare' }
+    ]
+  },
   {
     label: 'Picking',
     icon: IconNumber123,

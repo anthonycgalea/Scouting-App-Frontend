@@ -143,7 +143,7 @@ const superScoutRoute = createRoute({
   component: SuperScoutPage,
 });
 
-const analyticsRoute = createRoute({
+const summaryAnalyticsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/analytics',
   component: AnalyticsPage,
@@ -207,7 +207,7 @@ const routeTree = rootRoute.addChildren([
   dataValidationRoute.addChildren([matchValidationRoute]),
   dataImportRoute.addChildren([]),
   superScoutRoute.addChildren([]),
-  analyticsRoute.addChildren([]),
+  summaryAnalyticsRoute.addChildren([]),
   settingsRoute.addChildren([]),
   pickListsRoute.addChildren([]),
   listGeneratorRoute.addChildren([]),

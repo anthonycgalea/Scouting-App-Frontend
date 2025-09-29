@@ -132,7 +132,7 @@ export function AnalyticsPage() {
   return (
     <Box p="md">
       <Stack gap="sm">
-        <Title order={2}>Analytics</Title>
+        <Title order={2}>Analytics Summary</Title>
         <Text c="dimmed">
           Explore scoring trends across autonomous, teleop, and endgame phases
           with aggregated team performance metrics.
@@ -202,8 +202,8 @@ export function AnalyticsPage() {
                   <Stack gap="xs" pr="sm">
                     {teams.map((team) => {
                       const label = team.teamName
-                        ? `Team ${team.teamNumber} — ${team.teamName}`
-                        : `Team ${team.teamNumber}`;
+                        ? `${team.teamNumber} — ${team.teamName}`
+                        : `${team.teamNumber}`;
 
                       return (
                         <Checkbox

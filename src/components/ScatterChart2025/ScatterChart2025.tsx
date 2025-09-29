@@ -40,12 +40,12 @@ const tooltipContent = ({ active, payload }: ChartTooltipProps) => {
 
   const rows: { label: string; value: string }[] = [
     { label: 'Matches played', value: point.matchesPlayed.toString() },
-    { label: 'Autonomous avg', value: `${point.autonomousAverage.toFixed(1)} pts` },
-    { label: 'Teleop avg', value: `${point.teleopAverage.toFixed(1)} pts` },
-    { label: 'Endgame avg', value: `${point.endgameAverage.toFixed(1)} pts` },
-    { label: 'Auto + endgame', value: `${point.autoEndgameAverage.toFixed(1)} pts` },
-    { label: 'Game piece avg', value: point.gamePieceAverage.toFixed(1) },
-    { label: 'Total avg', value: `${point.totalAverage.toFixed(1)} pts` },
+    { label: 'Autonomous', value: `${point.autonomousAverage.toFixed(1)} pts` },
+    { label: 'Teleop', value: `${point.teleopAverage.toFixed(1)} pts` },
+    { label: 'Endgame', value: `${point.endgameAverage.toFixed(1)} pts` },
+    { label: 'Auto + Endgame', value: `${point.autoEndgameAverage.toFixed(1)} pts` },
+    { label: 'Game pieces', value: `${point.gamePieceAverage.toFixed(1)} pcs` },
+    { label: 'Total', value: `${point.totalAverage.toFixed(1)} pts` },
   ];
 
   return (
@@ -132,12 +132,12 @@ export function ScatterChart2025({ teams = [], color }: ScatterChart2025Props) {
           <XAxis
             type="number"
             dataKey="teleopAverage"
-            name="Teleop average"
+            name="Teleop"
             tick={axisTickStyle}
             axisLine={{ stroke: 'var(--scatter2025-axis)' }}
             tickLine={{ stroke: 'var(--scatter2025-axis)' }}
             label={{
-              value: 'Teleop average',
+              value: 'Teleop',
               position: 'insideBottom',
               offset: -12,
               fill: 'var(--scatter2025-axis)',
@@ -148,12 +148,12 @@ export function ScatterChart2025({ teams = [], color }: ScatterChart2025Props) {
           <YAxis
             type="number"
             dataKey="autoEndgameAverage"
-            name="Auto & endgame average"
+            name="Auto & Endgame"
             tick={axisTickStyle}
             axisLine={{ stroke: 'var(--scatter2025-axis)' }}
             tickLine={{ stroke: 'var(--scatter2025-axis)' }}
             label={{
-              value: 'Auto & endgame average',
+              value: 'Auto & Endgame',
               angle: -90,
               position: 'insideLeft',
               offset: -36,
