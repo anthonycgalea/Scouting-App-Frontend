@@ -1,3 +1,4 @@
+import BarChart2025 from '@/components/BarChart2025/BarChart2025';
 import {
   DEFAULT_TEAMS,
   ScatterChart2025,
@@ -15,6 +16,9 @@ export function AnalyticsPage() {
         </Text>
         <Box>
           <ScatterChart2025 teams={DEFAULT_TEAMS} />
+        </Box>
+        <Box>
+          <BarChart2025/>
         </Box>
       </Stack>
     </Box>
