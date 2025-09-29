@@ -8,6 +8,7 @@ import {
   Tooltip,
   useMantineColorScheme,
   useMantineTheme,
+  rgba,
 } from '@mantine/core';
 
 import { type TeamDistributionSummary } from '@/types/analytics';
@@ -23,7 +24,7 @@ const formatNumber = (value: number, unit: string) =>
 
 const clampPercent = (value: number) => Math.min(100, Math.max(0, value));
 
-export type BoxMetric = 'total' | 'autonomous' | 'teleop' | 'gamePieces';
+export type BoxMetric =  'gamePieces' | 'total' | 'autonomous' | 'teleop';
 
 type BoxWhiskerChart2025Props = {
   teams?: TeamDistributionSummary[];
@@ -34,6 +35,12 @@ const METRIC_CONFIG: Record<
   BoxMetric,
   { label: string; unit: string; summaryLabel: string; formatter: (value: number) => string }
 > = {
+  gamePieces: {
+    label: 'Game pieces',
+    unit: 'pcs',
+    summaryLabel: 'Avg game pieces',
+    formatter: (value) => formatNumber(value, 'pcs'),
+  },
   total: {
     label: 'Total points',
     unit: 'pts',
@@ -51,12 +58,6 @@ const METRIC_CONFIG: Record<
     unit: 'pts',
     summaryLabel: 'Avg teleop',
     formatter: (value) => formatNumber(value, 'pts'),
-  },
-  gamePieces: {
-    label: 'Game pieces',
-    unit: 'pcs',
-    summaryLabel: 'Avg game pieces',
-    formatter: (value) => formatNumber(value, 'pcs'),
   },
 };
 
@@ -101,7 +102,7 @@ const BoxWhiskerChart2025 = ({ teams = [], metric }: BoxWhiskerChart2025Props) =
         text: theme.colors.gray[0],
         axis: theme.colors.gray[4],
         dimmed: theme.colors.gray[5],
-        boxFill: theme.fn.rgba(theme.colors.blue[4], 0.4),
+        boxFill: rgba(theme.colors.blue[4], 0.4),
         boxBorder: theme.colors.blue[3],
         whisker: theme.colors.gray[3],
         median: theme.colors.yellow[3],
@@ -117,7 +118,7 @@ const BoxWhiskerChart2025 = ({ teams = [], metric }: BoxWhiskerChart2025Props) =
       text: theme.colors.dark[7],
       axis: theme.colors.gray[6],
       dimmed: theme.colors.gray[6],
-      boxFill: theme.fn.rgba(theme.colors.blue[5], 0.35),
+      boxFill: rgba(theme.colors.blue[5], 0.35),
       boxBorder: theme.colors.blue[6],
       whisker: theme.colors.gray[7],
       median: theme.colors.yellow[6],
@@ -366,7 +367,7 @@ const BoxWhiskerChart2025 = ({ teams = [], metric }: BoxWhiskerChart2025Props) =
                       backgroundColor: colors.averageFill,
                       border: `2px solid ${colors.averageBorder}`,
                       transform: 'translate(-50%, -50%)',
-                      boxShadow: `0 0 6px ${theme.fn.rgba(colors.averageBorder, 0.35)}`,
+                      boxShadow: `0 0 6px ${rgba(colors.averageBorder, 0.35)}`,
                     }}
                   />
                 </Box>
