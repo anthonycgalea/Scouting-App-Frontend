@@ -1,7 +1,14 @@
 import { type ReactNode, useMemo, useState } from 'react';
 import cx from 'clsx';
-import { Alert, Center, Loader, ScrollArea, Table } from '@mantine/core';
-import { Endgame2025, TeamMatchData, useTeamMatchData } from '@/api';
+import { Alert, Center, Group, Loader, ScrollArea, Table, Text } from '@mantine/core';
+import {
+  Endgame2025,
+  TeamMatchData,
+  TeamMatchValidationStatus,
+  useTeamMatchData,
+  useTeamMatchValidation,
+} from '@/api';
+import { ValidationStatusIcon } from '../ValidationStatusIcon';
 import classes from './TeamMatchTable.module.css';
 
 interface TeamMatchTableProps {
@@ -46,6 +53,12 @@ const formatMatchIdentifier = (row: TeamMatchData) => {
   const level = typeof row.match_level === 'string' ? row.match_level.toUpperCase() : String(row.match_level ?? '');
   return `${level}${row.match_number}`;
 };
+
+const buildValidationKey = (
+  matchLevel: string | null | undefined,
+  matchNumber: number | null | undefined,
+  teamNumber: number | null | undefined
+) => `${(matchLevel ?? '').toLowerCase()}-${matchNumber ?? 0}-${teamNumber ?? 0}`;
 
 const MATCH_LEVEL_PRIORITY: Record<string, number> = {
   QM: 0,
@@ -107,6 +120,11 @@ export function TeamMatchTable({ teamNumber }: TeamMatchTableProps) {
     isLoading,
     isError,
   } = useTeamMatchData(teamNumber);
+  const {
+    data: validationData = [],
+    isLoading: isValidationLoading,
+    isError: isValidationError,
+  } = useTeamMatchValidation();
 
   const sortedData = useMemo(() => {
     if (!data) {
@@ -134,6 +152,56 @@ export function TeamMatchTable({ teamNumber }: TeamMatchTableProps) {
 
     return undefined;
   }, [season]);
+
+  const validationLookup = useMemo(() => {
+    const entries = new Map<string, TeamMatchValidationStatus>();
+
+    validationData.forEach((entry) => {
+      entries.set(
+        buildValidationKey(entry.match_level, entry.match_number, entry.team_number),
+        entry.validation_status
+      );
+    });
+
+    return entries;
+  }, [validationData]);
+
+  const tableConfig = useMemo(() => {
+    if (!seasonConfig) {
+      return undefined;
+    }
+
+    const leadColumns = seasonConfig.leadColumns.map((column) => {
+      if (column.key !== 'match') {
+        return column;
+      }
+
+      return {
+        ...column,
+        render: (row: TeamMatchData) => {
+          const status = validationLookup.get(
+            buildValidationKey(row.match_level, row.match_number, row.team_number)
+          );
+
+          return (
+            <Group justify="center" align="center" gap="xs" wrap="nowrap">
+              <Text>{formatMatchIdentifier(row)}</Text>
+              <ValidationStatusIcon
+                status={status}
+                isLoading={isValidationLoading}
+                isError={isValidationError}
+              />
+            </Group>
+          );
+        },
+      };
+    });
+
+    return {
+      ...seasonConfig,
+      leadColumns,
+    };
+  }, [isValidationError, isValidationLoading, seasonConfig, validationLookup]);
 
   if (!Number.isFinite(teamNumber)) {
     return <Alert color="red" title="Invalid team number" />;
@@ -163,7 +231,7 @@ export function TeamMatchTable({ teamNumber }: TeamMatchTableProps) {
     );
   }
 
-  if (!seasonConfig) {
+  if (!tableConfig) {
     return (
       <Alert color="yellow" title="Unsupported season">
         Match data for season {season ?? 'Unknown'} is not configured yet. Please update the table configuration.
@@ -182,15 +250,15 @@ export function TeamMatchTable({ teamNumber }: TeamMatchTableProps) {
       </Table.Th>
     ));
 
-  const hasColumnGroups = seasonConfig.groups.length > 0;
+  const hasColumnGroups = tableConfig.groups.length > 0;
 
-  const groupHeaderCells = seasonConfig.groups.map((group) => (
+  const groupHeaderCells = tableConfig.groups.map((group) => (
     <Table.Th key={group.title} colSpan={group.columns.length} style={{ textAlign: 'center' }}>
       {group.title}
     </Table.Th>
   ));
 
-  const groupColumnHeaders = seasonConfig.groups.flatMap((group) =>
+  const groupColumnHeaders = tableConfig.groups.flatMap((group) =>
     group.columns.map((column) => (
       <Table.Th key={`${group.title}-${column.key}`} style={{ textAlign: column.align ?? 'left', whiteSpace: 'nowrap' }}>
         {column.title}
@@ -200,19 +268,19 @@ export function TeamMatchTable({ teamNumber }: TeamMatchTableProps) {
 
   const rows = sortedData.map((row, index) => (
     <Table.Tr key={`${row.match_level}-${row.match_number}-${row.user_id ?? index}`}>
-      {seasonConfig.leadColumns.map((column) => (
+      {tableConfig.leadColumns.map((column) => (
         <Table.Td key={column.key} style={{ textAlign: column.align ?? 'left', whiteSpace: 'nowrap' }}>
           {column.render(row)}
         </Table.Td>
       ))}
-      {seasonConfig.groups.flatMap((group) =>
+      {tableConfig.groups.flatMap((group) =>
         group.columns.map((column) => (
           <Table.Td key={`${group.title}-${column.key}`} style={{ textAlign: column.align ?? 'left' }}>
             {column.render(row)}
           </Table.Td>
         )),
       )}
-      {seasonConfig.trailingColumns.map((column) => (
+      {tableConfig.trailingColumns.map((column) => (
         <Table.Td key={column.key} style={{ textAlign: column.align ?? 'left' }}>
           {column.render(row)}
         </Table.Td>
@@ -226,9 +294,9 @@ export function TeamMatchTable({ teamNumber }: TeamMatchTableProps) {
         <Table miw={900}>
           <Table.Thead className={cx(classes.header, { [classes.scrolled]: scrolled })}>
             <Table.Tr>
-              {renderHeaderRow(seasonConfig.leadColumns, hasColumnGroups ? { rowSpan: 2 } : undefined)}
+              {renderHeaderRow(tableConfig.leadColumns, hasColumnGroups ? { rowSpan: 2 } : undefined)}
               {hasColumnGroups ? groupHeaderCells : null}
-              {renderHeaderRow(seasonConfig.trailingColumns, hasColumnGroups ? { rowSpan: 2 } : undefined)}
+              {renderHeaderRow(tableConfig.trailingColumns, hasColumnGroups ? { rowSpan: 2 } : undefined)}
             </Table.Tr>
             {hasColumnGroups ? <Table.Tr>{groupColumnHeaders}</Table.Tr> : null}
           </Table.Thead>

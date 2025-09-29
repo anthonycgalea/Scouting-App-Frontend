@@ -1,12 +1,5 @@
-import { type JSX, type ReactNode, useEffect, useMemo, useState } from 'react';
-import {
-  IconChevronDown,
-  IconChevronUp,
-  IconCircle,
-  IconCircleCheck,
-  IconExclamationCircle,
-  IconSearch,
-} from '@tabler/icons-react';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { IconChevronDown, IconChevronUp, IconSearch } from '@tabler/icons-react';
 import {
   Box,
   Button,
@@ -24,6 +17,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { DataManagerButtonMenu } from './DataManagerButtonMenu';
 import { ExportHeader } from '../ExportHeader/ExportHeader';
 import classes from './DataManager.module.css';
+import { ValidationStatusIcon } from '../ValidationStatusIcon';
 import {
   useMatchSchedule,
   useTeamMatchValidation,
@@ -222,57 +216,6 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
     ];
   }, [scheduleData, validationData]);
 
-  const wrapIcon = (icon: JSX.Element, label: string) => (
-    <Box component="span" aria-label={label} role="img" title={label}>
-      {icon}
-    </Box>
-  );
-
-  const buildValidationIcon = (status?: TeamMatchValidationStatus) => {
-    if (isValidationLoading) {
-      return wrapIcon(<Loader size="md" color="gray-1" />, 'Loading validation status');
-    }
-
-    if (isValidationError) {
-      return wrapIcon(
-        <IconCircle size={20} color="var(--mantine-color-gray-5)" stroke={1.5} />,
-        'Validation status unavailable'
-      );
-    }
-
-    switch (status) {
-      case 'PENDING':
-        return wrapIcon(
-          <IconCircle
-            size={18}
-            color="var(--mantine-color-dark-5)"
-            stroke={1.5}
-            style={{ fill: 'var(--mantine-color-yellow-5)' }}
-          />,
-          'Validation pending'
-        );
-      case 'NEEDS REVIEW':
-        return wrapIcon(
-          <IconExclamationCircle
-            size={25}
-            color="var(--mantine-color-orange-6)"
-            stroke={1.5}
-          />,
-          'Needs review'
-        );
-      case 'VALID':
-        return wrapIcon(
-          <IconCircleCheck size={25} color="var(--mantine-color-green-6)" stroke={1.5} />,
-          'Validated'
-        );
-      default:
-        return wrapIcon(
-          <IconCircle size={15} color="var(--mantine-color-gray-5)" stroke={1.5} />,
-          'Validation status missing'
-        );
-    }
-  };
-
   const renderTeamCell = (
     matchNumber: number,
     matchLevel: string,
@@ -285,7 +228,11 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
       <Table.Td className={className}>
         <Group justify="center" align="center" gap="xs" wrap="nowrap">
           <Text>{teamNumber}</Text>
-          {buildValidationIcon(status)}
+          <ValidationStatusIcon
+            status={status}
+            isLoading={isValidationLoading}
+            isError={isValidationError}
+          />
         </Group>
       </Table.Td>
     );
