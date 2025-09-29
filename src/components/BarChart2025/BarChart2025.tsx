@@ -57,11 +57,11 @@ const tooltipContent = (
 
     const rows: { label: string; value: string }[] = [
       { label: 'Matches played', value: point.matchesPlayed.toString() },
-      { label: 'Autonomous avg', value: `${point.autonomousAverage.toFixed(1)} pts` },
-      { label: 'Teleop avg', value: `${point.teleopAverage.toFixed(1)} pts` },
-      { label: 'Endgame avg', value: `${point.endgameAverage.toFixed(1)} pts` },
-      { label: 'Game piece avg', value: point.gamePieceAverage.toFixed(1) },
-      { label: 'Total avg', value: `${point.totalAverage.toFixed(1)} pts` },
+      { label: 'Autonomous Average', value: `${point.autonomousAverage.toFixed(1)} pts` },
+      { label: 'Teleop Average', value: `${point.teleopAverage.toFixed(1)} pts` },
+      { label: 'Endgame Average', value: `${point.endgameAverage.toFixed(1)} pts` },
+      { label: 'Game piece Average', value: point.gamePieceAverage.toFixed(1) },
+      { label: 'Total Points Average', value: `${point.totalAverage.toFixed(1)} pts` },
     ];
 
     return (
