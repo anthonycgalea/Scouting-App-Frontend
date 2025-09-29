@@ -18,7 +18,7 @@ export function AnalyticsPage() {
           <ScatterChart2025 teams={DEFAULT_TEAMS} />
         </Box>
         <Box w={1100} h={600}>
-          <BarChart2025/>
+          <BarChart2025 />
         </Box>
       </Stack>
     </Box>

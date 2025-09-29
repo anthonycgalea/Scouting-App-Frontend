@@ -1,4 +1,5 @@
-import React from 'react';
+import { useMemo } from 'react';
+import { useMantineColorScheme, useMantineTheme, rgba } from '@mantine/core';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const data = [
@@ -46,13 +47,43 @@ const data = [
   },
 ];
 
+const sortByTotalDescending = (a: typeof data[number], b: typeof data[number]) => {
+  const totalA = a.pv + a.uv;
+  const totalB = b.pv + b.uv;
+
+  return totalB - totalA;
+};
+
+const sortedData = [...data].sort(sortByTotalDescending);
+
+
 const BarChart2025 = () => {
+  const theme = useMantineTheme();
+  const { colorScheme } = useMantineColorScheme();
+
+  const tooltipContentStyle = useMemo(
+    () => ({
+      backgroundColor: colorScheme === 'dark' ? theme.colors.dark[6] : theme.white,
+      borderColor: colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[3],
+      color: colorScheme === 'dark' ? theme.colors.gray[1] : theme.colors.dark[7],
+    }),
+    [colorScheme, theme]
+  );
+
+  const cursorFill = useMemo(
+    () =>
+      colorScheme === 'dark'
+        ? rgba(theme.colors.dark[3], 0.45)
+        : rgba(theme.colors.gray[3], 0.35),
+    [colorScheme, theme]
+  );
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart
         width={500}
         height={300}
-        data={data}
+        data={sortedData}
+        layout="vertical"
         margin={{
           top: 20,
           right: 30,
@@ -61,9 +92,9 @@ const BarChart2025 = () => {
         }}
       >
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="name" />
-        <YAxis />
-        <Tooltip />
+        <XAxis type="number" />
+        <YAxis dataKey="name" type="category" />
+        <Tooltip contentStyle={tooltipContentStyle} cursor={{ fill: cursorFill }} />
         <Legend />
         <Bar dataKey="pv" stackId="a" fill="#8884d8" />
         <Bar dataKey="uv" stackId="a" fill="#82ca9d" />
