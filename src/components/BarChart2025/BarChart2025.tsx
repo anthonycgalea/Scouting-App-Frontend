@@ -1,74 +1,86 @@
 import { useMemo } from 'react';
 import { useMantineColorScheme, useMantineTheme, rgba } from '@mantine/core';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+  type TooltipProps,
+} from 'recharts';
 
-const data = [
-  {
-    name: 'Page A',
-    uv: 4000,
-    pv: 2400,
-    amt: 2400,
-  },
-  {
-    name: 'Page B',
-    uv: 3000,
-    pv: 1398,
-    amt: 2210,
-  },
-  {
-    name: 'Page C',
-    uv: 2000,
-    pv: 9800,
-    amt: 2290,
-  },
-  {
-    name: 'Page D',
-    uv: 2780,
-    pv: 3908,
-    amt: 2000,
-  },
-  {
-    name: 'Page E',
-    uv: 1890,
-    pv: 4800,
-    amt: 2181,
-  },
-  {
-    name: 'Page F',
-    uv: 2390,
-    pv: 3800,
-    amt: 2500,
-  },
-  {
-    name: 'Page G',
-    uv: 3490,
-    pv: 4300,
-    amt: 2100,
-  },
-];
+import { type TeamPerformanceSummary } from '@/types/analytics';
 
-const sortByTotalDescending = (a: typeof data[number], b: typeof data[number]) => {
-  const totalA = a.pv + a.uv;
-  const totalB = b.pv + b.uv;
-
-  return totalB - totalA;
+type BarChart2025Props = {
+  teams?: TeamPerformanceSummary[];
 };
 
-const sortedData = [...data].sort(sortByTotalDescending);
+type ChartDatum = TeamPerformanceSummary & {
+  teamLabel: string;
+};
 
+const tooltipContent = (
+  themeColors: {
+    background: string;
+    border: string;
+    text: string;
+    label: string;
+  },
+) =>
+  ({ active, payload }: TooltipProps<number, string>) => {
+    if (!active || !payload || payload.length === 0) {
+      return null;
+    }
 
-const BarChart2025 = () => {
+    const point = payload[0]?.payload as ChartDatum | undefined;
+
+    if (!point) {
+      return null;
+    }
+
+    const rows: { label: string; value: string }[] = [
+      { label: 'Matches played', value: point.matchesPlayed.toString() },
+      { label: 'Autonomous avg', value: `${point.autonomousAverage.toFixed(1)} pts` },
+      { label: 'Teleop avg', value: `${point.teleopAverage.toFixed(1)} pts` },
+      { label: 'Endgame avg', value: `${point.endgameAverage.toFixed(1)} pts` },
+      { label: 'Game piece avg', value: point.gamePieceAverage.toFixed(1) },
+      { label: 'Total avg', value: `${point.totalAverage.toFixed(1)} pts` },
+    ];
+
+    return (
+      <div
+        style={{
+          backgroundColor: themeColors.background,
+          border: `1px solid ${themeColors.border}`,
+          borderRadius: 8,
+          padding: '0.75rem 1rem',
+          color: themeColors.text,
+          minWidth: 200,
+        }}
+      >
+        <div style={{ fontWeight: 600, marginBottom: '0.35rem', color: themeColors.label }}>
+          {point.teamName ? `${point.teamName} • Team ${point.teamNumber}` : `Team ${point.teamNumber}`}
+        </div>
+        <div style={{ display: 'grid', gap: '0.2rem' }}>
+          {rows.map((row) => (
+            <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem' }}>
+              <span style={{ color: themeColors.label }}>{row.label}</span>
+              <span>{row.value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+const sortByTotalDescending = (a: ChartDatum, b: ChartDatum) => b.totalAverage - a.totalAverage;
+
+const BarChart2025 = ({ teams = [] }: BarChart2025Props) => {
   const theme = useMantineTheme();
   const { colorScheme } = useMantineColorScheme();
-
-  const tooltipContentStyle = useMemo(
-    () => ({
-      backgroundColor: colorScheme === 'dark' ? theme.colors.dark[6] : theme.white,
-      borderColor: colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[3],
-      color: colorScheme === 'dark' ? theme.colors.gray[1] : theme.colors.dark[7],
-    }),
-    [colorScheme, theme]
-  );
 
   const cursorFill = useMemo(
     () =>
@@ -77,27 +89,84 @@ const BarChart2025 = () => {
         : rgba(theme.colors.gray[3], 0.35),
     [colorScheme, theme]
   );
+
+  const colors = useMemo(() => {
+    if (colorScheme === 'dark') {
+      return {
+        autonomous: theme.colors.blue[4],
+        teleop: theme.colors.green[4],
+        endgame: theme.colors.grape[4],
+        background: theme.colors.dark[6],
+        border: theme.colors.dark[4],
+        text: theme.colors.gray[1],
+        label: theme.colors.gray[3],
+      };
+    }
+
+    return {
+      autonomous: theme.colors.blue[6],
+      teleop: theme.colors.green[6],
+      endgame: theme.colors.grape[6],
+      background: theme.white,
+      border: theme.colors.gray[3],
+      text: theme.colors.dark[7],
+      label: theme.colors.gray[6],
+    };
+  }, [colorScheme, theme]);
+
+  const data = useMemo<ChartDatum[]>(
+    () =>
+      teams
+        .map<ChartDatum>((team) => ({
+          ...team,
+          teamLabel: `Team ${team.teamNumber}`,
+        }))
+        .sort(sortByTotalDescending),
+    [teams]
+  );
+
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart
-        width={500}
-        height={300}
-        data={sortedData}
+        data={data}
         layout="vertical"
         margin={{
           top: 20,
-          right: 30,
-          left: 20,
-          bottom: 5,
+          right: 40,
+          left: 40,
+          bottom: 20,
         }}
       >
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis type="number" />
-        <YAxis dataKey="name" type="category" />
-        <Tooltip contentStyle={tooltipContentStyle} cursor={{ fill: cursorFill }} />
+        <XAxis
+          type="number"
+          tick={{ fill: colors.label }}
+          label={{
+            value: 'Average points per match',
+            position: 'insideBottom',
+            offset: -10,
+            fill: colors.label,
+          }}
+        />
+        <YAxis
+          dataKey="teamLabel"
+          type="category"
+          width={120}
+          tick={{ fill: colors.label }}
+        />
+        <Tooltip
+          cursor={{ fill: cursorFill }}
+          content={tooltipContent({
+            background: colors.background,
+            border: colors.border,
+            text: colors.text,
+            label: colors.label,
+          })}
+        />
         <Legend />
-        <Bar dataKey="pv" stackId="a" fill="#8884d8" />
-        <Bar dataKey="uv" stackId="a" fill="#82ca9d" />
+        <Bar dataKey="autonomousAverage" stackId="a" name="Autonomous" fill={colors.autonomous} />
+        <Bar dataKey="teleopAverage" stackId="a" name="Teleop" fill={colors.teleop} />
+        <Bar dataKey="endgameAverage" stackId="a" name="Endgame" fill={colors.endgame} />
       </BarChart>
     </ResponsiveContainer>
   );

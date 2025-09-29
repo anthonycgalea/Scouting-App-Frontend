@@ -1,3 +1,4 @@
+import { type TeamPerformanceSummary } from '@/types/analytics';
 import {
   CartesianGrid,
   LabelList,
@@ -13,29 +14,10 @@ import {
 
 import classes from './ScatterChart2025.module.css';
 
-export type TeamPerformancePoint = {
-  teamNumber: number;
-  teleopAverage: number;
-  autoEndgameAverage: number;
-};
+export type TeamPerformancePoint = TeamPerformanceSummary;
 
-export const DEFAULT_TEAMS: TeamPerformancePoint[] = [
-  { teamNumber: 67, teleopAverage: 78, autoEndgameAverage: 82 },
-  { teamNumber: 118, teleopAverage: 92, autoEndgameAverage: 88 },
-  { teamNumber: 148, teleopAverage: 84, autoEndgameAverage: 73 },
-  { teamNumber: 1678, teleopAverage: 87, autoEndgameAverage: 94 },
-  { teamNumber: 2056, teleopAverage: 95, autoEndgameAverage: 97 },
-  { teamNumber: 2910, teleopAverage: 72, autoEndgameAverage: 68 },
-  { teamNumber: 4414, teleopAverage: 81, autoEndgameAverage: 79 },
-  { teamNumber: 6328, teleopAverage: 76, autoEndgameAverage: 83 },
-  { teamNumber: 7461, teleopAverage: 69, autoEndgameAverage: 64 },
-  { teamNumber: 971, teleopAverage: 88, autoEndgameAverage: 86 },
-];
-
-type ChartPoint = {
-  teamNumber: number;
+type ChartPoint = TeamPerformancePoint & {
   teamLabel: string;
-  teleopAverage: number;
   autoEndgameAverage: number;
 };
 
@@ -46,30 +28,58 @@ type ScatterChart2025Props = {
 
 type ChartTooltipProps = TooltipProps<number, string>;
 
-const tooltipLabelFormatter: NonNullable<ChartTooltipProps['labelFormatter']> = (
-  _label,
-  payload,
-) => {
-  const point = payload?.[0]?.payload as ChartPoint | undefined;
-  return point ? `Team ${point.teamNumber}` : '';
-};
-
-const tooltipFormatter: NonNullable<ChartTooltipProps['formatter']> = (
-  value,
-  name,
-  item,
-) => {
-  const point = (item?.payload ?? {}) as ChartPoint;
-
-  if (name === 'teleopAverage') {
-    return [`${point.teleopAverage.toFixed(1)} pts`, 'Teleop avg'];
+const tooltipContent = ({ active, payload }: ChartTooltipProps) => {
+  if (!active || !payload || payload.length === 0) {
+    return null;
   }
 
-  if (name === 'autoEndgameAverage') {
-    return [`${point.autoEndgameAverage.toFixed(1)} pts`, 'Auto & endgame avg'];
+  const point = payload[0]?.payload as ChartPoint | undefined;
+
+  if (!point) {
+    return null;
   }
 
-  return [value, name];
+  const rows: { label: string; value: string }[] = [
+    { label: 'Matches played', value: point.matchesPlayed.toString() },
+    { label: 'Autonomous avg', value: `${point.autonomousAverage.toFixed(1)} pts` },
+    { label: 'Teleop avg', value: `${point.teleopAverage.toFixed(1)} pts` },
+    { label: 'Endgame avg', value: `${point.endgameAverage.toFixed(1)} pts` },
+    { label: 'Auto + endgame', value: `${point.autoEndgameAverage.toFixed(1)} pts` },
+    { label: 'Game piece avg', value: point.gamePieceAverage.toFixed(1) },
+    { label: 'Total avg', value: `${point.totalAverage.toFixed(1)} pts` },
+  ];
+
+  return (
+    <div
+      style={{
+        backgroundColor: 'var(--scatter2025-tooltip-bg)',
+        border: `1px solid var(--scatter2025-border)`,
+        borderRadius: 8,
+        padding: '0.75rem 1rem',
+        boxShadow: `0 4px 12px var(--scatter2025-tooltip-shadow)`,
+        color: 'var(--scatter2025-text)',
+        minWidth: 200,
+      }}
+    >
+      <div
+        style={{
+          color: 'var(--scatter2025-label)',
+          fontWeight: 600,
+          marginBottom: '0.35rem',
+        }}
+      >
+        {point.teamName ? `${point.teamName} • Team ${point.teamNumber}` : `Team ${point.teamNumber}`}
+      </div>
+      <div style={{ display: 'grid', gap: '0.2rem' }}>
+        {rows.map((row) => (
+          <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem' }}>
+            <span style={{ color: 'var(--scatter2025-axis)' }}>{row.label}</span>
+            <span>{row.value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 };
 
 const renderTeamLabel = (props: LabelProps) => {
@@ -94,12 +104,18 @@ const renderTeamLabel = (props: LabelProps) => {
   );
 };
 
-export function ScatterChart2025({ teams = DEFAULT_TEAMS, color }: ScatterChart2025Props) {
+export function ScatterChart2025({ teams = [], color }: ScatterChart2025Props) {
   const data = teams.map<ChartPoint>((team) => ({
     teamNumber: team.teamNumber,
     teamLabel: `${team.teamNumber}`,
     teleopAverage: team.teleopAverage,
-    autoEndgameAverage: team.autoEndgameAverage,
+    autoEndgameAverage: team.autonomousAverage + team.endgameAverage,
+    matchesPlayed: team.matchesPlayed,
+    autonomousAverage: team.autonomousAverage,
+    endgameAverage: team.endgameAverage,
+    gamePieceAverage: team.gamePieceAverage,
+    totalAverage: team.totalAverage,
+    teamName: team.teamName,
   }));
 
   const pointFill = color ?? 'var(--scatter2025-point)';
@@ -149,16 +165,7 @@ export function ScatterChart2025({ teams = DEFAULT_TEAMS, color }: ScatterChart2
           />
           <Tooltip
             cursor={{ strokeDasharray: '3 3', stroke: 'var(--scatter2025-axis)' }}
-            labelFormatter={tooltipLabelFormatter}
-            formatter={tooltipFormatter}
-            contentStyle={{
-              backgroundColor: 'var(--scatter2025-tooltip-bg)',
-              borderColor: 'var(--scatter2025-border)',
-              color: 'var(--scatter2025-text)',
-              boxShadow: `0 4px 12px var(--scatter2025-tooltip-shadow)`,
-            }}
-            itemStyle={{ color: 'var(--scatter2025-text)', fontSize: 12 }}
-            labelStyle={{ color: 'var(--scatter2025-label)', fontWeight: 600 }}
+            content={tooltipContent}
           />
           <Scatter name="Teleop vs Auto/Endgame averages" data={data} fill={pointFill}>
             <LabelList dataKey="teamLabel" content={renderTeamLabel} />
