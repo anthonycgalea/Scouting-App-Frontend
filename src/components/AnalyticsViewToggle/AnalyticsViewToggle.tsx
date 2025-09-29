@@ -2,7 +2,7 @@ import { SegmentedControl } from '@mantine/core';
 
 import classes from './AnalyticsViewToggle.module.css';
 
-export type AnalyticsView = 'scatter' | 'bar';
+export type AnalyticsView = 'scatter' | 'bar' | 'box';
 
 type AnalyticsViewToggleProps = {
   value: AnalyticsView;
@@ -17,6 +17,7 @@ export function AnalyticsViewToggle({ value, onChange }: AnalyticsViewToggleProp
       data={[
         { label: 'Auto + Endgame vs Teleop', value: 'scatter' },
         { label: 'Team Averages', value: 'bar' },
+        { label: 'Score Distribution', value: 'box' },
       ]}
       value={value}
       onChange={(newValue) => onChange(newValue as AnalyticsView)}

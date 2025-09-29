@@ -1,13 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { useTeamAnalytics, type TeamAnalyticsResponse } from '@/api';
+import {
+  useTeamAnalytics,
+  useTeamDetailedAnalytics,
+  type TeamAnalyticsResponse,
+  type TeamDetailedAnalyticsResponse,
+} from '@/api';
 import BarChart2025 from '@/components/BarChart2025/BarChart2025';
 import {
   AnalyticsViewToggle,
   type AnalyticsView,
 } from '@/components/AnalyticsViewToggle/AnalyticsViewToggle';
 import { ScatterChart2025 } from '@/components/ScatterChart2025/ScatterChart2025';
-import { type TeamPerformanceSummary } from '@/types/analytics';
+import BoxWhiskerChart2025, {
+  type BoxMetric,
+} from '@/components/BoxWhiskerChart2025/BoxWhiskerChart2025';
+import { type TeamDistributionSummary, type TeamPerformanceSummary } from '@/types/analytics';
 import {
   Box,
   Center,
@@ -16,10 +24,18 @@ import {
   Loader,
   Paper,
   ScrollArea,
+  SegmentedControl,
   Stack,
   Text,
   Title,
 } from '@mantine/core';
+
+const BOX_METRIC_OPTIONS: { label: string; value: BoxMetric }[] = [
+  { label: 'Total Points', value: 'total' },
+  { label: 'Autonomous', value: 'autonomous' },
+  { label: 'Teleop', value: 'teleop' },
+  { label: 'Game Pieces', value: 'gamePieces' },
+];
 
 const mapAnalyticsResponse = (team: TeamAnalyticsResponse): TeamPerformanceSummary => ({
   teamNumber: team.team_number,
@@ -32,12 +48,29 @@ const mapAnalyticsResponse = (team: TeamAnalyticsResponse): TeamPerformanceSumma
   totalAverage: team.total_points_average,
 });
 
+const mapDetailedAnalyticsResponse = (
+  team: TeamDetailedAnalyticsResponse,
+): TeamDistributionSummary => ({
+  teamNumber: team.team_number,
+  teamName: team.team_name,
+  matchesPlayed: team.matches_played,
+  autonomous: team.autonomous_points,
+  teleop: team.teleop_points,
+  gamePieces: team.game_pieces,
+  total: team.total_points,
+});
+
 export function AnalyticsPage() {
   const {
     data: analyticsData,
     isLoading,
     isError,
   } = useTeamAnalytics();
+  const {
+    data: detailedAnalyticsData,
+    isLoading: isDetailedLoading,
+    isError: isDetailedError,
+  } = useTeamDetailedAnalytics();
 
   const teams = useMemo<TeamPerformanceSummary[]>(() => {
     if (!analyticsData || analyticsData.length === 0) {
@@ -46,6 +79,16 @@ export function AnalyticsPage() {
 
     return analyticsData.map(mapAnalyticsResponse);
   }, [analyticsData]);
+
+  const teamDistributions = useMemo(() => {
+    if (!detailedAnalyticsData || detailedAnalyticsData.length === 0) {
+      return new Map<number, TeamDistributionSummary>();
+    }
+
+    return new Map<number, TeamDistributionSummary>(
+      detailedAnalyticsData.map((team) => [team.team_number, mapDetailedAnalyticsResponse(team)]),
+    );
+  }, [detailedAnalyticsData]);
 
   const [selectedTeamNumbers, setSelectedTeamNumbers] = useState<number[]>([]);
   const previousTeamNumbersRef = useRef<number[]>([]);
@@ -114,6 +157,7 @@ export function AnalyticsPage() {
   const showLoadError = isError && !isLoading;
   const showNoDataMessage = !isLoading && !showLoadError && !hasTeams;
   const [view, setView] = useState<AnalyticsView>('scatter');
+  const [boxMetric, setBoxMetric] = useState<BoxMetric>('total');
 
   const selectedTeamNumbersSet = useMemo(
     () => new Set(selectedTeamNumbers),
@@ -125,9 +169,38 @@ export function AnalyticsPage() {
     [teams, selectedTeamNumbersSet]
   );
 
+  const filteredTeamDistributions = useMemo(() => {
+    if (filteredTeams.length === 0) {
+      return [];
+    }
+
+    const summaries: TeamDistributionSummary[] = [];
+
+    filteredTeams.forEach((team) => {
+      const distribution = teamDistributions.get(team.teamNumber);
+
+      if (distribution) {
+        summaries.push({
+          ...distribution,
+          teamName: distribution.teamName ?? team.teamName,
+        });
+      }
+    });
+
+    return summaries;
+  }, [filteredTeams, teamDistributions]);
+
   const allTeamsSelected = hasTeams && selectedTeamNumbers.length === teams.length;
   const hasSomeSelected = selectedTeamNumbers.length > 0;
   const showNoTeamsSelectedMessage = hasTeams && !isLoading && filteredTeams.length === 0;
+  const showDetailedLoading = view === 'box' && isDetailedLoading;
+  const showDetailedError = view === 'box' && isDetailedError;
+  const showNoDistributionData =
+    view === 'box' &&
+    !showDetailedLoading &&
+    !showDetailedError &&
+    filteredTeams.length > 0 &&
+    filteredTeamDistributions.length === 0;
 
   return (
     <Box p="md">
@@ -167,17 +240,52 @@ export function AnalyticsPage() {
                 </Center>
               ) : (
                 <>
-                <Box w="100%" maw={520} mx="auto">
-              <AnalyticsViewToggle value={view} onChange={setView} />
-            </Box>
-            {view === 'scatter' ? (
-                  <Box w="100%" maw={1200} h={600} mx="auto">
-                    <ScatterChart2025 teams={filteredTeams} />
+                  <Box w="100%" maw={520} mx="auto">
+                    <AnalyticsViewToggle value={view} onChange={setView} />
                   </Box>
-                  ) : (
-                  <Box w="100%" maw={1200} h={600} mx="auto" style={{ overflowY: 'auto' }}>
-                    <BarChart2025 teams={filteredTeams} />
-                  </Box>
+                  {view === 'scatter' && (
+                    <Box w="100%" maw={1200} h={600} mx="auto">
+                      <ScatterChart2025 teams={filteredTeams} />
+                    </Box>
+                  )}
+                  {view === 'bar' && (
+                    <Box w="100%" maw={1200} h={600} mx="auto" style={{ overflowY: 'auto' }}>
+                      <BarChart2025 teams={filteredTeams} />
+                    </Box>
+                  )}
+                  {view === 'box' && (
+                    <Box w="100%" maw={1200} mx="auto" style={{ maxHeight: 600, overflowY: 'auto' }}>
+                      <Stack gap="md">
+                        <SegmentedControl
+                          radius="md"
+                          size="sm"
+                          fullWidth
+                          value={boxMetric}
+                          onChange={(value) => setBoxMetric(value as BoxMetric)}
+                          data={BOX_METRIC_OPTIONS}
+                          disabled={filteredTeams.length === 0}
+                        />
+                        {showDetailedLoading ? (
+                          <Center mih={420}>
+                            <Loader />
+                          </Center>
+                        ) : showDetailedError ? (
+                          <Center mih={420}>
+                            <Text c="red.6" fw={500}>
+                              Unable to load detailed analytics data at this time.
+                            </Text>
+                          </Center>
+                        ) : showNoDistributionData ? (
+                          <Center mih={420}>
+                            <Text c="dimmed" fw={500}>
+                              No distribution data is available for the selected teams.
+                            </Text>
+                          </Center>
+                        ) : (
+                          <BoxWhiskerChart2025 teams={filteredTeamDistributions} metric={boxMetric} />
+                        )}
+                      </Stack>
+                    </Box>
                   )}
                 </>
               )}
