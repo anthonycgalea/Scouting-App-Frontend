@@ -13,8 +13,11 @@ import {
 } from 'recharts';
 
 import classes from './ScatterChart2025.module.css';
+import { useMemo } from 'react';
 
 export type TeamPerformancePoint = TeamPerformanceSummary;
+
+const MIN_CHART_HEIGHT = 320;
 
 type ChartPoint = TeamPerformancePoint & {
   teamLabel: string;
@@ -128,7 +131,7 @@ export function ScatterChart2025({ teams = [], color }: ScatterChart2025Props) {
       aria-label="Teleop versus auto and endgame averages scatter chart"
     >
       <ResponsiveContainer width="100%" height="100%" className={classes.chart}>
-        <ScatterChart margin={{ top: 20, right: 32, bottom: 48, left: 48 }}>
+        <ScatterChart margin={{ top: 20, right: 32, bottom: 32, left: 48 }}>
           <CartesianGrid stroke="var(--scatter2025-grid)" strokeDasharray="3 3" />
           <XAxis
             type="number"

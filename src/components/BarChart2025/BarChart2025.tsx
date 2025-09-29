@@ -14,6 +14,18 @@ import {
 
 import { type TeamPerformanceSummary } from '@/types/analytics';
 
+
+const BAR_SIZE = 24;
+const LABEL_FONT_SIZE = 12;
+const CATEGORY_GAP = 6;
+const MIN_CHART_HEIGHT = 320;
+const CHART_MARGIN = {
+  top: 20,
+  right: 40,
+  left: 40,
+  bottom: 20,
+};
+
 type BarChart2025Props = {
   teams?: TeamPerformanceSummary[];
 };
@@ -78,6 +90,8 @@ const tooltipContent = (
 
 const sortByTotalDescending = (a: ChartDatum, b: ChartDatum) => b.totalAverage - a.totalAverage;
 
+
+
 const BarChart2025 = ({ teams = [] }: BarChart2025Props) => {
   const theme = useMantineTheme();
   const { colorScheme } = useMantineColorScheme();
@@ -119,23 +133,29 @@ const BarChart2025 = ({ teams = [] }: BarChart2025Props) => {
       teams
         .map<ChartDatum>((team) => ({
           ...team,
-          teamLabel: `Team ${team.teamNumber}`,
+          teamLabel: `${team.teamNumber}`,
         }))
         .sort(sortByTotalDescending),
     [teams]
   );
 
+  const chartHeight = useMemo(() => {
+    if (data.length === 0) {
+      return MIN_CHART_HEIGHT;
+    }
+
+    const categoriesHeight = data.length * BAR_SIZE + Math.max(data.length - 1, 0) * CATEGORY_GAP;
+
+    return Math.max(categoriesHeight + CHART_MARGIN.top + CHART_MARGIN.bottom, MIN_CHART_HEIGHT);
+  }, [data.length]);
+
   return (
-    <ResponsiveContainer width="100%" height="100%">
+    <ResponsiveContainer width="100%" height={chartHeight}>
       <BarChart
         data={data}
         layout="vertical"
-        margin={{
-          top: 20,
-          right: 40,
-          left: 40,
-          bottom: 20,
-        }}
+        margin={CHART_MARGIN}
+        barCategoryGap={CATEGORY_GAP}
       >
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis
@@ -152,7 +172,7 @@ const BarChart2025 = ({ teams = [] }: BarChart2025Props) => {
           dataKey="teamLabel"
           type="category"
           width={120}
-          tick={{ fill: colors.label }}
+          tick={{ fill: colors.label, fontSize: LABEL_FONT_SIZE }}
         />
         <Tooltip
           cursor={{ fill: cursorFill }}
@@ -164,9 +184,27 @@ const BarChart2025 = ({ teams = [] }: BarChart2025Props) => {
           })}
         />
         <Legend />
-        <Bar dataKey="autonomousAverage" stackId="a" name="Autonomous" fill={colors.autonomous} />
-        <Bar dataKey="teleopAverage" stackId="a" name="Teleop" fill={colors.teleop} />
-        <Bar dataKey="endgameAverage" stackId="a" name="Endgame" fill={colors.endgame} />
+        <Bar
+          dataKey="autonomousAverage"
+          stackId="a"
+          name="Autonomous"
+          fill={colors.autonomous}
+          barSize={BAR_SIZE}
+        />
+        <Bar
+          dataKey="teleopAverage"
+          stackId="a"
+          name="Teleop"
+          fill={colors.teleop}
+          barSize={BAR_SIZE}
+        />
+        <Bar
+          dataKey="endgameAverage"
+          stackId="a"
+          name="Endgame"
+          fill={colors.endgame}
+          barSize={BAR_SIZE}
+        />
       </BarChart>
     </ResponsiveContainer>
   );

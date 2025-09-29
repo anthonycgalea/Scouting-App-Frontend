@@ -68,7 +68,7 @@ export function AnalyticsPage() {
             <Box w="100%" maw={1200} h={420} mx="auto">
               <ScatterChart2025 teams={teams} />
             </Box>
-            <Box w="100%" maw={1200} h={420} mx="auto">
+            <Box w="100%" maw={1200} h={420} mx="auto"  style={{ overflowY: 'auto' }}>
               <BarChart2025 teams={teams} />
             </Box>
           </>
