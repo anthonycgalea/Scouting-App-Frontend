@@ -172,6 +172,7 @@ const BarChart2025 = ({ teams = [] }: BarChart2025Props) => {
           dataKey="teamLabel"
           type="category"
           width={120}
+          interval={0}
           tick={{ fill: colors.label, fontSize: LABEL_FONT_SIZE }}
         />
         <Tooltip
