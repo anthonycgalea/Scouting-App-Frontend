@@ -70,7 +70,7 @@ export function CompareTeamsPage() {
           </Text>
         </Stack>
         <MultiSelect
-          w={{ base: '100%', sm: 320 }}
+          w={{ base: '100%', sm: 320, md: 500, lg: 1000, xl: 1500 }}
           label="Teams"
           data={teamOptions}
           value={selectedTeams}
