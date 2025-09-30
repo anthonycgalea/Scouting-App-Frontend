@@ -351,7 +351,7 @@ export default function CompareZScoreChart2025({ selectedTeams }: CompareZScoreC
   const legendTextColor = colorScheme === 'dark' ? theme.colors.gray[2] : theme.colors.dark[6];
 
   return (
-    <Card withBorder p="lg" radius="lg" shadow="sm" h="100%">
+    <Card withBorder p="lg" radius="lg" shadow="sm" h="100%" w="100%">
       <Stack gap="lg" h="100%">
         <Stack gap={4}>
           <Title order={3}>Team Skill Comparison</Title>

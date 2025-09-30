@@ -307,7 +307,7 @@ export default function CompareLineChart2025({ teams, isLoading, isError }: Comp
   const hasData = chartData.length > 0 && selectedTeams.length > 0;
 
   return (
-    <Card withBorder p="lg" radius="lg" shadow="sm" h="100%">
+    <Card withBorder p="lg" radius="lg" shadow="sm" h="100%" w="100%">
       <Stack gap="lg" h="100%">
         <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
           <div>

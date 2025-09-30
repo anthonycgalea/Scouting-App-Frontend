@@ -19,7 +19,6 @@
 
 .chartPanel {
   display: flex;
-  flex: 1 1 100%;
   min-width: 0;
   min-height: 0;
 }
@@ -34,10 +33,16 @@
 
 @media (min-width: 75em) {
   .lineChartPanel {
-    flex: 2 1 0%;
+    flex-grow: 0;
+    flex-shrink: 0;
+    flex-basis: calc((100% - var(--mantine-spacing-lg)) * 2 / 3);
+    max-width: calc((100% - var(--mantine-spacing-lg)) * 2 / 3);
   }
 
   .radarChartPanel {
-    flex: 1 1 0%;
+    flex-grow: 0;
+    flex-shrink: 0;
+    flex-basis: calc((100% - var(--mantine-spacing-lg)) / 3);
+    max-width: calc((100% - var(--mantine-spacing-lg)) / 3);
   }
 }
