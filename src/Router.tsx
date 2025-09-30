@@ -27,6 +27,7 @@ import { AddEventPage } from './pages/AddEvent.page';
 import { ApplyToOrganizationPage } from './pages/ApplyToOrganization.page';
 import { useAuth } from './auth/AuthProvider';
 import { AnalyticsPage } from './pages/Analytics.page';
+import { CompareTeamsPage } from './pages/CompareTeams.page';
 import { PickListsPage } from './pages/PickLists.page';
 import { AllianceSelectionPage } from './pages/AllianceSelection.page';
 import { ListGeneratorPage } from './pages/ListGenerator.page';
@@ -149,6 +150,12 @@ const summaryAnalyticsRoute = createRoute({
   component: AnalyticsPage,
 });
 
+const compareTeamsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/analytics/compare',
+  component: CompareTeamsPage,
+});
+
 const settingsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/userSettings',
@@ -208,6 +215,7 @@ const routeTree = rootRoute.addChildren([
   dataImportRoute.addChildren([]),
   superScoutRoute.addChildren([]),
   summaryAnalyticsRoute.addChildren([]),
+  compareTeamsRoute.addChildren([]),
   settingsRoute.addChildren([]),
   pickListsRoute.addChildren([]),
   listGeneratorRoute.addChildren([]),
