@@ -72,7 +72,7 @@ const METRIC_OPTIONS: MetricOption[] = [
     value: 'autonomous_points',
     label: 'Autonomous Points',
     axisLabel: 'Autonomous Points',
-    valueSuffix: 'EPA',
+    valueSuffix: 'Points',
   },
   { value: 'teleop_points', label: 'Teleop Points', axisLabel: 'Teleop Points', valueSuffix: 'Points' },
   {
@@ -328,7 +328,7 @@ export default function CompareLineChart2025() {
       <Stack gap="lg">
         <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
           <div>
-            <Title order={3}>Team EPA Over Time</Title>
+            <Title order={3}>Team Performance Over Time</Title>
             <Text size="sm" c="dimmed">
               Compare up to five teams at once. Additional metrics and live data will be available
               soon.
