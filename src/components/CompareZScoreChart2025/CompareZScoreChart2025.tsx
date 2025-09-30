@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Card,
   Center,
+  Group,
   Loader,
   MultiSelect,
   Stack,
@@ -14,7 +15,6 @@ import {
   rgba,
 } from '@mantine/core';
 import {
-  Legend,
   PolarAngleAxis,
   PolarGrid,
   PolarRadiusAxis,
@@ -391,31 +391,56 @@ export default function CompareZScoreChart2025({ selectedTeams }: CompareZScoreC
               <Text c="dimmed">No z-score data is available for the selected teams.</Text>
             </Center>
           ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <RadarChart cx="50%" cy="50%" outerRadius="80%" data={chartData}>
-                <PolarGrid stroke={rgba(axisColor, colorScheme === 'dark' ? 0.4 : 0.5)} />
-                <PolarAngleAxis dataKey="attribute" tick={{ fill: axisColor }} />
-                <PolarRadiusAxis
-                  angle={30}
-                  domain={[0, 1]}
-                  tick={{ fill: axisColor }}
-                  tickFormatter={() => ''}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: colorScheme === 'dark' ? theme.colors.dark[6] : theme.white,
-                    borderColor: colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[3],
-                    borderRadius: theme.radius.md,
-                    color: colorScheme === 'dark' ? theme.colors.gray[2] : theme.colors.dark[6],
-                  }}
-                  formatter={tooltipFormatter}
-                />
-                <Legend
-                  verticalAlign="bottom"
-                  height={48}
-                  wrapperStyle={{ color: legendTextColor }}
-                  iconType="circle"
-                />
+            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: rem(16) }}>
+              <div style={{ flex: 1 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart
+                    cx="50%"
+                    cy="50%"
+                    outerRadius="70%"
+                    data={chartData}
+                    margin={{ top: 16, right: 16, bottom: 24, left: 16 }}
+                  >
+                    <PolarGrid stroke={rgba(axisColor, colorScheme === 'dark' ? 0.4 : 0.5)} />
+                    <PolarAngleAxis dataKey="attribute" tick={{ fill: axisColor }} />
+                    <PolarRadiusAxis
+                      angle={30}
+                      domain={[0, 1]}
+                      tick={{ fill: axisColor }}
+                      tickFormatter={() => ''}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: colorScheme === 'dark' ? theme.colors.dark[6] : theme.white,
+                        borderColor: colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[3],
+                        borderRadius: theme.radius.md,
+                        color: colorScheme === 'dark' ? theme.colors.gray[2] : theme.colors.dark[6],
+                      }}
+                      formatter={tooltipFormatter}
+                    />
+                    {filteredTeams.map((team, index) => {
+                      const color = palette[index % palette.length];
+                      const teamKey = getTeamKey(team);
+                      const displayName = team.team_name
+                        ? `${team.team_number} • ${team.team_name}`
+                        : `Team ${team.team_number}`;
+
+                      return (
+                        <Radar
+                          key={teamKey}
+                          name={displayName}
+                          dataKey={teamKey}
+                          stroke={color}
+                          fill={color}
+                          fillOpacity={0.25}
+                        />
+                      );
+                    })}
+                  </RadarChart>
+                </ResponsiveContainer>
+              </div>
+
+              <Group gap="lg" justify="center" wrap="wrap" style={{ color: legendTextColor }}>
                 {filteredTeams.map((team, index) => {
                   const color = palette[index % palette.length];
                   const teamKey = getTeamKey(team);
@@ -424,18 +449,21 @@ export default function CompareZScoreChart2025({ selectedTeams }: CompareZScoreC
                     : `Team ${team.team_number}`;
 
                   return (
-                    <Radar
-                      key={teamKey}
-                      name={displayName}
-                      dataKey={teamKey}
-                      stroke={color}
-                      fill={color}
-                      fillOpacity={0.25}
-                    />
+                    <Group key={`legend-${teamKey}`} gap="xs" align="center">
+                      <div
+                        style={{
+                          width: rem(10),
+                          height: rem(10),
+                          borderRadius: '50%',
+                          backgroundColor: color,
+                        }}
+                      />
+                      <Text size="sm">{displayName}</Text>
+                    </Group>
                   );
                 })}
-              </RadarChart>
-            </ResponsiveContainer>
+              </Group>
+            </div>
           )}
         </div>
       </Stack>
