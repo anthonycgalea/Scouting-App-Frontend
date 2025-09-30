@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useMemo, useState } from 'react';
 import {
   Card,
   Center,
   Group,
   Loader,
-  MultiSelect,
   Select,
   Stack,
   Text,
@@ -26,9 +25,7 @@ import {
   type TooltipContentProps,
 } from 'recharts';
 
-import { useTeamMatchHistory, type TeamMatchHistoryResponse } from '@/api';
-
-const MAX_TEAMS = 5;
+import { type TeamMatchHistoryResponse } from '@/api';
 
 type TeamIdentifier = string;
 
@@ -248,41 +245,35 @@ const tooltipContent = (
     );
   };
 
-export default function CompareLineChart2025() {
+type CompareLineChart2025Props = {
+  teams: TeamMatchHistoryResponse[];
+  isLoading: boolean;
+  isError: boolean;
+  teamFilter?: ReactNode;
+};
+
+export default function CompareLineChart2025({
+  teams,
+  isLoading,
+  isError,
+  teamFilter,
+}: CompareLineChart2025Props) {
   const theme = useMantineTheme();
   const { colorScheme: resolvedColorScheme } = useMantineColorScheme();
   const colorScheme = resolvedColorScheme === 'dark' ? 'dark' : 'light';
-  const { data: matchHistory, isLoading, isError } = useTeamMatchHistory();
 
   const [selectedMetric, setSelectedMetric] = useState<MetricKey>(METRIC_OPTIONS[0].value);
-  const [selectedTeams, setSelectedTeams] = useState<TeamIdentifier[]>([]);
 
   const teamLookup = useMemo(() => {
-    if (!matchHistory) {
-      return new Map<TeamIdentifier, TeamMatchHistoryResponse>();
-    }
-
     return new Map<TeamIdentifier, TeamMatchHistoryResponse>(
-      matchHistory.map((team) => [String(team.team_number), team]),
+      teams.map((team) => [String(team.team_number), team]),
     );
-  }, [matchHistory]);
+  }, [teams]);
 
-  useEffect(() => {
-    if (!matchHistory || matchHistory.length === 0) {
-      setSelectedTeams([]);
-      return;
-    }
-
-    setSelectedTeams((previous) => {
-      const validPrevious = previous.filter((teamId) => teamLookup.has(teamId)).slice(0, MAX_TEAMS);
-
-      if (validPrevious.length > 0) {
-        return validPrevious;
-      }
-
-      return matchHistory.slice(0, MAX_TEAMS).map((team) => String(team.team_number));
-    });
-  }, [matchHistory, teamLookup]);
+  const selectedTeams = useMemo(
+    () => teams.map((team) => String(team.team_number)),
+    [teams],
+  );
 
   const palette = useMemo(
     () => getPalette(colorScheme, theme),
@@ -305,11 +296,6 @@ export default function CompareLineChart2025() {
       ? rgba(theme.colors.dark[3], 0.6)
       : rgba(theme.colors.gray[3], 0.6);
   const legendTextColor = colorScheme === 'dark' ? theme.colors.gray[2] : theme.colors.dark[6];
-
-  const handleTeamChange = (teams: string[]) => {
-    const nextTeams = teams.slice(0, MAX_TEAMS) as TeamIdentifier[];
-    setSelectedTeams(nextTeams);
-  };
 
   const tooltipRenderer = useMemo(
     () => tooltipContent(theme, colorScheme, teamLookup, selectedMetricDefinition.valueSuffix),
@@ -350,25 +336,7 @@ export default function CompareLineChart2025() {
                 },
               }}
             />
-
-            <MultiSelect
-              w={260}
-              label="Teams"
-              data={(matchHistory ?? []).map((team) => ({
-                value: String(team.team_number),
-                label: team.team_name
-                  ? `${team.team_number} • ${team.team_name}`
-                  : `${team.team_number}`,
-              }))}
-              value={selectedTeams}
-              onChange={handleTeamChange}
-              maxValues={MAX_TEAMS}
-              searchable
-              placeholder="Select up to 5 teams"
-              nothingFoundMessage="No teams found"
-              checkIconPosition="right"
-              comboboxProps={{ withinPortal: true }}
-            />
+            {teamFilter}
           </Group>
         </Group>
 
