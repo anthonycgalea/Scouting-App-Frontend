@@ -18,7 +18,7 @@ import { type TeamPerformanceSummary } from '@/types/analytics';
 
 
 const BAR_SIZE = 18;
-const LABEL_FONT_SIZE = 12;
+const LABEL_FONT_SIZE = 14;
 const CATEGORY_GAP = 6;
 const MIN_CHART_HEIGHT = 320;
 const CHART_MARGIN = {
@@ -143,7 +143,7 @@ const BarChart2025 = ({ teams = [] }: BarChart2025Props) => {
       teams
         .map<ChartDatum>((team) => ({
           ...team,
-          teamLabel: `Team ${team.teamNumber}`,
+          teamLabel: `${team.teamNumber}`,
         }))
         .sort(sortByTotalDescending),
     [teams]
