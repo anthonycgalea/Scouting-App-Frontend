@@ -129,16 +129,32 @@ const tooltipContent = (
       return null;
     }
 
-    const tooltipPayload = payload[0] as CustomTooltipPayload | undefined;
+    const teamsInTooltip = payload
+      .map((item) => {
+        const tooltipPayload = item as CustomTooltipPayload | undefined;
 
-    if (!tooltipPayload?.dataKey) {
-      return null;
-    }
+        if (!tooltipPayload?.dataKey) {
+          return null;
+        }
 
-    const teamId = tooltipPayload.dataKey as TeamId;
-    const team = TEAM_SERIES[teamId];
+        const teamId = tooltipPayload.dataKey as TeamId;
+        const team = TEAM_SERIES[teamId];
 
-    if (!team) {
+        if (!team) {
+          return null;
+        }
+
+        return {
+          teamId,
+          value: typeof tooltipPayload.value === 'number' ? tooltipPayload.value : null,
+          color: tooltipPayload.color,
+        };
+      })
+      .filter((team): team is { teamId: TeamId; value: number | null; color?: string } =>
+        Boolean(team)
+      );
+
+    if (teamsInTooltip.length === 0) {
       return null;
     }
 
@@ -148,9 +164,6 @@ const tooltipContent = (
       colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[3];
     const textColor =
       colorScheme === 'dark' ? theme.colors.gray[1] : theme.colors.dark[7];
-    const labelColor =
-      colorScheme === 'dark' ? theme.colors.gray[4] : theme.colors.gray[6];
-
     return (
       <div
         style={{
@@ -169,15 +182,24 @@ const tooltipContent = (
         <Text fw={600} size="sm" c={textColor} mb={4}>
           {`Match ${label}`}
         </Text>
-        <Text size="sm" fw={500} c={textColor} mb={6}>
-          {`Team ${teamId} — ${team.name}`}
-        </Text>
-        <Text size="xs" c={labelColor}>
-          {team.location}
-        </Text>
-        <Text size="lg" fw={700} mt={8}>
-          {tooltipPayload.value?.toFixed(2)} EPA
-        </Text>
+        <Stack gap={4} mt={6}>
+          {teamsInTooltip.map(({ teamId, value, color }) => (
+            <Group key={teamId} gap={8} wrap="nowrap">
+              <div
+                style={{
+                  width: rem(10),
+                  height: rem(10),
+                  borderRadius: '50%',
+                  backgroundColor: color ?? theme.colors.gray[5],
+                  flexShrink: 0,
+                }}
+              />
+              <Text size="sm" fw={500} c={textColor}>
+                {`Team ${teamId}: ${value !== null ? value.toFixed(2) : 'N/A'} EPA`}
+              </Text>
+            </Group>
+          ))}
+        </Stack>
       </div>
     );
   };
