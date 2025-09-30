@@ -16,6 +16,8 @@ import {
   TextInput,
   Title,
   useMantineTheme,
+  rgba,
+  useMantineColorScheme
 } from '@mantine/core';
 import { IconRefresh, IconSettings } from '@tabler/icons-react';
 import { useRequireOrganizationAccess } from '@/hooks/useRequireOrganizationAccess';
@@ -130,8 +132,8 @@ export function AllianceSelectionPage() {
   }, [rankings, selectedTeams]);
 
   const captainHighlightColor =
-    theme.colorScheme === 'dark'
-      ? theme.fn.rgba(theme.colors.yellow[8], 0.2)
+    useMantineColorScheme().colorScheme === 'dark'
+      ? rgba(theme.colors.green[2], 0.2)
       : theme.colors.yellow[1];
 
   const captainSpotsFilled = useMemo(
