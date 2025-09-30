@@ -258,7 +258,10 @@ export function HeadToHeadStatsTable({ teams, isLoading, isError }: HeadToHeadSt
                             className={cx(classes.metricRow, hasData && classes.metricRowInteractive)}
                             onClick={() => (hasData ? toggleMetric(metricKey) : undefined)}
                           >
-                            <Table.Th scope="row" className={classes.metricLabelCell}>
+                          <Table.Th
+                            scope="row"
+                            className={cx(classes.metricLabelCell, classes.metricLabelCellCompact)}
+                          >
                               <Group gap="xs" wrap="nowrap">
                                 <ActionIcon
                                   size="sm"
@@ -281,7 +284,9 @@ export function HeadToHeadStatsTable({ teams, isLoading, isError }: HeadToHeadSt
                                   )}
                                 </ActionIcon>
                                 <div className={classes.metricLabelContent}>
-                                  <Text fw={600}>{metric.label}</Text>
+                                  <Text fw={600} className={classes.metricLabelTitleCompact}>
+                                    {metric.label}
+                                  </Text>
                                   <Text className={classes.metricSubLabel}>Average (±σ)</Text>
                                 </div>
                               </Group>
@@ -292,7 +297,10 @@ export function HeadToHeadStatsTable({ teams, isLoading, isError }: HeadToHeadSt
 
                               if (!summary) {
                                 return (
-                                  <Table.Td key={cellKey} className={classes.valueCell}>
+                                  <Table.Td
+                                    key={cellKey}
+                                    className={cx(classes.valueCell, classes.valueCellCompact)}
+                                  >
                                     —
                                   </Table.Td>
                                 );
@@ -302,7 +310,10 @@ export function HeadToHeadStatsTable({ teams, isLoading, isError }: HeadToHeadSt
 
                               if (!averageText) {
                                 return (
-                                  <Table.Td key={cellKey} className={classes.valueCell}>
+                                  <Table.Td
+                                    key={cellKey}
+                                    className={cx(classes.valueCell, classes.valueCellCompact)}
+                                  >
                                     —
                                   </Table.Td>
                                 );
@@ -317,6 +328,7 @@ export function HeadToHeadStatsTable({ teams, isLoading, isError }: HeadToHeadSt
                                   key={cellKey}
                                   className={cx(
                                     classes.valueCell,
+                                    classes.valueCellCompact,
                                     isHighlighted && averageText ? classes.highlightCell : null,
                                   )}
                                 >
@@ -324,7 +336,10 @@ export function HeadToHeadStatsTable({ teams, isLoading, isError }: HeadToHeadSt
                                     {averageText}
                                   </Text>
                                   {deviationNumber ? (
-                                    <Text component="span" className={classes.deviationText}>
+                                    <Text
+                                      component="span"
+                                      className={cx(classes.deviationText, classes.deviationTextCompact)}
+                                    >
                                       {` (±${deviationNumber}${deviationUnitSuffix})`}
                                     </Text>
                                   ) : null}
@@ -352,7 +367,7 @@ export function HeadToHeadStatsTable({ teams, isLoading, isError }: HeadToHeadSt
                                 const isMaxHighlighted = maxText !== '—' && maxHighlights.has(index);
 
                                 return (
-                                  <Table.Td key={cellKey} className={classes.valueCell}>
+                                  <Table.Td key={cellKey} className={cx(classes.valueCell, classes.rangeCell)}>
                                     <div className={classes.rangeValues}>
                                       <div className={classes.rangeValue}>
                                         <Text component="span" className={classes.rangeValueLabel}>
