@@ -220,7 +220,10 @@ const tooltipContent = (
         </Text>
         <Stack gap={4} mt={6}>
           {teamsInTooltip.map(({ teamId, value, color, matchLabel }) => {
-            const valueText = value !== null ? `${value.toFixed(2)} ${valueSuffix}` : 'N/A';
+            const valueText =
+              value !== null
+                ? `${value.toLocaleString(undefined, { maximumFractionDigits: 0 })} ${valueSuffix}`
+                : 'N/A';
             const matchText = matchLabel ? ` (${matchLabel})` : '';
 
             return (

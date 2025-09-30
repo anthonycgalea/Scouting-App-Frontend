@@ -72,14 +72,11 @@ const rootRoute = createRootRoute({
       hasRedirectedToHome,
     ]);
 
-    const shouldShowNavbar =
-      !loading && !( !user && location.pathname === '/' && hasRedirectedToHome );
-
     return (
       <MantineProvider theme={theme}>
         <Notifications position="top-right" />
         <div style={{ display: 'flex', height: '100vh' }}>
-          {shouldShowNavbar ? <NavbarNested /> : null}
+          <NavbarNested />
           <div style={{ flex: 1, overflow: 'auto' }}>
             <Outlet />
           </div>
