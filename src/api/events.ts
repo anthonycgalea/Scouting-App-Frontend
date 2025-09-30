@@ -115,6 +115,9 @@ export const useUpdateOrganizationEvents = () => {
   });
 };
 
+export const syncEventRankings = () =>
+  apiFetch<void>('event/getRankings', { method: 'POST' });
+
 export interface EventTbaMatchDataRequest {
   matchNumber: number;
   matchLevel: string;
