@@ -40,6 +40,15 @@
   white-space: nowrap;
 }
 
+.metricLabelCellCompact {
+  padding-block: calc(var(--mantine-spacing-sm) / 2);
+}
+
+.metricLabelTitleCompact {
+  font-size: var(--mantine-font-size-sm);
+  line-height: 1.2;
+}
+
 .metricRow {
   transition: background-color 150ms ease;
 }
@@ -76,10 +85,19 @@
   font-variant-numeric: tabular-nums;
 }
 
+.valueCellCompact {
+  padding-block: calc(var(--mantine-spacing-sm) / 2);
+}
+
 .deviationText {
   margin-left: var(--mantine-spacing-xs);
   color: var(--mantine-color-dimmed);
   font-size: var(--mantine-font-size-sm);
+}
+
+.deviationTextCompact {
+  margin-left: calc(var(--mantine-spacing-xs) / 1.5);
+  font-size: var(--mantine-font-size-xs);
 }
 
 .subMetricLabelCell {
