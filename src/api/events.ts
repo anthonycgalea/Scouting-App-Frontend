@@ -41,6 +41,31 @@ export const useEvents = (year: number) =>
     queryFn: () => fetchEvents(year),
   });
 
+export interface EventRanking {
+  event_key: string;
+  rank: number;
+  team_number: number;
+  team_name: string | null;
+  ranking_points: number;
+  matches_played: number;
+  ranking_tiebreaker_1: number;
+  ranking_tiebreaker_2: number;
+}
+
+export const eventRankingsQueryKey = () => ['event-rankings'] as const;
+
+export const fetchEventRankings = () => apiFetch<EventRanking[]>('event/rankings');
+
+export const useEventRankings = ({ enabled }: { enabled?: boolean } = {}) => {
+  const shouldEnable = enabled ?? true;
+
+  return useQuery<EventRanking[]>({
+    queryKey: eventRankingsQueryKey(),
+    queryFn: fetchEventRankings,
+    enabled: shouldEnable,
+  });
+};
+
 export const eventInfoQueryKey = (eventCode: string) => ['event-info', eventCode] as const;
 
 export const fetchEventInfo = (_eventCode: string) => apiFetch<EventSummary>('event/info');
