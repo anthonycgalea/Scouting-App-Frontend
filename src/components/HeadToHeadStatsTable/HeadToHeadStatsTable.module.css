@@ -40,6 +40,37 @@
   white-space: nowrap;
 }
 
+.metricRow {
+  transition: background-color 150ms ease;
+}
+
+.metricRowInteractive {
+  cursor: pointer;
+}
+
+.metricRowInteractive:hover {
+  background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-5));
+}
+
+.metricLabelContent {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.metricSubLabel {
+  font-size: var(--mantine-font-size-xs);
+  color: var(--mantine-color-dimmed);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.expandIcon:disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
 .valueCell {
   text-align: center;
   font-variant-numeric: tabular-nums;
@@ -51,24 +82,53 @@
   font-size: var(--mantine-font-size-sm);
 }
 
-.rangeCell {
+.subMetricLabelCell {
+  font-weight: 500;
+  color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-gray-2));
+  padding-left: calc(var(--mantine-spacing-md) + 20px);
+}
+
+.subMetricLabel {
+  font-size: var(--mantine-font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--mantine-color-dimmed);
+}
+
+.highlightCell {
+  background-color: rgb(46 204 113 / 18%);
+}
+
+.rangeValues {
   display: flex;
   justify-content: center;
   gap: var(--mantine-spacing-lg);
+  flex-wrap: wrap;
 }
 
-.rangeColumn {
+.rangeValue {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
 }
 
-.rangeLabel {
+.rangeValueLabel {
   font-size: var(--mantine-font-size-xs);
   text-transform: uppercase;
   letter-spacing: 0.02em;
   color: var(--mantine-color-dimmed);
+  font-weight: 600;
+}
+
+.rangeValueText {
+  font-weight: 600;
+}
+
+.rangeValueHighlight {
+  background-color: rgb(46 204 113 / 18%);
+  border-radius: var(--mantine-radius-sm);
+  padding: 2px 6px;
 }
 
 .emptyState {

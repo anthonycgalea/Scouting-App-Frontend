@@ -1,7 +1,9 @@
-import { Fragment } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 
 import {
+  ActionIcon,
   Center,
+  Group,
   Loader,
   Paper,
   Stack,
@@ -9,6 +11,8 @@ import {
   Text,
   Title,
 } from '@mantine/core';
+import { IconChevronDown, IconChevronUp } from '@tabler/icons-react';
+import cx from 'clsx';
 
 import { type TeamHeadToHeadSummary } from '@/types/analytics';
 
@@ -109,7 +113,61 @@ const formatNumberWithUnit = (value: number | null | undefined, unit: string) =>
   return `${formatted} ${unit}`;
 };
 
+const getHighestValueIndices = (values: (number | null | undefined)[]) => {
+  let maxValue: number | null = null;
+  const indices = new Set<number>();
+
+  values.forEach((value, index) => {
+    if (value === null || value === undefined || Number.isNaN(value)) {
+      return;
+    }
+
+    if (maxValue === null || value > maxValue) {
+      maxValue = value;
+      indices.clear();
+      indices.add(index);
+      return;
+    }
+
+    if (value === maxValue) {
+      indices.add(index);
+    }
+  });
+
+  return indices;
+};
+
 export function HeadToHeadStatsTable({ teams, isLoading, isError }: HeadToHeadStatsTableProps) {
+  const [expandedMetrics, setExpandedMetrics] = useState<string[]>([]);
+
+  const metricHasData = useMemo(
+    () =>
+      new Map(
+        METRIC_SECTIONS.flatMap((section) =>
+          section.metrics.map((metric) => {
+            if (metric.type === 'summary') {
+              const hasSummary = teams.some((team) => team[metric.key]);
+              return [`${section.label}-${metric.key}`, hasSummary] as const;
+            }
+
+            const hasValue = teams.some((team) => {
+              const value = team[metric.key];
+              return value !== null && value !== undefined && !Number.isNaN(value);
+            });
+
+            return [`${section.label}-${metric.key}`, hasValue] as const;
+          }),
+        ),
+      ),
+    [teams],
+  );
+
+  const toggleMetric = (metricKey: string) => {
+    setExpandedMetrics((prev) =>
+      prev.includes(metricKey) ? prev.filter((key) => key !== metricKey) : [...prev, metricKey],
+    );
+  };
+
   if (isLoading) {
     return (
       <Paper withBorder radius="md" p="xl" className={classes.card}>
@@ -181,13 +239,54 @@ export function HeadToHeadStatsTable({ teams, isLoading, isError }: HeadToHeadSt
                   </Table.Tr>
                   {section.metrics.map((metric) => {
                     if (metric.type === 'summary') {
+                      const metricKey = `${section.label}-${metric.key}`;
+                      const isExpanded = expandedMetrics.includes(metricKey);
+                      const hasData = metricHasData.get(metricKey) ?? false;
+                      const averages = teams.map((team) => team[metric.key]?.average ?? null);
+                      const averageHighlights = getHighestValueIndices(averages);
+                      const medianValues = teams.map((team) => team[metric.key]?.median ?? null);
+                      const medianHighlights = getHighestValueIndices(medianValues);
+                      const minValues = teams.map((team) => team[metric.key]?.min ?? null);
+                      const minHighlights = getHighestValueIndices(minValues);
+                      const maxValues = teams.map((team) => team[metric.key]?.max ?? null);
+                      const maxHighlights = getHighestValueIndices(maxValues);
+
                       return (
                         <Fragment key={`${section.label}-${metric.key}`}>
-                          <Table.Tr key={`${section.label}-${metric.key}-average`}>
+                          <Table.Tr
+                            key={`${section.label}-${metric.key}-average`}
+                            className={cx(classes.metricRow, hasData && classes.metricRowInteractive)}
+                            onClick={() => (hasData ? toggleMetric(metricKey) : undefined)}
+                          >
                             <Table.Th scope="row" className={classes.metricLabelCell}>
-                              Average (σ)
+                              <Group gap="xs" wrap="nowrap">
+                                <ActionIcon
+                                  size="sm"
+                                  variant="subtle"
+                                  radius="xl"
+                                  className={classes.expandIcon}
+                                  aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${metric.label}`}
+                                  disabled={!hasData}
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    if (hasData) {
+                                      toggleMetric(metricKey);
+                                    }
+                                  }}
+                                >
+                                  {isExpanded ? (
+                                    <IconChevronUp size={16} stroke={1.5} />
+                                  ) : (
+                                    <IconChevronDown size={16} stroke={1.5} />
+                                  )}
+                                </ActionIcon>
+                                <div className={classes.metricLabelContent}>
+                                  <Text fw={600}>{metric.label}</Text>
+                                  <Text className={classes.metricSubLabel}>Average (±σ)</Text>
+                                </div>
+                              </Group>
                             </Table.Th>
-                            {teams.map((team) => {
+                            {teams.map((team, index) => {
                               const summary = team[metric.key];
                               const cellKey = `${team.teamNumber}-${metric.key}-average`;
 
@@ -211,9 +310,16 @@ export function HeadToHeadStatsTable({ teams, isLoading, isError }: HeadToHeadSt
 
                               const deviationNumber = formatNumber(summary.stdev);
                               const deviationUnitSuffix = metric.unit ? ` ${metric.unit}` : '';
+                              const isHighlighted = averageHighlights.has(index);
 
                               return (
-                                <Table.Td key={cellKey} className={classes.valueCell}>
+                                <Table.Td
+                                  key={cellKey}
+                                  className={cx(
+                                    classes.valueCell,
+                                    isHighlighted && averageText ? classes.highlightCell : null,
+                                  )}
+                                >
                                   <Text component="span" fw={600}>
                                     {averageText}
                                   </Text>
@@ -226,67 +332,76 @@ export function HeadToHeadStatsTable({ teams, isLoading, isError }: HeadToHeadSt
                               );
                             })}
                           </Table.Tr>
-                          <Table.Tr key={`${section.label}-${metric.key}-median`}>
-                            <Table.Th scope="row" className={classes.metricLabelCell}>
-                              Median
-                            </Table.Th>
-                            {teams.map((team) => {
-                              const summary = team[metric.key];
-                              const cellKey = `${team.teamNumber}-${metric.key}-median`;
-                              const medianText = summary
-                                ? formatNumberWithUnit(summary.median, metric.unit)
-                                : null;
+                          {isExpanded ? (
+                            <Table.Tr key={`${section.label}-${metric.key}-range`}>
+                              <Table.Th scope="row" className={classes.subMetricLabelCell}>
+                                <Text className={classes.subMetricLabel}>Min / Median / Max</Text>
+                              </Table.Th>
+                              {teams.map((team, index) => {
+                                const summary = team[metric.key];
+                                const cellKey = `${team.teamNumber}-${metric.key}-range`;
 
-                              return (
-                                <Table.Td key={cellKey} className={classes.valueCell}>
-                                  {medianText ?? '—'}
-                                </Table.Td>
-                              );
-                            })}
-                          </Table.Tr>
-                          <Table.Tr key={`${section.label}-${metric.key}-range`}>
-                            <Table.Th scope="row" className={classes.metricLabelCell}>
-                              Min / Max
-                            </Table.Th>
-                            {teams.map((team) => {
-                              const summary = team[metric.key];
-                              const cellKey = `${team.teamNumber}-${metric.key}-range`;
+                                const minText = formatNumberWithUnit(summary?.min, metric.unit) ?? '—';
+                                const medianText =
+                                  formatNumberWithUnit(summary?.median, metric.unit) ?? '—';
+                                const maxText = formatNumberWithUnit(summary?.max, metric.unit) ?? '—';
 
-                              if (!summary) {
+                                const isMinHighlighted = minText !== '—' && minHighlights.has(index);
+                                const isMedianHighlighted =
+                                  medianText !== '—' && medianHighlights.has(index);
+                                const isMaxHighlighted = maxText !== '—' && maxHighlights.has(index);
+
                                 return (
                                   <Table.Td key={cellKey} className={classes.valueCell}>
-                                    —
+                                    <div className={classes.rangeValues}>
+                                      <div className={classes.rangeValue}>
+                                        <Text component="span" className={classes.rangeValueLabel}>
+                                          Min
+                                        </Text>
+                                        <Text
+                                          component="span"
+                                          className={cx(
+                                            classes.rangeValueText,
+                                            isMinHighlighted ? classes.rangeValueHighlight : null,
+                                          )}
+                                        >
+                                          {minText}
+                                        </Text>
+                                      </div>
+                                      <div className={classes.rangeValue}>
+                                        <Text component="span" className={classes.rangeValueLabel}>
+                                          Median
+                                        </Text>
+                                        <Text
+                                          component="span"
+                                          className={cx(
+                                            classes.rangeValueText,
+                                            isMedianHighlighted ? classes.rangeValueHighlight : null,
+                                          )}
+                                        >
+                                          {medianText}
+                                        </Text>
+                                      </div>
+                                      <div className={classes.rangeValue}>
+                                        <Text component="span" className={classes.rangeValueLabel}>
+                                          Max
+                                        </Text>
+                                        <Text
+                                          component="span"
+                                          className={cx(
+                                            classes.rangeValueText,
+                                            isMaxHighlighted ? classes.rangeValueHighlight : null,
+                                          )}
+                                        >
+                                          {maxText}
+                                        </Text>
+                                      </div>
+                                    </div>
                                   </Table.Td>
                                 );
-                              }
-
-                              const minText = formatNumberWithUnit(summary.min, metric.unit);
-                              const maxText = formatNumberWithUnit(summary.max, metric.unit);
-
-                              if (!minText && !maxText) {
-                                return (
-                                  <Table.Td key={cellKey} className={classes.valueCell}>
-                                    —
-                                  </Table.Td>
-                                );
-                              }
-
-                              return (
-                                <Table.Td key={cellKey} className={classes.valueCell}>
-                                  <div className={classes.rangeCell}>
-                                    <div className={classes.rangeColumn}>
-                                      <Text className={classes.rangeLabel}>Min</Text>
-                                      <Text fw={600}>{minText ?? '—'}</Text>
-                                    </div>
-                                    <div className={classes.rangeColumn}>
-                                      <Text className={classes.rangeLabel}>Max</Text>
-                                      <Text fw={600}>{maxText ?? '—'}</Text>
-                                    </div>
-                                  </div>
-                                </Table.Td>
-                              );
-                            })}
-                          </Table.Tr>
+                              })}
+                            </Table.Tr>
+                          ) : null}
                         </Fragment>
                       );
                     }
@@ -294,19 +409,31 @@ export function HeadToHeadStatsTable({ teams, isLoading, isError }: HeadToHeadSt
                     return (
                       <Table.Tr key={`${section.label}-${metric.key}`}>
                         <Table.Th scope="row" className={classes.metricLabelCell}>
-                          {metric.label}
+                          <Text fw={600}>{metric.label}</Text>
                         </Table.Th>
-                        {teams.map((team) => {
-                          const value = team[metric.key];
-                          const cellKey = `${team.teamNumber}-${metric.key}`;
-                          const displayValue = formatNumberWithUnit(value, metric.unit);
+                        {(() => {
+                          const values = teams.map((teamValue) => teamValue[metric.key] ?? null);
+                          const highlights = getHighestValueIndices(values);
 
-                          return (
-                            <Table.Td key={cellKey} className={classes.valueCell}>
-                              {displayValue ?? '—'}
-                            </Table.Td>
-                          );
-                        })}
+                          return teams.map((team, index) => {
+                            const value = team[metric.key];
+                            const cellKey = `${team.teamNumber}-${metric.key}`;
+                            const displayValue = formatNumberWithUnit(value, metric.unit);
+                            const isHighlighted = highlights.has(index);
+
+                            return (
+                              <Table.Td
+                                key={cellKey}
+                                className={cx(
+                                  classes.valueCell,
+                                  isHighlighted && displayValue ? classes.highlightCell : null,
+                                )}
+                              >
+                                {displayValue ?? '—'}
+                              </Table.Td>
+                            );
+                          });
+                        })()}
                       </Table.Tr>
                     );
                   })}
