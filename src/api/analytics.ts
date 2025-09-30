@@ -51,6 +51,27 @@ export interface TeamMatchHistoryResponse {
   matches: TeamMatchPerformanceResponse[];
 }
 
+export interface TeamZScoreExtreme {
+  min: number;
+  max: number;
+}
+
+export interface TeamZScoreExtremes {
+  [metric: string]: TeamZScoreExtreme;
+}
+
+export interface TeamZScoreResponseTeam {
+  team_number: number;
+  team_name?: string;
+  matches_played: number;
+  [metric: string]: number | string | undefined;
+}
+
+export interface TeamZScoreResponse {
+  teams: TeamZScoreResponseTeam[];
+  z_score_extremes: TeamZScoreExtremes;
+}
+
 export const teamAnalyticsQueryKey = () => ['analytics', 'team-performance'] as const;
 
 export const fetchTeamAnalytics = () =>
@@ -65,6 +86,11 @@ export const teamMatchHistoryQueryKey = () => ['analytics', 'team-match-history'
 
 export const fetchTeamMatchHistory = () =>
   apiFetch<TeamMatchHistoryResponse[]>('analytics/event/teams/matches');
+
+export const teamZScoresQueryKey = () => ['analytics', 'team-z-scores'] as const;
+
+export const fetchTeamZScores = () =>
+  apiFetch<TeamZScoreResponse>('analytics/event/teams/zScores');
 
 export const useTeamAnalytics = () =>
   useQuery({
@@ -82,4 +108,10 @@ export const useTeamMatchHistory = () =>
   useQuery({
     queryKey: teamMatchHistoryQueryKey(),
     queryFn: fetchTeamMatchHistory,
+  });
+
+export const useTeamZScores = () =>
+  useQuery({
+    queryKey: teamZScoresQueryKey(),
+    queryFn: fetchTeamZScores,
   });
