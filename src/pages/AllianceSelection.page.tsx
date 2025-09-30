@@ -127,6 +127,29 @@ export function AllianceSelectionPage() {
     return rankings.filter((ranking) => !selectedTeams.has(String(ranking.team_number)));
   }, [rankings, selectedTeams]);
 
+  const captainSpotsFilled = useMemo(
+    () =>
+      allianceEntries.reduce((count, entry) => {
+        const hasCaptain = entry.captain.trim().length > 0;
+        return hasCaptain ? count + 1 : count;
+      }, 0),
+    [allianceEntries],
+  );
+
+  const remainingCaptainSpots = Math.max(allianceCount - captainSpotsFilled, 0);
+
+  const captainCandidateTeams = useMemo(() => {
+    if (remainingCaptainSpots === 0) {
+      return new Set<string>();
+    }
+
+    return new Set(
+      filteredRankings
+        .slice(0, remainingCaptainSpots)
+        .map((ranking) => String(ranking.team_number)),
+    );
+  }, [filteredRankings, remainingCaptainSpots]);
+
   if (isCheckingAccess || !canAccessOrganizationPages) {
     return null;
   }
@@ -220,15 +243,26 @@ export function AllianceSelectionPage() {
                       </Table.Tr>
                     </Table.Thead>
                     <Table.Tbody>
-                      {filteredRankings.map((ranking) => (
-                        <Table.Tr
-                          key={`${ranking.event_key}-${ranking.team_number}-${ranking.rank}`}
-                        >
-                          <Table.Td>{ranking.rank}</Table.Td>
-                          <Table.Td>{ranking.team_number}</Table.Td>
-                          <Table.Td>{ranking.team_name?.trim() || '—'}</Table.Td>
-                        </Table.Tr>
-                      ))}
+                      {filteredRankings.map((ranking) => {
+                        const isCaptainCandidate = captainCandidateTeams.has(
+                          String(ranking.team_number),
+                        );
+
+                        return (
+                          <Table.Tr
+                            key={`${ranking.event_key}-${ranking.team_number}-${ranking.rank}`}
+                            style={
+                              isCaptainCandidate
+                                ? { backgroundColor: 'var(--mantine-color-yellow-1)' }
+                                : undefined
+                            }
+                          >
+                            <Table.Td>{ranking.rank}</Table.Td>
+                            <Table.Td>{ranking.team_number}</Table.Td>
+                            <Table.Td>{ranking.team_name?.trim() || '—'}</Table.Td>
+                          </Table.Tr>
+                        );
+                      })}
                     </Table.Tbody>
                   </Table>
                 </ScrollArea>
