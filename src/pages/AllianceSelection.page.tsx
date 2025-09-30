@@ -40,8 +40,8 @@ export function AllianceSelectionPage() {
   }
 
   return (
-    <Box p="md">
-      <Stack gap="lg">
+    <Box p="md" style={{ height: '100%' }}>
+      <Flex direction="column" gap="lg" style={{ height: '100%' }}>
         <Group justify="center" align="center" gap="sm">
           <Title order={2}>Alliance Selection</Title>
           <ActionIcon
@@ -56,9 +56,20 @@ export function AllianceSelectionPage() {
             {isRefreshing ? <Loader size="sm" /> : <IconRefresh size={20} />}
           </ActionIcon>
         </Group>
-        <Flex direction={{ base: 'column', md: 'row' }} gap="lg" align="flex-start">
-          <Paper withBorder radius="md" p="md" w={{ base: '100%', md: 320 }}>
-            <Stack gap="sm">
+        <Flex
+          direction={{ base: 'column', md: 'row' }}
+          gap="lg"
+          align="stretch"
+          style={{ flex: 1, minHeight: 0 }}
+        >
+          <Paper
+            withBorder
+            radius="md"
+            p="md"
+            w={{ base: '100%', md: 320 }}
+            style={{ display: 'flex', flexDirection: 'column' }}
+          >
+            <Stack gap="sm" style={{ flex: 1, minHeight: 0 }}>
               <Title order={4}>Event Rankings</Title>
               {isLoading ? (
                 <Group justify="center">
@@ -67,7 +78,7 @@ export function AllianceSelectionPage() {
               ) : isError ? (
                 <Text c="red">Unable to load event rankings.</Text>
               ) : rankings && rankings.length > 0 ? (
-                <ScrollArea h={400} type="auto">
+                <ScrollArea type="auto" style={{ flex: 1 }}>
                   <Table striped highlightOnHover stickyHeader>
                     <Table.Thead>
                       <Table.Tr>
@@ -94,14 +105,14 @@ export function AllianceSelectionPage() {
               )}
             </Stack>
           </Paper>
-          <Stack gap="sm" flex={1}>
+          <Stack gap="sm" flex={1} style={{ minHeight: 0 }}>
             <Text c="dimmed">
               Alliance selection planning tools will be available on this page in a future
               release.
             </Text>
           </Stack>
         </Flex>
-      </Stack>
+      </Flex>
     </Box>
   );
 }
