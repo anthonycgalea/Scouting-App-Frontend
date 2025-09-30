@@ -1,4 +1,4 @@
-import { type ReactNode, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Card,
   Center,
@@ -252,15 +252,9 @@ type CompareLineChart2025Props = {
   teams: TeamMatchHistoryResponse[];
   isLoading: boolean;
   isError: boolean;
-  teamFilter?: ReactNode;
 };
 
-export default function CompareLineChart2025({
-  teams,
-  isLoading,
-  isError,
-  teamFilter,
-}: CompareLineChart2025Props) {
+export default function CompareLineChart2025({ teams, isLoading, isError }: CompareLineChart2025Props) {
   const theme = useMantineTheme();
   const { colorScheme: resolvedColorScheme } = useMantineColorScheme();
   const colorScheme = resolvedColorScheme === 'dark' ? 'dark' : 'light';
@@ -338,7 +332,6 @@ export default function CompareLineChart2025({
                 },
               }}
             />
-            {teamFilter}
           </Group>
         </Group>
 
