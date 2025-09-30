@@ -67,19 +67,19 @@ type TooltipTeam = {
 };
 
 const METRIC_OPTIONS: MetricOption[] = [
-  { value: 'total_points', label: 'Total EPA', axisLabel: 'Total EPA', valueSuffix: 'EPA' },
+  { value: 'total_points', label: 'Total Points', axisLabel: 'Total Points', valueSuffix: 'Points' },
   {
     value: 'autonomous_points',
-    label: 'Autonomous EPA',
-    axisLabel: 'Autonomous EPA',
+    label: 'Autonomous Points',
+    axisLabel: 'Autonomous Points',
     valueSuffix: 'EPA',
   },
-  { value: 'teleop_points', label: 'Teleop EPA', axisLabel: 'Teleop EPA', valueSuffix: 'EPA' },
+  { value: 'teleop_points', label: 'Teleop Points', axisLabel: 'Teleop Points', valueSuffix: 'Points' },
   {
     value: 'endgame_points',
-    label: 'Endgame EPA',
-    axisLabel: 'Endgame EPA',
-    valueSuffix: 'EPA',
+    label: 'Endgame Points',
+    axisLabel: 'Endgame Points',
+    valueSuffix: 'Points',
   },
   {
     value: 'game_pieces',
