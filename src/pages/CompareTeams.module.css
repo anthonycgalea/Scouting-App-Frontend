@@ -1,0 +1,43 @@
+.page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.chartsRow {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.chartPanel {
+  display: flex;
+  flex: 1 1 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.lineChartPanel {
+  flex: 1 1 100%;
+}
+
+.radarChartPanel {
+  flex: 1 1 100%;
+}
+
+@media (min-width: 75em) {
+  .lineChartPanel {
+    flex: 2 1 0%;
+  }
+
+  .radarChartPanel {
+    flex: 1 1 0%;
+  }
+}
