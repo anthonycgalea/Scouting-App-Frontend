@@ -11,6 +11,25 @@
   flex-direction: column;
 }
 
+.tabs {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.tabList {
+  gap: var(--mantine-spacing-sm);
+}
+
+.tabPanel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding-top: var(--mantine-spacing-md);
+}
+
 .chartsRow {
   flex: 1;
   min-height: 0;
