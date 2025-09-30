@@ -14,11 +14,12 @@ import { Button, Code, Group, ScrollArea } from '@mantine/core';
 import { LinksGroup } from '../NavbarLinksGroup/NavbarLinksGroup';
 import { UserButton } from '../UserButton/UserButton';
 import { useUserInfo, useUserRole } from '@/api';
+import { isOrganizationRoleAllowed } from '@/hooks/useRequireOrganizationAccess';
 import { useAuth } from '../../auth/AuthProvider';
 import { Logo } from './Logo';
 import classes from './NavbarNested.module.css';
 
-const BASE_LINKS_DATA = [
+const NAV_LINKS_BEFORE_PICKING = [
   { label: 'Dashboard', icon: IconGauge, to: '/dashboard' },
   { label: 'Matches', icon: IconNotes, to: '/matches' },
   { label: 'Teams', icon: IconUsersGroup, to: '/teams' },
@@ -28,16 +29,20 @@ const BASE_LINKS_DATA = [
       { label: 'Summary', link: '/analytics'},
       { label: 'Compare', link: '/analytics/compare' }
     ]
-  },
-  {
-    label: 'Picking',
-    icon: IconNumber123,
-    links: [
-      { label: 'Pick Lists', link: '/picking/pickLists' },
-      { label: 'Alliance Selection', link: '/picking/allianceSelection' },
-      { label: 'List Generators', link: '/picking/listGenerators' },
-    ],
-  },
+  }
+];
+
+const PICKING_LINKS_DATA = {
+  label: 'Picking',
+  icon: IconNumber123,
+  links: [
+    { label: 'Pick Lists', link: '/picking/pickLists' },
+    { label: 'Alliance Selection', link: '/picking/allianceSelection' },
+    { label: 'List Generators', link: '/picking/listGenerators' },
+  ],
+};
+
+const NAV_LINKS_AFTER_PICKING = [
   {
     label: 'Data Manager',
     icon: IconFileAnalytics,
@@ -63,14 +68,26 @@ export function NavbarNested() {
   const { data: userInfo } = useUserInfo();
   const isUserLoggedIn = userInfo?.id !== undefined && userInfo?.id !== null;
   const { data: userRole } = useUserRole({ enabled: isUserLoggedIn });
-  const canManageOrganizations = userRole?.role === 'LEAD' || userRole?.role === 'ADMIN';
+  const canAccessPrivilegedSections = isOrganizationRoleAllowed(userRole?.role ?? null);
+  const canManageOrganizations = canAccessPrivilegedSections;
 
   const linksData = useMemo(
-    () =>
-      isUserLoggedIn && canManageOrganizations
-        ? [...BASE_LINKS_DATA, ORGANIZATION_LINKS_DATA]
-        : BASE_LINKS_DATA,
-    [canManageOrganizations, isUserLoggedIn],
+    () => {
+      const links = [...NAV_LINKS_BEFORE_PICKING];
+
+      if (canAccessPrivilegedSections) {
+        links.push(PICKING_LINKS_DATA);
+      }
+
+      links.push(...NAV_LINKS_AFTER_PICKING);
+
+      if (isUserLoggedIn && canManageOrganizations) {
+        links.push(ORGANIZATION_LINKS_DATA);
+      }
+
+      return links;
+    },
+    [canAccessPrivilegedSections, canManageOrganizations, isUserLoggedIn],
   );
 
   const links = linksData.map((item) => <LinksGroup {...item} key={item.label} />);
