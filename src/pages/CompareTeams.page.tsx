@@ -1,18 +1,26 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { Box, Flex, MultiSelect, Stack, Text, Title } from '@mantine/core';
+import { Box, Flex, MultiSelect, Stack, Tabs, Text, Title } from '@mantine/core';
 import cx from 'clsx';
 
 import CompareLineChart2025 from '@/components/CompareLineChart2025/CompareLineChart2025';
 import CompareZScoreChart2025 from '@/components/CompareZScoreChart2025/CompareZScoreChart2025';
-import { useTeamMatchHistory, type TeamMatchHistoryResponse } from '@/api';
+import HeadToHeadStatsTable from '@/components/HeadToHeadStatsTable/HeadToHeadStatsTable';
+import { useTeamDetailedAnalytics, useTeamMatchHistory, type TeamMatchHistoryResponse } from '@/api';
+import { type TeamDistributionSummary } from '@/types/analytics';
 import classes from './CompareTeams.module.css';
 
 const MAX_TEAMS = 5;
 
 export function CompareTeamsPage() {
   const { data: matchHistory, isLoading, isError } = useTeamMatchHistory();
+  const {
+    data: detailedAnalytics,
+    isLoading: isDetailedLoading,
+    isError: isDetailedError,
+  } = useTeamDetailedAnalytics();
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<string>('charts');
 
   useEffect(() => {
     if (!matchHistory || matchHistory.length === 0) {
@@ -58,6 +66,51 @@ export function CompareTeamsPage() {
       .filter((team): team is TeamMatchHistoryResponse => team !== null);
   }, [matchHistory, selectedTeams]);
 
+  const detailedAnalyticsMap = useMemo(() => {
+    if (!detailedAnalytics || detailedAnalytics.length === 0) {
+      return new Map<number, TeamDistributionSummary>();
+    }
+
+    return new Map<number, TeamDistributionSummary>(
+      detailedAnalytics.map((team) => [
+        team.team_number,
+        {
+          teamNumber: team.team_number,
+          teamName: team.team_name,
+          matchesPlayed: team.matches_played,
+          autonomous: team.autonomous_points,
+          teleop: team.teleop_points,
+          gamePieces: team.game_pieces,
+          total: team.total_points,
+        },
+      ]),
+    );
+  }, [detailedAnalytics]);
+
+  const headToHeadTeams = useMemo(() => {
+    if (selectedTeams.length === 0) {
+      return [] as TeamDistributionSummary[];
+    }
+
+    const summaries: TeamDistributionSummary[] = [];
+
+    selectedTeams.forEach((teamId) => {
+      const teamNumber = Number(teamId);
+
+      if (!Number.isFinite(teamNumber)) {
+        return;
+      }
+
+      const summary = detailedAnalyticsMap.get(teamNumber);
+
+      if (summary) {
+        summaries.push(summary);
+      }
+    });
+
+    return summaries;
+  }, [detailedAnalyticsMap, selectedTeams]);
+
   const handleTeamChange = (teams: string[]) => {
     setSelectedTeams(teams.slice(0, MAX_TEAMS));
   };
@@ -85,19 +138,41 @@ export function CompareTeamsPage() {
           comboboxProps={{ withinPortal: true }}
         />
 
-        <Flex
-          direction={{ base: 'column', lg: 'row' }}
-          gap="lg"
-          align="stretch"
-          className={classes.chartsRow}
+        <Tabs
+          value={activeTab}
+          onChange={(value) => setActiveTab(value ?? 'charts')}
+          keepMounted={false}
+          classNames={{ root: classes.tabs, list: classes.tabList, panel: classes.tabPanel }}
         >
-          <Box className={cx(classes.chartPanel, classes.lineChartPanel)}>
-            <CompareLineChart2025 teams={selectedTeamData} isLoading={isLoading} isError={isError} />
-          </Box>
-          <Box className={cx(classes.chartPanel, classes.radarChartPanel)}>
-            <CompareZScoreChart2025 selectedTeams={selectedTeams} />
-          </Box>
-        </Flex>
+          <Tabs.List>
+            <Tabs.Tab value="charts">Charts</Tabs.Tab>
+            <Tabs.Tab value="head-to-head">Head to Head Stats</Tabs.Tab>
+          </Tabs.List>
+
+          <Tabs.Panel value="charts">
+            <Flex
+              direction={{ base: 'column', lg: 'row' }}
+              gap="lg"
+              align="stretch"
+              className={classes.chartsRow}
+            >
+              <Box className={cx(classes.chartPanel, classes.lineChartPanel)}>
+                <CompareLineChart2025 teams={selectedTeamData} isLoading={isLoading} isError={isError} />
+              </Box>
+              <Box className={cx(classes.chartPanel, classes.radarChartPanel)}>
+                <CompareZScoreChart2025 selectedTeams={selectedTeams} />
+              </Box>
+            </Flex>
+          </Tabs.Panel>
+
+          <Tabs.Panel value="head-to-head">
+            <HeadToHeadStatsTable
+              teams={headToHeadTeams}
+              isLoading={isDetailedLoading}
+              isError={isDetailedError}
+            />
+          </Tabs.Panel>
+        </Tabs>
       </Stack>
     </Box>
   );

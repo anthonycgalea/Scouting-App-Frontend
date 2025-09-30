@@ -1,5 +1,4 @@
-import { useCallback, useMemo } from 'react';
-import type { KeyboardEvent } from 'react';
+import { useCallback, useMemo, type KeyboardEvent } from 'react';
 import { useMantineColorScheme, useMantineTheme, rgba } from '@mantine/core';
 import {
   Bar,
