@@ -307,8 +307,8 @@ export default function CompareLineChart2025({ teams, isLoading, isError }: Comp
   const hasData = chartData.length > 0 && selectedTeams.length > 0;
 
   return (
-    <Card withBorder p="lg" radius="lg" shadow="sm">
-      <Stack gap="lg">
+    <Card withBorder p="lg" radius="lg" shadow="sm" h="100%">
+      <Stack gap="lg" h="100%">
         <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
           <div>
             <Title order={3}>Team Performance Over Time</Title>
@@ -335,7 +335,7 @@ export default function CompareLineChart2025({ teams, isLoading, isError }: Comp
           </Group>
         </Group>
 
-        <div style={{ height: rem(360) }}>
+        <div style={{ flex: 1, minHeight: rem(360) }}>
           {isLoading ? (
             <Center h="100%">
               <Loader size="sm" />

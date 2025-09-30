@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { Box, Flex, MultiSelect, Stack, Text, Title } from '@mantine/core';
+import cx from 'clsx';
 
 import CompareLineChart2025 from '@/components/CompareLineChart2025/CompareLineChart2025';
 import CompareZScoreChart2025 from '@/components/CompareZScoreChart2025/CompareZScoreChart2025';
 import { useTeamMatchHistory, type TeamMatchHistoryResponse } from '@/api';
+import classes from './CompareTeams.module.css';
 
 const MAX_TEAMS = 5;
 
@@ -61,8 +63,8 @@ export function CompareTeamsPage() {
   };
 
   return (
-    <Box p="md">
-      <Stack gap="lg">
+    <Box p="md" className={classes.page}>
+      <Stack gap="lg" className={classes.content}>
         <Stack gap={4}>
           <Title order={2}>Compare Teams</Title>
           <Text c="dimmed" size="sm">
@@ -83,11 +85,16 @@ export function CompareTeamsPage() {
           comboboxProps={{ withinPortal: true }}
         />
 
-        <Flex direction={{ base: 'column', lg: 'row' }} gap="lg" align="stretch">
-          <Box style={{ flex: 2, minWidth: 0 }}>
+        <Flex
+          direction={{ base: 'column', lg: 'row' }}
+          gap="lg"
+          align="stretch"
+          className={classes.chartsRow}
+        >
+          <Box className={cx(classes.chartPanel, classes.lineChartPanel)}>
             <CompareLineChart2025 teams={selectedTeamData} isLoading={isLoading} isError={isError} />
           </Box>
-          <Box style={{ flex: 1, minWidth: 0 }}>
+          <Box className={cx(classes.chartPanel, classes.radarChartPanel)}>
             <CompareZScoreChart2025 selectedTeams={selectedTeams} />
           </Box>
         </Flex>
