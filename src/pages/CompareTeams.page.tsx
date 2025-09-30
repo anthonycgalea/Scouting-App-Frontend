@@ -59,8 +59,7 @@ export function CompareTeamsPage() {
         <Stack gap={4}>
           <Title order={2}>Compare Teams</Title>
           <Text c="dimmed" size="sm">
-            Explore trends in estimated performance averages (EPA) across multiple teams.
-            Select up to five teams to see how their performance evolves over time.
+            Select up to five teams to see how their performance compares.
           </Text>
         </Stack>
         <CompareLineChart2025

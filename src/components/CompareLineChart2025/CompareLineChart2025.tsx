@@ -316,8 +316,7 @@ export default function CompareLineChart2025({
           <div>
             <Title order={3}>Team Performance Over Time</Title>
             <Text size="sm" c="dimmed">
-              Compare up to five teams at once. Additional metrics and live data will be available
-              soon.
+              Explore trends in performance.
             </Text>
           </div>
 
@@ -367,7 +366,7 @@ export default function CompareLineChart2025({
                   tickLine={{ stroke: axisColor }}
                   axisLine={{ stroke: axisColor }}
                   label={{
-                    value: 'Match Order',
+                    value: 'Match',
                     position: 'insideBottomRight',
                     offset: -8,
                     fill: axisColor,
