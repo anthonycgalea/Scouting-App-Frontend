@@ -21,7 +21,7 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-  type TooltipProps,
+  type TooltipContentProps,
 } from 'recharts';
 
 const MAX_TEAMS = 5;
@@ -29,10 +29,7 @@ const MATCHES = Array.from({ length: 15 }, (_, index) => index + 1);
 
 type TeamId = keyof typeof TEAM_SERIES;
 
-type ChartPoint = {
-  match: number;
-  [teamId: TeamId]: number | null;
-};
+type ChartPoint = { match: number } & Partial<Record<TeamId, number | null>>;
 
 type CustomTooltipPayload = {
   color?: string;
@@ -127,7 +124,7 @@ const tooltipContent = (
   theme: ReturnType<typeof useMantineTheme>,
   colorScheme: 'dark' | 'light'
 ) =>
-  ({ active, payload, label }: TooltipProps<number, string>) => {
+  ({ active, payload, label }: TooltipContentProps<number, string>) => {
     if (!active || !payload || payload.length === 0) {
       return null;
     }
