@@ -352,7 +352,7 @@ export function HeadToHeadStatsTable({ teams, isLoading, isError }: HeadToHeadSt
                                 const isMaxHighlighted = maxText !== '—' && maxHighlights.has(index);
 
                                 return (
-                                  <Table.Td key={cellKey} className={classes.valueCell}>
+                                  <Table.Td key={cellKey} className={cx(classes.valueCell, classes.rangeCell)}>
                                     <div className={classes.rangeValues}>
                                       <div className={classes.rangeValue}>
                                         <Text component="span" className={classes.rangeValueLabel}>
