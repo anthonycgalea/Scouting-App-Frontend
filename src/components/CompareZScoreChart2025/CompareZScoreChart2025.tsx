@@ -23,6 +23,7 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from 'recharts';
+import type { Formatter, NameType, ValueType } from 'recharts/types/component/DefaultTooltipContent';
 
 import { useTeamZScores, type TeamZScoreResponseTeam } from '@/api';
 
@@ -203,29 +204,94 @@ export default function CompareZScoreChart2025({ selectedTeams }: CompareZScoreC
       .filter((team): team is TeamZScoreResponseTeam => Boolean(team));
   }, [data, selectedTeams]);
 
-  const domain = useMemo(() => {
-    if (!data) {
-      return [-3, 3] as [number, number];
-    }
+  const attributeScales = useMemo(() => {
+    const defaultScale = { min: -3, max: 3 } as const;
 
-    const extremes = selectedAttributes
-      .map((attribute) => attributeOptionMap.get(attribute)?.extremesKey)
-      .map((extremesKey) => (extremesKey ? data.z_score_extremes[extremesKey] : undefined))
-      .filter((item): item is { min: number; max: number } => Boolean(item));
+    return new Map<ZScoreAttributeKey, { min: number; max: number }>(
+      selectedAttributes
+        .map((attribute) => {
+          const option = attributeOptionMap.get(attribute);
 
-    if (extremes.length === 0) {
-      return [-3, 3] as [number, number];
-    }
+          if (!option) {
+            return null;
+          }
 
-    const min = Math.min(...extremes.map((item) => item.min));
-    const max = Math.max(...extremes.map((item) => item.max));
+          if (!data) {
+            return [attribute, defaultScale] as const;
+          }
 
-    if (!Number.isFinite(min) || !Number.isFinite(max) || min === max) {
-      return [-3, 3] as [number, number];
-    }
+          const extremes = option.extremesKey
+            ? data.z_score_extremes[option.extremesKey]
+            : undefined;
 
-    return [min, max] as [number, number];
+          if (!extremes || !Number.isFinite(extremes.min) || !Number.isFinite(extremes.max)) {
+            return [attribute, defaultScale] as const;
+          }
+
+          const min = extremes.min;
+          const max = extremes.max;
+
+          if (min === max) {
+            return [attribute, { min: min - 1, max: max + 1 }] as const;
+          }
+
+          return [attribute, { min, max }] as const;
+        })
+        .filter((entry): entry is readonly [ZScoreAttributeKey, { min: number; max: number }] =>
+          Array.isArray(entry),
+        ),
+    );
   }, [attributeOptionMap, data, selectedAttributes]);
+
+  const normalizeValue = useCallback(
+    (attribute: ZScoreAttributeKey, value: number | undefined) => {
+      if (typeof value !== 'number' || Number.isNaN(value)) {
+        return undefined;
+      }
+
+      const scale = attributeScales.get(attribute);
+
+      if (!scale) {
+        return undefined;
+      }
+
+      const range = scale.max - scale.min;
+
+      if (range <= 0) {
+        return 0.5;
+      }
+
+      const normalized = (value - scale.min) / range;
+
+      if (!Number.isFinite(normalized)) {
+        return undefined;
+      }
+
+      return Math.min(1, Math.max(0, normalized));
+    },
+    [attributeScales],
+  );
+
+  const tooltipFormatter = useCallback<Formatter<ValueType, NameType>>(
+    (_value, name, item) => {
+      const dataKey = typeof item?.dataKey === 'string' ? item.dataKey : undefined;
+      const payload = (item?.payload as RadarDatum | undefined) ?? undefined;
+      const label = typeof name === 'string' ? name : String(name);
+
+      if (!dataKey || !payload) {
+        return ['N/A', label];
+      }
+
+      const rawValue = payload[`${dataKey}Raw`];
+
+      if (typeof rawValue === 'number') {
+        return [rawValue.toFixed(2), label];
+      }
+
+      return ['N/A', label];
+    },
+    [],
+  );
 
   const chartData = useMemo(() => {
     if (!data) {
@@ -242,14 +308,25 @@ export default function CompareZScoreChart2025({ selectedTeams }: CompareZScoreC
 
         filteredTeams.forEach((team) => {
           const teamKey = getTeamKey(team);
-          const value = team[option.value];
+          const zScoreValue = team[option.value];
+          const normalizedValue = normalizeValue(
+            option.value,
+            typeof zScoreValue === 'number' ? zScoreValue : undefined,
+          );
 
-          row[teamKey] = typeof value === 'number' ? value : undefined;
+          row[teamKey] = normalizedValue;
+
+          const averageKey = option.extremesKey;
+          const averageValue = averageKey ? team[averageKey] : undefined;
+
+          if (typeof averageValue === 'number') {
+            row[`${teamKey}Raw`] = averageValue;
+          }
         });
 
         return row;
       });
-  }, [attributeOptionMap, filteredTeams, selectedAttributes, data]);
+  }, [attributeOptionMap, filteredTeams, normalizeValue, selectedAttributes]);
 
   const handleAttributeChange = useCallback(
     (values: string[]) => {
@@ -320,9 +397,9 @@ export default function CompareZScoreChart2025({ selectedTeams }: CompareZScoreC
                 <PolarAngleAxis dataKey="attribute" tick={{ fill: axisColor }} />
                 <PolarRadiusAxis
                   angle={30}
-                  domain={domain}
+                  domain={[0, 1]}
                   tick={{ fill: axisColor }}
-                  tickFormatter={(value: number) => value.toFixed(1)}
+                  tickFormatter={() => ''}
                 />
                 <Tooltip
                   contentStyle={{
@@ -331,10 +408,7 @@ export default function CompareZScoreChart2025({ selectedTeams }: CompareZScoreC
                     borderRadius: theme.radius.md,
                     color: colorScheme === 'dark' ? theme.colors.gray[2] : theme.colors.dark[6],
                   }}
-                  formatter={(value: number | string | undefined, name: string) => [
-                    typeof value === 'number' ? value.toFixed(2) : 'N/A',
-                    name,
-                  ]}
+                  formatter={tooltipFormatter}
                 />
                 <Legend
                   verticalAlign="bottom"
