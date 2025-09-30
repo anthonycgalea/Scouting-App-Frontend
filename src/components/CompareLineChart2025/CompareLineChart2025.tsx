@@ -10,6 +10,7 @@ import {
   rem,
   useMantineColorScheme,
   useMantineTheme,
+  rgba,
 } from '@mantine/core';
 import {
   CartesianGrid,
@@ -162,8 +163,8 @@ const tooltipContent = (
           padding: '0.75rem 1rem',
           boxShadow:
             colorScheme === 'dark'
-              ? `0 8px 20px ${theme.fn.rgba(theme.black, 0.45)}`
-              : `0 8px 20px ${theme.fn.rgba(theme.black, 0.1)}`,
+              ? `0 8px 20px ${rgba(theme.black, 0.45)}`
+              : `0 8px 20px ${rgba(theme.black, 0.1)}`,
           color: textColor,
           minWidth: 220,
         }}
@@ -209,8 +210,8 @@ export default function CompareLineChart2025() {
   const axisColor = colorScheme === 'dark' ? theme.colors.gray[4] : theme.colors.gray[6];
   const gridColor =
     colorScheme === 'dark'
-      ? theme.fn.rgba(theme.colors.dark[3], 0.6)
-      : theme.fn.rgba(theme.colors.gray[3], 0.6);
+      ? rgba(theme.colors.dark[3], 0.6)
+      : rgba(theme.colors.gray[3], 0.6);
   const legendTextColor =
     colorScheme === 'dark' ? theme.colors.gray[2] : theme.colors.dark[6];
 
