@@ -229,8 +229,13 @@ export function AllianceSelectionPage() {
             withBorder
             radius="md"
             p="md"
-            w={{ base: '100%', md: 320 }}
-            style={{ display: 'flex', flexDirection: 'column' }}
+            w={{ base: '100%', md: 'auto' }}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              flex: '1 1 0%',
+              minWidth: 0,
+            }}
           >
             <Stack gap="sm" style={{ flex: 1, minHeight: 0 }}>
               <Title order={4}>Event Rankings</Title>
@@ -283,7 +288,12 @@ export function AllianceSelectionPage() {
               )}
             </Stack>
           </Paper>
-          <Paper withBorder radius="md" p="md" style={{ flex: 1, display: 'flex' }}>
+          <Paper
+            withBorder
+            radius="md"
+            p="md"
+            style={{ flex: '3 1 0%', display: 'flex', minWidth: 0 }}
+          >
             <Stack gap="sm" style={{ flex: 1, minHeight: 0 }}>
               <Group justify="space-between" align="center">
                 <Title order={4}>Alliance Selection</Title>
@@ -355,6 +365,20 @@ export function AllianceSelectionPage() {
                   </Table.Tbody>
                 </Table>
               </ScrollArea>
+            </Stack>
+          </Paper>
+          <Paper
+            withBorder
+            radius="md"
+            p="md"
+            style={{ flex: '3 1 0%', display: 'flex', minWidth: 0 }}
+          >
+            <Stack gap="sm" style={{ flex: 1, minHeight: 0 }}>
+              <Title order={4}>Pick Lists</Title>
+              <Text c="dimmed">
+                Space reserved for future pick list tooling. This panel will house
+                pick list management once implemented.
+              </Text>
             </Stack>
           </Paper>
         </Flex>
