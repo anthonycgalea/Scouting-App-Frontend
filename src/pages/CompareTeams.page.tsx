@@ -17,17 +17,11 @@ export function CompareTeamsPage() {
       return;
     }
 
-    setSelectedTeams((previous) => {
-      const validPrevious = previous
-        .filter((teamId) => matchHistory.some((team) => String(team.team_number) === teamId))
-        .slice(0, MAX_TEAMS);
-
-      if (validPrevious.length > 0) {
-        return validPrevious;
-      }
-
-      return matchHistory.slice(0, MAX_TEAMS).map((team) => String(team.team_number));
-    });
+  setSelectedTeams((previous) =>
+  previous
+    .filter((teamId) => matchHistory.some((team) => String(team.team_number) === teamId))
+        .slice(0, MAX_TEAMS),
+    );
   }, [matchHistory]);
 
   const teamOptions = useMemo(
