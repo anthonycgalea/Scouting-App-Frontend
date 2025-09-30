@@ -45,6 +45,32 @@
   font-variant-numeric: tabular-nums;
 }
 
+.deviationText {
+  margin-left: var(--mantine-spacing-xs);
+  color: var(--mantine-color-dimmed);
+  font-size: var(--mantine-font-size-sm);
+}
+
+.rangeCell {
+  display: flex;
+  justify-content: center;
+  gap: var(--mantine-spacing-lg);
+}
+
+.rangeColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.rangeLabel {
+  font-size: var(--mantine-font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--mantine-color-dimmed);
+}
+
 .emptyState {
   color: var(--mantine-color-dimmed);
   text-align: center;
