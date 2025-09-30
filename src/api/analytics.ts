@@ -32,6 +32,33 @@ export interface TeamDetailedAnalyticsResponse {
   total_points: QuartileBreakdown;
 }
 
+export interface HeadToHeadMetricResponse {
+  min: number;
+  max: number;
+  median: number;
+  average: number;
+  stdev: number;
+}
+
+export interface TeamHeadToHeadResponse {
+  team_number: number;
+  team_name?: string;
+  matches_played: number;
+  autonomous_coral?: HeadToHeadMetricResponse;
+  autonomous_net_algae?: HeadToHeadMetricResponse;
+  autonomous_processor_algae?: HeadToHeadMetricResponse;
+  autonomous_points?: HeadToHeadMetricResponse;
+  teleop_coral?: HeadToHeadMetricResponse;
+  teleop_game_pieces?: HeadToHeadMetricResponse;
+  teleop_points?: HeadToHeadMetricResponse;
+  teleop_net_algae?: HeadToHeadMetricResponse;
+  teleop_processor_algae?: HeadToHeadMetricResponse;
+  endgame_points?: HeadToHeadMetricResponse;
+  total_points?: HeadToHeadMetricResponse;
+  total_net_algae?: HeadToHeadMetricResponse;
+  endgame_success_rate?: number | null;
+}
+
 export interface TeamMatchPerformanceResponse {
   team_number: number;
   match_level: string;
@@ -82,6 +109,11 @@ export const teamDetailedAnalyticsQueryKey = () => ['analytics', 'team-performan
 export const fetchTeamDetailedAnalytics = () =>
   apiFetch<TeamDetailedAnalyticsResponse[]>('analytics/event/teams/detailed');
 
+export const teamHeadToHeadQueryKey = () => ['analytics', 'team-head-to-head'] as const;
+
+export const fetchTeamHeadToHeadStats = () =>
+  apiFetch<TeamHeadToHeadResponse[]>('analytics/event/teams/headToHead');
+
 export const teamMatchHistoryQueryKey = () => ['analytics', 'team-match-history'] as const;
 
 export const fetchTeamMatchHistory = () =>
@@ -102,6 +134,12 @@ export const useTeamDetailedAnalytics = () =>
   useQuery({
     queryKey: teamDetailedAnalyticsQueryKey(),
     queryFn: fetchTeamDetailedAnalytics,
+  });
+
+export const useTeamHeadToHeadStats = () =>
+  useQuery({
+    queryKey: teamHeadToHeadQueryKey(),
+    queryFn: fetchTeamHeadToHeadStats,
   });
 
 export const useTeamMatchHistory = () =>
