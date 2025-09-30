@@ -354,7 +354,7 @@ export default function CompareZScoreChart2025({ selectedTeams }: CompareZScoreC
     <Card withBorder p="lg" radius="lg" shadow="sm" h="100%">
       <Stack gap="lg" h="100%">
         <Stack gap={4}>
-          <Title order={3}>Z-Score Comparison</Title>
+          <Title order={3}>Team Skill Comparison</Title>
           <Text size="sm" c="dimmed">
             Compare how selected teams stack up across key metrics.
           </Text>

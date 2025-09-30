@@ -70,7 +70,7 @@ export function CompareTeamsPage() {
           </Text>
         </Stack>
         <MultiSelect
-          w={{ base: '100%', sm: 320, md: 500, lg: 1000, xl: 1500 }}
+          w={{ base: '100%' }}
           label="Teams"
           data={teamOptions}
           value={selectedTeams}
@@ -84,7 +84,7 @@ export function CompareTeamsPage() {
         />
 
         <Flex direction={{ base: 'column', lg: 'row' }} gap="lg" align="stretch">
-          <Box style={{ flex: 3, minWidth: 0 }}>
+          <Box style={{ flex: 2, minWidth: 0 }}>
             <CompareLineChart2025 teams={selectedTeamData} isLoading={isLoading} isError={isError} />
           </Box>
           <Box style={{ flex: 1, minWidth: 0 }}>
