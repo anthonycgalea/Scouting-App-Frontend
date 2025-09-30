@@ -38,17 +38,9 @@ export function CompareTeamsPage() {
         matchHistory.map((team) => String(team.team_number)),
       );
 
-      const existingSelection = previous
+      return previous
         .filter((teamId) => availableTeamIds.has(teamId))
         .slice(0, MAX_TEAMS);
-
-      if (existingSelection.length > 0) {
-        return existingSelection;
-      }
-
-      return matchHistory
-        .slice(0, MAX_TEAMS)
-        .map((team) => String(team.team_number));
     });
   }, [matchHistory]);
 
