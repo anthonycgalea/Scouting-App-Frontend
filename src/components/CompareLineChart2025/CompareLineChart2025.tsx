@@ -1,7 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Card,
+  Center,
   Group,
+  Loader,
   MultiSelect,
   Select,
   Stack,
@@ -24,68 +26,67 @@ import {
   type TooltipContentProps,
 } from 'recharts';
 
+import { useTeamMatchHistory, type TeamMatchHistoryResponse } from '@/api';
+
 const MAX_TEAMS = 5;
-const MATCHES = Array.from({ length: 15 }, (_, index) => index + 1);
 
-type TeamId = keyof typeof TEAM_SERIES;
+type TeamIdentifier = string;
 
-type ChartPoint = { match: number } & Partial<Record<TeamId, number | null>>;
+type MetricKey =
+  | 'total_points'
+  | 'autonomous_points'
+  | 'teleop_points'
+  | 'endgame_points'
+  | 'game_pieces';
+
+type MetricOption = {
+  value: MetricKey;
+  label: string;
+  axisLabel: string;
+  valueSuffix: string;
+};
+
+type ChartPoint = {
+  matchIndex: number;
+  matchDetails: Record<TeamIdentifier, string | undefined>;
+  [teamId: string]: number | null | Record<TeamIdentifier, string | undefined>;
+};
 
 type CustomTooltipPayload = {
   color?: string;
   dataKey?: string;
   value?: number;
+  payload?: ChartPoint;
 };
 
-const TEAM_SERIES = {
-  '1678': {
-    name: 'Citrus Circuits',
-    location: 'Davis, CA',
-    values: [
-      2.6, 2.7, 2.8, 2.9, 3.0, 3.1, 3.3, 3.5, 3.6, 3.7, 3.8, 3.9, 4.0, 4.1, 4.2,
-    ],
-  },
-  '2056': {
-    name: 'OP Robotics',
-    location: 'Stoney Creek, ON',
-    values: [
-      3.1, 3.2, 3.4, 3.7, 4.0, 4.2, 4.3, 4.4, 4.6, 4.8, 5.0, 5.1, 5.2, 5.3, 5.4,
-    ],
-  },
-  '254': {
-    name: 'The Cheesy Poofs',
-    location: 'San Jose, CA',
-    values: [
-      2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3.0, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8,
-    ],
-  },
-  '118': {
-    name: 'Robonauts',
-    location: 'League City, TX',
-    values: [
-      1.8, 1.9, 2.0, 2.1, 2.1, 2.2, 2.3, 2.4, 2.5, 2.5, 2.6, 2.7, 2.8, 2.9, 3.0,
-    ],
-  },
-  '148': {
-    name: 'Robowranglers',
-    location: 'Greenville, TX',
-    values: [
-      2.0, 2.1, 2.1, 2.2, 2.3, 2.4, 2.5, 2.5, 2.6, 2.7, 2.8, 2.8, 2.9, 3.0, 3.1,
-    ],
-  },
-} satisfies Record<
-  string,
-  {
-    name: string;
-    location: string;
-    values: number[];
-  }
->;
+type TooltipTeam = {
+  teamId: TeamIdentifier;
+  value: number | null;
+  color?: string;
+  matchLabel?: string;
+};
 
-const METRIC_OPTIONS = [
-  { value: 'total-epa', label: 'Total EPA' },
-  { value: 'auto-epa', label: 'Autonomous EPA (coming soon)', disabled: true },
-  { value: 'teleop-epa', label: 'Teleop EPA (coming soon)', disabled: true },
+const METRIC_OPTIONS: MetricOption[] = [
+  { value: 'total_points', label: 'Total EPA', axisLabel: 'Total EPA', valueSuffix: 'EPA' },
+  {
+    value: 'autonomous_points',
+    label: 'Autonomous EPA',
+    axisLabel: 'Autonomous EPA',
+    valueSuffix: 'EPA',
+  },
+  { value: 'teleop_points', label: 'Teleop EPA', axisLabel: 'Teleop EPA', valueSuffix: 'EPA' },
+  {
+    value: 'endgame_points',
+    label: 'Endgame EPA',
+    axisLabel: 'Endgame EPA',
+    valueSuffix: 'EPA',
+  },
+  {
+    value: 'game_pieces',
+    label: 'Game Pieces',
+    axisLabel: 'Game Pieces',
+    valueSuffix: 'Game Pieces',
+  },
 ];
 
 const getPalette = (colorScheme: 'dark' | 'light', theme: ReturnType<typeof useMantineTheme>) => {
@@ -108,62 +109,100 @@ const getPalette = (colorScheme: 'dark' | 'light', theme: ReturnType<typeof useM
   ];
 };
 
-const buildChartData = (selectedTeams: TeamId[]): ChartPoint[] =>
-  MATCHES.map((match, index) => {
-    const point: ChartPoint = { match };
+const buildChartData = (
+  selectedTeams: TeamIdentifier[],
+  metricKey: MetricKey,
+  teamLookup: Map<TeamIdentifier, TeamMatchHistoryResponse>,
+): ChartPoint[] => {
+  if (selectedTeams.length === 0) {
+    return [];
+  }
+
+  const maxMatches = selectedTeams.reduce((max, teamId) => {
+    const team = teamLookup.get(teamId);
+    return Math.max(max, team?.matches.length ?? 0);
+  }, 0);
+
+  if (maxMatches === 0) {
+    return [];
+  }
+
+  return Array.from({ length: maxMatches }, (_, index) => {
+    const matchIndex = index + 1;
+    const point: ChartPoint = {
+      matchIndex,
+      matchDetails: {} as Record<TeamIdentifier, string | undefined>,
+    };
 
     selectedTeams.forEach((teamId) => {
-      const value = TEAM_SERIES[teamId]?.values[index] ?? null;
-      point[teamId] = value;
+      const team = teamLookup.get(teamId);
+      const match = team?.matches[index];
+
+      if (!match) {
+        point[teamId] = null;
+        point.matchDetails[teamId] = undefined;
+        return;
+      }
+
+      const value = match[metricKey];
+      point[teamId] = typeof value === 'number' ? value : null;
+
+      const level = match.match_level?.toLowerCase() ?? '';
+      const matchLabel =
+        match.match_number !== undefined && match.match_number !== null
+          ? `${level}${match.match_number}`
+          : level;
+      point.matchDetails[teamId] = matchLabel || undefined;
     });
 
     return point;
   });
+};
 
 const tooltipContent = (
   theme: ReturnType<typeof useMantineTheme>,
-  colorScheme: 'dark' | 'light'
+  colorScheme: 'dark' | 'light',
+  teamLookup: Map<TeamIdentifier, TeamMatchHistoryResponse>,
+  valueSuffix: string,
 ) =>
   ({ active, payload, label }: TooltipContentProps<number, string>) => {
     if (!active || !payload || payload.length === 0) {
       return null;
     }
 
-    const teamsInTooltip = payload
-      .map((item) => {
-        const tooltipPayload = item as CustomTooltipPayload | undefined;
+    const mappedTeams = payload.map((item): TooltipTeam | null => {
+      const tooltipPayload = item as CustomTooltipPayload | undefined;
 
-        if (!tooltipPayload?.dataKey) {
-          return null;
-        }
+      if (!tooltipPayload?.dataKey) {
+        return null;
+      }
 
-        const teamId = tooltipPayload.dataKey as TeamId;
-        const team = TEAM_SERIES[teamId];
+      const teamId = tooltipPayload.dataKey as TeamIdentifier;
+      const team = teamLookup.get(teamId);
 
-        if (!team) {
-          return null;
-        }
+      if (!team) {
+        return null;
+      }
 
-        return {
-          teamId,
-          value: typeof tooltipPayload.value === 'number' ? tooltipPayload.value : null,
-          color: tooltipPayload.color,
-        };
-      })
-      .filter((team): team is { teamId: TeamId; value: number | null; color?: string } =>
-        Boolean(team)
-      );
+      return {
+        teamId,
+        value: typeof tooltipPayload.value === 'number' ? tooltipPayload.value : null,
+        color: tooltipPayload.color,
+        matchLabel: tooltipPayload.payload?.matchDetails?.[teamId],
+      };
+    });
+
+    const teamsInTooltip = mappedTeams.filter(
+      (team): team is TooltipTeam => team !== null,
+    );
 
     if (teamsInTooltip.length === 0) {
       return null;
     }
 
-    const backgroundColor =
-      colorScheme === 'dark' ? theme.colors.dark[6] : theme.white;
-    const borderColor =
-      colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[3];
-    const textColor =
-      colorScheme === 'dark' ? theme.colors.gray[1] : theme.colors.dark[7];
+    const backgroundColor = colorScheme === 'dark' ? theme.colors.dark[6] : theme.white;
+    const borderColor = colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[3];
+    const textColor = colorScheme === 'dark' ? theme.colors.gray[1] : theme.colors.dark[7];
     return (
       <div
         style={{
@@ -183,22 +222,27 @@ const tooltipContent = (
           {`Match ${label}`}
         </Text>
         <Stack gap={4} mt={6}>
-          {teamsInTooltip.map(({ teamId, value, color }) => (
-            <Group key={teamId} gap={8} wrap="nowrap">
-              <div
-                style={{
-                  width: rem(10),
-                  height: rem(10),
-                  borderRadius: '50%',
-                  backgroundColor: color ?? theme.colors.gray[5],
-                  flexShrink: 0,
-                }}
-              />
-              <Text size="sm" fw={500} c={textColor}>
-                {`Team ${teamId}: ${value !== null ? value.toFixed(2) : 'N/A'} EPA`}
-              </Text>
-            </Group>
-          ))}
+          {teamsInTooltip.map(({ teamId, value, color, matchLabel }) => {
+            const valueText = value !== null ? `${value.toFixed(2)} ${valueSuffix}` : 'N/A';
+            const matchText = matchLabel ? ` (${matchLabel})` : '';
+
+            return (
+              <Group key={teamId} gap={8} wrap="nowrap">
+                <div
+                  style={{
+                    width: rem(10),
+                    height: rem(10),
+                    borderRadius: '50%',
+                    backgroundColor: color ?? theme.colors.gray[5],
+                    flexShrink: 0,
+                  }}
+                />
+                <Text size="sm" fw={500} c={textColor}>
+                  {`Team ${teamId}: ${valueText}${matchText}`}
+                </Text>
+              </Group>
+            );
+          })}
         </Stack>
       </div>
     );
@@ -208,22 +252,51 @@ export default function CompareLineChart2025() {
   const theme = useMantineTheme();
   const { colorScheme: resolvedColorScheme } = useMantineColorScheme();
   const colorScheme = resolvedColorScheme === 'dark' ? 'dark' : 'light';
+  const { data: matchHistory, isLoading, isError } = useTeamMatchHistory();
 
-  const [selectedMetric, setSelectedMetric] = useState(METRIC_OPTIONS[0]?.value ?? 'total-epa');
-  const [selectedTeams, setSelectedTeams] = useState<TeamId[]>([
-    '2056',
-    '1678',
-    '254',
-  ]);
+  const [selectedMetric, setSelectedMetric] = useState<MetricKey>(METRIC_OPTIONS[0].value);
+  const [selectedTeams, setSelectedTeams] = useState<TeamIdentifier[]>([]);
+
+  const teamLookup = useMemo(() => {
+    if (!matchHistory) {
+      return new Map<TeamIdentifier, TeamMatchHistoryResponse>();
+    }
+
+    return new Map<TeamIdentifier, TeamMatchHistoryResponse>(
+      matchHistory.map((team) => [String(team.team_number), team]),
+    );
+  }, [matchHistory]);
+
+  useEffect(() => {
+    if (!matchHistory || matchHistory.length === 0) {
+      setSelectedTeams([]);
+      return;
+    }
+
+    setSelectedTeams((previous) => {
+      const validPrevious = previous.filter((teamId) => teamLookup.has(teamId)).slice(0, MAX_TEAMS);
+
+      if (validPrevious.length > 0) {
+        return validPrevious;
+      }
+
+      return matchHistory.slice(0, MAX_TEAMS).map((team) => String(team.team_number));
+    });
+  }, [matchHistory, teamLookup]);
 
   const palette = useMemo(
     () => getPalette(colorScheme, theme),
-    [colorScheme, theme]
+    [colorScheme, theme],
+  );
+
+  const selectedMetricDefinition = useMemo(
+    () => METRIC_OPTIONS.find((option) => option.value === selectedMetric) ?? METRIC_OPTIONS[0],
+    [selectedMetric],
   );
 
   const chartData = useMemo(
-    () => buildChartData(selectedTeams),
-    [selectedTeams]
+    () => buildChartData(selectedTeams, selectedMetricDefinition.value, teamLookup),
+    [selectedTeams, selectedMetricDefinition.value, teamLookup],
   );
 
   const axisColor = colorScheme === 'dark' ? theme.colors.gray[4] : theme.colors.gray[6];
@@ -231,13 +304,24 @@ export default function CompareLineChart2025() {
     colorScheme === 'dark'
       ? rgba(theme.colors.dark[3], 0.6)
       : rgba(theme.colors.gray[3], 0.6);
-  const legendTextColor =
-    colorScheme === 'dark' ? theme.colors.gray[2] : theme.colors.dark[6];
+  const legendTextColor = colorScheme === 'dark' ? theme.colors.gray[2] : theme.colors.dark[6];
 
   const handleTeamChange = (teams: string[]) => {
-    const nextTeams = teams.slice(0, MAX_TEAMS) as TeamId[];
+    const nextTeams = teams.slice(0, MAX_TEAMS) as TeamIdentifier[];
     setSelectedTeams(nextTeams);
   };
+
+  const tooltipRenderer = useMemo(
+    () => tooltipContent(theme, colorScheme, teamLookup, selectedMetricDefinition.valueSuffix),
+    [theme, colorScheme, teamLookup, selectedMetricDefinition.valueSuffix],
+  );
+
+  const metricSelectOptions = useMemo(
+    () => METRIC_OPTIONS.map((option) => ({ value: option.value, label: option.label })),
+    [],
+  );
+
+  const hasData = chartData.length > 0 && selectedTeams.length > 0;
 
   return (
     <Card withBorder p="lg" radius="lg" shadow="sm">
@@ -246,8 +330,8 @@ export default function CompareLineChart2025() {
           <div>
             <Title order={3}>Team EPA Over Time</Title>
             <Text size="sm" c="dimmed">
-              Compare up to five teams at once. Additional metrics and live data will be
-              available soon.
+              Compare up to five teams at once. Additional metrics and live data will be available
+              soon.
             </Text>
           </div>
 
@@ -256,8 +340,8 @@ export default function CompareLineChart2025() {
               label="Metric"
               size="sm"
               value={selectedMetric}
-              onChange={(value) => value && setSelectedMetric(value)}
-              data={METRIC_OPTIONS}
+              onChange={(value) => value && setSelectedMetric(value as MetricKey)}
+              data={metricSelectOptions}
               comboboxProps={{ withinPortal: true }}
               styles={{
                 dropdown: {
@@ -270,9 +354,11 @@ export default function CompareLineChart2025() {
             <MultiSelect
               w={260}
               label="Teams"
-              data={Object.entries(TEAM_SERIES).map(([teamId, team]) => ({
-                value: teamId,
-                label: `${teamId} • ${team.name}`,
+              data={(matchHistory ?? []).map((team) => ({
+                value: String(team.team_number),
+                label: team.team_name
+                  ? `${team.team_number} • ${team.team_name}`
+                  : `${team.team_number}`,
               }))}
               value={selectedTeams}
               onChange={handleTeamChange}
@@ -287,43 +373,59 @@ export default function CompareLineChart2025() {
         </Group>
 
         <div style={{ height: rem(360) }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 20, right: 32, left: 16, bottom: 12 }}>
-              <CartesianGrid stroke={gridColor} strokeDasharray="3 3" />
-              <XAxis
-                dataKey="match"
-                tick={{ fill: axisColor }}
-                tickLine={{ stroke: axisColor }}
-                axisLine={{ stroke: axisColor }}
-                label={{ value: 'Match', position: 'insideBottomRight', offset: -8, fill: axisColor }}
-              />
-              <YAxis
-                tick={{ fill: axisColor }}
-                tickLine={{ stroke: axisColor }}
-                axisLine={{ stroke: axisColor }}
-                width={60}
-                label={{ value: 'Total EPA', angle: -90, position: 'insideLeft', fill: axisColor }}
-                domain={['dataMin - 0.2', 'dataMax + 0.2']}
-              />
-              <Tooltip content={tooltipContent(theme, colorScheme)} />
-              <Legend
-                verticalAlign="top"
-                height={36}
-                wrapperStyle={{ color: legendTextColor }}
-                iconType="circle"
-              />
-              {selectedTeams.length === 0 ? (
-                <text
-                  x="50%"
-                  y="50%"
-                  textAnchor="middle"
-                  fill={legendTextColor}
-                  style={{ fontSize: rem(16) }}
-                >
-                  Select teams to compare their progress.
-                </text>
-              ) : (
-                selectedTeams.map((teamId, index) => (
+          {isLoading ? (
+            <Center h="100%">
+              <Loader size="sm" />
+            </Center>
+          ) : isError ? (
+            <Center h="100%">
+              <Text c="dimmed">Unable to load match history at this time.</Text>
+            </Center>
+          ) : !hasData ? (
+            <Center h="100%">
+              <Text c="dimmed">
+                {selectedTeams.length === 0
+                  ? 'Select teams to compare their progress.'
+                  : 'No match data is available for the selected teams.'}
+              </Text>
+            </Center>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData} margin={{ top: 20, right: 32, left: 16, bottom: 12 }}>
+                <CartesianGrid stroke={gridColor} strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="matchIndex"
+                  tick={{ fill: axisColor }}
+                  tickLine={{ stroke: axisColor }}
+                  axisLine={{ stroke: axisColor }}
+                  label={{
+                    value: 'Match Order',
+                    position: 'insideBottomRight',
+                    offset: -8,
+                    fill: axisColor,
+                  }}
+                />
+                <YAxis
+                  tick={{ fill: axisColor }}
+                  tickLine={{ stroke: axisColor }}
+                  axisLine={{ stroke: axisColor }}
+                  width={60}
+                  label={{
+                    value: selectedMetricDefinition.axisLabel,
+                    angle: -90,
+                    position: 'insideLeft',
+                    fill: axisColor,
+                  }}
+                  domain={[0, 'auto']}
+                />
+                <Tooltip content={tooltipRenderer} />
+                <Legend
+                  verticalAlign="top"
+                  height={36}
+                  wrapperStyle={{ color: legendTextColor }}
+                  iconType="circle"
+                />
+                {selectedTeams.map((teamId, index) => (
                   <Line
                     key={teamId}
                     type="monotone"
@@ -335,10 +437,10 @@ export default function CompareLineChart2025() {
                     activeDot={{ r: 6 }}
                     connectNulls
                   />
-                ))
-              )}
-            </LineChart>
-          </ResponsiveContainer>
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          )}
         </div>
       </Stack>
     </Card>
