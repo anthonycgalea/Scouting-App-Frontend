@@ -32,6 +32,25 @@ export interface TeamDetailedAnalyticsResponse {
   total_points: QuartileBreakdown;
 }
 
+export interface TeamMatchPerformanceResponse {
+  team_number: number;
+  match_level: string;
+  match_number: number;
+  autonomous_points: number;
+  teleop_points: number;
+  endgame_points: number;
+  game_pieces: number;
+  total_points: number;
+  notes: string | null;
+}
+
+export interface TeamMatchHistoryResponse {
+  team_number: number;
+  team_name?: string;
+  matches_played: number;
+  matches: TeamMatchPerformanceResponse[];
+}
+
 export const teamAnalyticsQueryKey = () => ['analytics', 'team-performance'] as const;
 
 export const fetchTeamAnalytics = () =>
@@ -41,6 +60,11 @@ export const teamDetailedAnalyticsQueryKey = () => ['analytics', 'team-performan
 
 export const fetchTeamDetailedAnalytics = () =>
   apiFetch<TeamDetailedAnalyticsResponse[]>('analytics/event/teams/detailed');
+
+export const teamMatchHistoryQueryKey = () => ['analytics', 'team-match-history'] as const;
+
+export const fetchTeamMatchHistory = () =>
+  apiFetch<TeamMatchHistoryResponse[]>('analytics/event/teams/matches');
 
 export const useTeamAnalytics = () =>
   useQuery({
@@ -52,4 +76,10 @@ export const useTeamDetailedAnalytics = () =>
   useQuery({
     queryKey: teamDetailedAnalyticsQueryKey(),
     queryFn: fetchTeamDetailedAnalytics,
+  });
+
+export const useTeamMatchHistory = () =>
+  useQuery({
+    queryKey: teamMatchHistoryQueryKey(),
+    queryFn: fetchTeamMatchHistory,
   });
