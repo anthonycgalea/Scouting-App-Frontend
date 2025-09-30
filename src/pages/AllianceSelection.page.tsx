@@ -15,6 +15,7 @@ import {
   Text,
   TextInput,
   Title,
+  useMantineTheme,
 } from '@mantine/core';
 import { IconRefresh, IconSettings } from '@tabler/icons-react';
 import { useRequireOrganizationAccess } from '@/hooks/useRequireOrganizationAccess';
@@ -39,6 +40,7 @@ const createAllianceEntries = (count: number): AllianceEntry[] =>
 
 export function AllianceSelectionPage() {
   const { canAccessOrganizationPages, isCheckingAccess } = useRequireOrganizationAccess();
+  const theme = useMantineTheme();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [allianceEntries, setAllianceEntries] = useState<AllianceEntry[]>(() =>
     createAllianceEntries(DEFAULT_ALLIANCE_COUNT),
@@ -126,6 +128,11 @@ export function AllianceSelectionPage() {
 
     return rankings.filter((ranking) => !selectedTeams.has(String(ranking.team_number)));
   }, [rankings, selectedTeams]);
+
+  const captainHighlightColor =
+    theme.colorScheme === 'dark'
+      ? theme.fn.rgba(theme.colors.yellow[8], 0.2)
+      : theme.colors.yellow[1];
 
   const captainSpotsFilled = useMemo(
     () =>
@@ -253,7 +260,7 @@ export function AllianceSelectionPage() {
                             key={`${ranking.event_key}-${ranking.team_number}-${ranking.rank}`}
                             style={
                               isCaptainCandidate
-                                ? { backgroundColor: 'var(--mantine-color-yellow-1)' }
+                                ? { backgroundColor: captainHighlightColor }
                                 : undefined
                             }
                           >
