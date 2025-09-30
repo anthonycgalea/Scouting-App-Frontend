@@ -233,7 +233,7 @@ export function AllianceSelectionPage() {
             style={{
               display: 'flex',
               flexDirection: 'column',
-              flex: '1 1 0%',
+              flex: '3 1 0%',
               minWidth: 0,
             }}
           >
@@ -292,7 +292,7 @@ export function AllianceSelectionPage() {
             withBorder
             radius="md"
             p="md"
-            style={{ flex: '3 1 0%', display: 'flex', minWidth: 0 }}
+            style={{ flex: '5 1 0%', display: 'flex', minWidth: 0 }}
           >
             <Stack gap="sm" style={{ flex: 1, minHeight: 0 }}>
               <Group justify="space-between" align="center">
@@ -371,7 +371,7 @@ export function AllianceSelectionPage() {
             withBorder
             radius="md"
             p="md"
-            style={{ flex: '3 1 0%', display: 'flex', minWidth: 0 }}
+            style={{ flex: '5 1 0%', display: 'flex', minWidth: 0 }}
           >
             <Stack gap="sm" style={{ flex: 1, minHeight: 0 }}>
               <Title order={4}>Pick Lists</Title>
