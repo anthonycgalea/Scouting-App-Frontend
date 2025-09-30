@@ -5,7 +5,7 @@ import { useUserInfo, useUserRole } from '@/api';
 export const ALLOWED_ORGANIZATION_ROLES = ['ADMIN', 'LEAD'] as const;
 const allowedOrganizationRoleSet = new Set<string>(ALLOWED_ORGANIZATION_ROLES);
 
-const isRoleAllowed = (role: string | null | undefined) =>
+export const isOrganizationRoleAllowed = (role: string | null | undefined) =>
   role !== null && role !== undefined && allowedOrganizationRoleSet.has(role);
 
 export const useRequireOrganizationAccess = () => {
@@ -19,7 +19,7 @@ export const useRequireOrganizationAccess = () => {
   } = useUserRole({ enabled: isUserLoggedIn });
 
   const canAccessOrganizationPages = useMemo(
-    () => isUserLoggedIn && isRoleAllowed(userRole?.role ?? null),
+    () => isUserLoggedIn && isOrganizationRoleAllowed(userRole?.role ?? null),
     [isUserLoggedIn, userRole?.role]
   );
 
