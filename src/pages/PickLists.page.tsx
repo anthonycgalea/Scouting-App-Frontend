@@ -7,7 +7,6 @@ import {
   Checkbox,
   Group,
   Modal,
-  Select,
   SimpleGrid,
   Stack,
   Text,
@@ -27,6 +26,7 @@ import {
   type PickList,
 } from '@/api/pickLists';
 import { useRequireOrganizationAccess } from '@/hooks/useRequireOrganizationAccess';
+import { PickListSelector } from '@/components/PickLists/PickListSelector';
 
 export function PickListsPage() {
   const { canAccessOrganizationPages, isCheckingAccess } = useRequireOrganizationAccess();
@@ -63,24 +63,31 @@ export function PickListsPage() {
     return pickLists.filter((list) => list.event_key === activeEvent.eventKey);
   }, [activeEvent, pickLists]);
 
+  const sortedPickListsForActiveEvent = useMemo<PickList[]>(() => {
+    return [...pickListsForActiveEvent].sort(
+      (first, second) =>
+        new Date(second.last_updated).getTime() - new Date(first.last_updated).getTime(),
+    );
+  }, [pickListsForActiveEvent]);
+
   useEffect(() => {
-    if (pickListsForActiveEvent.length === 0) {
+    if (sortedPickListsForActiveEvent.length === 0) {
       setSelectedPickListId(null);
       return;
     }
 
     setSelectedPickListId((current) => {
-      if (current && pickListsForActiveEvent.some((list) => list.id === current)) {
+      if (current && sortedPickListsForActiveEvent.some((list) => list.id === current)) {
         return current;
       }
 
-      return pickListsForActiveEvent[0]?.id ?? null;
+      return sortedPickListsForActiveEvent[0]?.id ?? null;
     });
-  }, [pickListsForActiveEvent]);
+  }, [sortedPickListsForActiveEvent]);
 
   const selectedPickList = useMemo(
-    () => pickListsForActiveEvent.find((list) => list.id === selectedPickListId) ?? null,
-    [pickListsForActiveEvent, selectedPickListId],
+    () => sortedPickListsForActiveEvent.find((list) => list.id === selectedPickListId) ?? null,
+    [sortedPickListsForActiveEvent, selectedPickListId],
   );
 
   useEffect(() => {
@@ -157,9 +164,30 @@ export function PickListsPage() {
           <Card withBorder padding="lg" radius="md">
             <Stack gap="sm">
               <Title order={4}>Manage Pick Lists</Title>
-              <Text c="dimmed">
-                Tools for managing pick lists will be added to this page soon.
-              </Text>
+              {selectedPickList ? (
+                <Stack gap="xs">
+                  <Text c="dimmed" size="sm">
+                    Selected pick list for {activeEventName}
+                  </Text>
+                  <Text fw={600}>{selectedPickList.title}</Text>
+                  <Text c="dimmed" size="sm">
+                    Last updated{' '}
+                    {new Date(selectedPickList.last_updated).toLocaleString(undefined, {
+                      dateStyle: 'medium',
+                      timeStyle: 'short',
+                    })}
+                  </Text>
+                  {selectedPickList.notes ? (
+                    <Text size="sm">{selectedPickList.notes}</Text>
+                  ) : (
+                    <Text c="dimmed" size="sm">
+                      This pick list does not have any notes yet.
+                    </Text>
+                  )}
+                </Stack>
+              ) : (
+                <Text c="dimmed">Select a pick list to view its details.</Text>
+              )}
             </Stack>
           </Card>
 
@@ -181,23 +209,14 @@ export function PickListsPage() {
                   <Text c="dimmed" size="sm">
                     Showing pick lists for {activeEventName}.
                   </Text>
-                  <Select
-                    data={pickListsForActiveEvent.map((list) => ({
-                      value: list.id,
-                      label: list.title,
-                    }))}
-                    label="Pick list"
-                    placeholder="Select a pick list"
-                    value={selectedPickListId}
-                    onChange={setSelectedPickListId}
+                  <PickListSelector
+                    pickLists={sortedPickListsForActiveEvent}
+                    selectedPickListId={selectedPickListId}
+                    onSelectPickList={(pickListId) => setSelectedPickListId(pickListId)}
                   />
-                  {selectedPickList?.notes ? (
-                    <Text size="sm">{selectedPickList.notes}</Text>
-                  ) : (
-                    <Text c="dimmed" size="sm">
-                      This pick list does not have any notes yet.
-                    </Text>
-                  )}
+                  <Text c="dimmed" size="sm">
+                    Click a pick list to load it in the manager on the left.
+                  </Text>
                 </Stack>
               )}
             </Stack>
