@@ -126,7 +126,7 @@ export function PickListsPage() {
         return current;
       }
 
-      return sortedPickListsForActiveEvent[0]?.id ?? null;
+      return null;
     });
   }, [sortedPickListsForActiveEvent]);
 
