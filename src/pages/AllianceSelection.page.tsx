@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+
 import {
   ActionIcon,
   Box,
@@ -9,6 +10,7 @@ import {
   NumberInput,
   Paper,
   ScrollArea,
+  Select,
   Switch,
   Stack,
   Table,
@@ -17,11 +19,15 @@ import {
   Title,
   useMantineTheme,
   rgba,
-  useMantineColorScheme
+  useMantineColorScheme,
 } from '@mantine/core';
 import { IconRefresh, IconSettings } from '@tabler/icons-react';
 import { useRequireOrganizationAccess } from '@/hooks/useRequireOrganizationAccess';
 import { syncEventRankings, useEventRankings } from '@/api';
+import { useOrganizationEvents } from '@/api/events';
+import { usePickLists } from '@/api/pickLists';
+import { useEventTeams } from '@/api/teams';
+import { PickListPreview } from '@/components/PickLists/PickListPreview';
 
 type AllianceEntry = {
   captain: string;
@@ -49,9 +55,87 @@ export function AllianceSelectionPage() {
   );
   const [includeThirdPicks, setIncludeThirdPicks] = useState(false);
   const [allianceCount, setAllianceCount] = useState<number>(DEFAULT_ALLIANCE_COUNT);
+  const [selectedPickListId, setSelectedPickListId] = useState<string | null>(null);
   const { data: rankings, isLoading, isError } = useEventRankings({
     enabled: canAccessOrganizationPages && !isCheckingAccess,
   });
+  const { data: organizationEvents, isLoading: isLoadingEvents } = useOrganizationEvents({
+    enabled: canAccessOrganizationPages && !isCheckingAccess,
+  });
+  const { data: pickLists, isLoading: isLoadingPickLists } = usePickLists({
+    enabled: canAccessOrganizationPages && !isCheckingAccess,
+  });
+
+  const activeEvent = useMemo(
+    () => organizationEvents?.find((event) => event.isActive) ?? null,
+    [organizationEvents],
+  );
+  const { data: eventTeams = [], isLoading: isLoadingEventTeams } = useEventTeams(
+    activeEvent?.eventKey ?? '2025micmp4',
+    {
+      enabled: Boolean(activeEvent),
+    },
+  );
+
+  const pickListsForActiveEvent = useMemo(() => {
+    if (!pickLists) {
+      return [];
+    }
+
+    if (!activeEvent) {
+      return pickLists;
+    }
+
+    return pickLists.filter((list) => list.event_key === activeEvent.eventKey);
+  }, [activeEvent, pickLists]);
+
+  const sortedPickLists = useMemo(() => {
+    return [...pickListsForActiveEvent].sort((first, second) => {
+      if (first.favorited !== second.favorited) {
+        return first.favorited ? -1 : 1;
+      }
+
+      return (
+        new Date(second.last_updated).getTime() - new Date(first.last_updated).getTime()
+      );
+    });
+  }, [pickListsForActiveEvent]);
+
+  useEffect(() => {
+    if (sortedPickLists.length === 0) {
+      setSelectedPickListId(null);
+      return;
+    }
+
+    setSelectedPickListId((current) => {
+      if (current && sortedPickLists.some((list) => list.id === current)) {
+        return current;
+      }
+
+      return sortedPickLists[0]?.id ?? null;
+    });
+  }, [sortedPickLists]);
+
+  const selectedPickList = useMemo(
+    () => sortedPickLists.find((list) => list.id === selectedPickListId) ?? null,
+    [selectedPickListId, sortedPickLists],
+  );
+
+  const eventTeamsByNumber = useMemo(
+    () =>
+      new Map(eventTeams.map((team) => [team.team_number, team])),
+    [eventTeams],
+  );
+
+  const pickListSelectOptions = useMemo(
+    () => sortedPickLists.map((list) => ({ value: list.id, label: list.title })),
+    [sortedPickLists],
+  );
+
+  const selectedPickListRanks = selectedPickList?.ranks ?? [];
+
+  const isPickListPanelLoading =
+    isLoadingPickLists || isLoadingEvents || (Boolean(activeEvent) && isLoadingEventTeams);
 
   const handleRefreshRankings = async () => {
     try {
@@ -375,10 +459,31 @@ export function AllianceSelectionPage() {
           >
             <Stack gap="sm" style={{ flex: 1, minHeight: 0 }}>
               <Title order={4}>Pick Lists</Title>
-              <Text c="dimmed">
-                Space reserved for future pick list tooling. This panel will house
-                pick list management once implemented.
-              </Text>
+              {isPickListPanelLoading ? (
+                <Group justify="center">
+                  <Loader aria-label="Loading pick lists" />
+                </Group>
+              ) : sortedPickLists.length === 0 ? (
+                <Text c="dimmed">No pick lists available.</Text>
+              ) : (
+                <>
+                  <Select
+                    label="Pick list"
+                    placeholder="Select a pick list"
+                    data={pickListSelectOptions}
+                    value={selectedPickListId}
+                    onChange={setSelectedPickListId}
+                    withinPortal
+                  />
+                  <ScrollArea style={{ flex: 1 }}>
+                    <PickListPreview
+                      ranks={selectedPickListRanks}
+                      eventTeamsByNumber={eventTeamsByNumber}
+                      selectedTeamNumbers={selectedTeams}
+                    />
+                  </ScrollArea>
+                </>
+              )}
             </Stack>
           </Paper>
         </Flex>
