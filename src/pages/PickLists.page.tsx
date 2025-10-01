@@ -26,6 +26,7 @@ import { IconEdit, IconPlus } from '@tabler/icons-react';
 import { useOrganizationEvents } from '@/api/events';
 import {
   useCreatePickList,
+  useDeletePickList,
   usePickListGenerators,
   usePickLists,
   useUpdatePickList,
@@ -59,6 +60,7 @@ export function PickListsPage() {
   const [createModalOpened, { close: closeCreateModal, open: openCreateModal }] = useDisclosure(false);
   const [editMetadataModalOpened, { close: closeEditMetadataModal, open: openEditMetadataModal }] =
     useDisclosure(false);
+  const [deleteModalOpened, { close: closeDeleteModal, open: openDeleteModal }] = useDisclosure(false);
   const [selectedPickListId, setSelectedPickListId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');
@@ -84,6 +86,7 @@ export function PickListsPage() {
   } = usePickListGenerators({ enabled: createModalOpened });
   const createPickListMutation = useCreatePickList();
   const updatePickListMutation = useUpdatePickList();
+  const deletePickListMutation = useDeletePickList();
 
   const activeEvent = useMemo(
     () => organizationEvents?.find((event) => event.isActive) ?? null,
@@ -455,6 +458,37 @@ export function PickListsPage() {
     }
   };
 
+  const handleConfirmDeletePickList = useCallback(async () => {
+    if (!selectedPickList) {
+      return;
+    }
+
+    const pickListId = selectedPickList.id;
+    const pickListTitle = selectedPickList.title;
+
+    try {
+      await deletePickListMutation.mutateAsync({ id: pickListId });
+
+      setSelectedPickListId((current) => (current === pickListId ? null : current));
+      closeDeleteModal();
+
+      notifications.show({
+        color: 'green',
+        title: 'Pick list deleted',
+        message: `Deleted “${pickListTitle}”.`,
+      });
+    } catch (error) {
+      notifications.show({
+        color: 'red',
+        title: 'Unable to delete pick list',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'An unexpected error occurred while deleting the pick list.',
+      });
+    }
+  }, [closeDeleteModal, deletePickListMutation, selectedPickList, setSelectedPickListId]);
+
   const activeEventName = activeEvent?.eventName ?? 'Active event';
   const isLoadingData = isLoadingEvents || isLoadingPickLists;
 
@@ -591,7 +625,12 @@ export function PickListsPage() {
                     >
                       Save Changes
                     </Button>
-                    <Button color="red" variant="light">
+                    <Button
+                      color="red"
+                      variant="light"
+                      onClick={openDeleteModal}
+                      loading={deletePickListMutation.isPending}
+                    >
                       Delete Pick List
                     </Button>
                   </Group>
@@ -703,6 +742,33 @@ export function PickListsPage() {
           </Card>
         </Flex>
       </Stack>
+
+      <Modal
+        opened={deleteModalOpened}
+        onClose={closeDeleteModal}
+        title="Delete Pick List"
+        centered
+      >
+        <Stack>
+          <Text>Are you sure you want to delete this pick list?</Text>
+          <Group justify="flex-end">
+            <Button
+              variant="default"
+              onClick={closeDeleteModal}
+              disabled={deletePickListMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              color="red"
+              onClick={handleConfirmDeletePickList}
+              loading={deletePickListMutation.isPending}
+            >
+              Delete Pick List
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
 
       <Modal
         opened={editMetadataModalOpened}
