@@ -151,8 +151,8 @@ export function PickListsPage() {
   const isLoadingData = isLoadingEvents || isLoadingPickLists;
 
   return (
-    <Box p="md">
-      <Stack gap="lg">
+    <Box p="md" h="100%">
+      <Stack gap="lg" h="100%">
         <Group align="center" justify="space-between">
           <Title order={2}>Pick Lists</Title>
           <Button leftSection={<IconPlus stroke={1.5} size={16} />} onClick={openCreateModal}>
@@ -160,9 +160,14 @@ export function PickListsPage() {
           </Button>
         </Group>
 
-        <Flex direction={{ base: 'column', md: 'row' }} gap="md">
-          <Card withBorder padding="lg" radius="md" style={{ flex: 2 }}>
-            <Stack gap="md" h="100%">
+        <Flex direction={{ base: 'column', md: 'row' }} gap="md" style={{ flex: 1 }}>
+          <Card
+            withBorder
+            padding="lg"
+            radius="md"
+            style={{ flex: 2, display: 'flex' }}
+          >
+            <Stack gap="md" style={{ flex: 1 }}>
               {selectedPickList ? (
                 <>
                   <Stack gap="xs">
@@ -197,8 +202,13 @@ export function PickListsPage() {
             </Stack>
           </Card>
 
-          <Card withBorder padding="lg" radius="md" style={{ flex: 1 }}>
-            <Stack gap="sm">
+          <Card
+            withBorder
+            padding="lg"
+            radius="md"
+            style={{ flex: 1, display: 'flex' }}
+          >
+            <Stack gap="sm" style={{ flex: 1 }}>
               <Title order={4}>Active Event Pick Lists</Title>
               {isLoadingData ? (
                 <Text c="dimmed">Loading pick lists…</Text>
