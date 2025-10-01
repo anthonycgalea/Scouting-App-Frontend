@@ -8,7 +8,10 @@ import {
   Flex,
   Group,
   Modal,
+  ScrollArea,
+  Select,
   Stack,
+  Table,
   Text,
   Textarea,
   TextInput,
@@ -24,7 +27,9 @@ import {
   usePickListGenerators,
   usePickLists,
   type PickList,
+  type PickListRank,
 } from '@/api/pickLists';
+import { useEventTeams, type EventTeam } from '@/api/teams';
 import { useRequireOrganizationAccess } from '@/hooks/useRequireOrganizationAccess';
 import { PickListSelector } from '@/components/PickLists/PickListSelector';
 
@@ -37,6 +42,8 @@ export function PickListsPage() {
   const [notes, setNotes] = useState('');
   const [shouldUseGenerator, setShouldUseGenerator] = useState(false);
   const [selectedGeneratorId, setSelectedGeneratorId] = useState<string | null>(null);
+  const [editablePickListRanks, setEditablePickListRanks] = useState<PickListRank[]>([]);
+  const [addTeamSearchQuery, setAddTeamSearchQuery] = useState('');
 
   if (isCheckingAccess || !canAccessOrganizationPages) {
     return null;
@@ -54,6 +61,13 @@ export function PickListsPage() {
     () => organizationEvents?.find((event) => event.isActive) ?? null,
     [organizationEvents],
   );
+
+  const {
+    data: eventTeams = [],
+    isLoading: isLoadingEventTeams,
+  } = useEventTeams(activeEvent?.eventKey ?? '2025micmp4', {
+    enabled: Boolean(activeEvent),
+  });
 
   const pickListsForActiveEvent = useMemo<PickList[]>(() => {
     if (!activeEvent || !pickLists) {
@@ -91,10 +105,82 @@ export function PickListsPage() {
   );
 
   useEffect(() => {
+    if (!selectedPickList) {
+      setEditablePickListRanks([]);
+      setAddTeamSearchQuery('');
+      return;
+    }
+
+    const sortedRanks = [...selectedPickList.ranks].sort(
+      (first, second) => first.rank - second.rank,
+    );
+
+    setEditablePickListRanks(sortedRanks);
+    setAddTeamSearchQuery('');
+  }, [selectedPickList]);
+
+  const pickListTeamNumbers = useMemo(
+    () => new Set(editablePickListRanks.map((rank) => rank.team_number)),
+    [editablePickListRanks],
+  );
+
+  const sortedEditablePickListRanks = useMemo(
+    () => [...editablePickListRanks].sort((first, second) => first.rank - second.rank),
+    [editablePickListRanks],
+  );
+
+  const availableTeams = useMemo(
+    () => eventTeams.filter((team) => !pickListTeamNumbers.has(team.team_number)),
+    [eventTeams, pickListTeamNumbers],
+  );
+
+  const filteredTeamsToAdd = useMemo(() => {
+    const trimmedQuery = addTeamSearchQuery.trim().toLowerCase();
+
+    if (!trimmedQuery) {
+      return availableTeams;
+    }
+
+    return availableTeams.filter((team) => {
+      const teamNumberMatches = team.team_number.toString().includes(trimmedQuery);
+      const teamNameMatches = team.team_name.toLowerCase().includes(trimmedQuery);
+
+      return teamNumberMatches || teamNameMatches;
+    });
+  }, [addTeamSearchQuery, availableTeams]);
+
+  const eventTeamsByNumber = useMemo(
+    () => new Map(eventTeams.map((team) => [team.team_number, team] as const)),
+    [eventTeams],
+  );
+
+  useEffect(() => {
     if (!shouldUseGenerator) {
       setSelectedGeneratorId(null);
     }
   }, [shouldUseGenerator]);
+
+  const handleAddTeamToPickList = (team: EventTeam) => {
+    if (!selectedPickList) {
+      return;
+    }
+
+    setEditablePickListRanks((current) => {
+      const nextRank = current.length > 0
+        ? Math.max(...current.map((rank) => rank.rank)) + 1
+        : 1;
+
+      return [
+        ...current,
+        {
+          rank: nextRank,
+          team_number: team.team_number,
+          notes: '',
+          dnp: false,
+        },
+      ];
+    });
+  };
 
   const handleCloseCreateModal = () => {
     setTitle('');
@@ -167,7 +253,7 @@ export function PickListsPage() {
             radius="md"
             style={{ flex: 2, display: 'flex' }}
           >
-            <Stack gap="md" style={{ flex: 1 }}>
+            <Stack gap="md" style={{ flex: 1, minHeight: 0 }}>
               {selectedPickList ? (
                 <>
                   <Stack gap="xs">
@@ -189,6 +275,65 @@ export function PickListsPage() {
                       </Text>
                     )}
                   </Stack>
+                  <Stack gap="sm" style={{ flex: 1, minHeight: 0 }}>
+                    <Text fw={600}>Pick List Teams</Text>
+                    {sortedEditablePickListRanks.length > 0 ? (
+                      <ScrollArea style={{ flex: 1 }}>
+                        <Table highlightOnHover withRowBorders={false} verticalSpacing="sm">
+                          <Table.Thead>
+                            <Table.Tr>
+                              <Table.Th style={{ width: '4rem' }}>Rank</Table.Th>
+                              <Table.Th style={{ width: '6rem' }}>Team #</Table.Th>
+                              <Table.Th>Team Name</Table.Th>
+                              <Table.Th style={{ width: '6rem' }}>Status</Table.Th>
+                              <Table.Th>Notes</Table.Th>
+                            </Table.Tr>
+                          </Table.Thead>
+                          <Table.Tbody>
+                            {sortedEditablePickListRanks.map((rank) => {
+                              const teamDetails = eventTeamsByNumber.get(rank.team_number);
+
+                              return (
+                                <Table.Tr key={`${rank.team_number}-${rank.rank}`}>
+                                  <Table.Td>{rank.rank}</Table.Td>
+                                  <Table.Td>{rank.team_number}</Table.Td>
+                                  <Table.Td>
+                                    {teamDetails ? (
+                                      <Text fw={500} size="sm">
+                                        {teamDetails.team_name}
+                                      </Text>
+                                    ) : (
+                                      <Text c="dimmed" size="sm">
+                                        Team information unavailable
+                                      </Text>
+                                    )}
+                                  </Table.Td>
+                                  <Table.Td>
+                                    <Text size="sm" fw={500} c={rank.dnp ? 'red.6' : undefined}>
+                                      {rank.dnp ? 'DNP' : 'Active'}
+                                    </Text>
+                                  </Table.Td>
+                                  <Table.Td>
+                                    {rank.notes ? (
+                                      <Text size="sm">{rank.notes}</Text>
+                                    ) : (
+                                      <Text c="dimmed" size="sm">
+                                        No notes yet
+                                      </Text>
+                                    )}
+                                  </Table.Td>
+                                </Table.Tr>
+                              );
+                            })}
+                          </Table.Tbody>
+                        </Table>
+                      </ScrollArea>
+                    ) : (
+                      <Text c="dimmed" size="sm">
+                        No teams have been added to this pick list yet.
+                      </Text>
+                    )}
+                  </Stack>
                   <Group justify="space-between" mt="auto">
                     <Button>Save Changes</Button>
                     <Button color="red" variant="light">
@@ -202,41 +347,95 @@ export function PickListsPage() {
             </Stack>
           </Card>
 
-          <Card
-            withBorder
-            padding="lg"
-            radius="md"
-            style={{ flex: 1, display: 'flex' }}
-          >
-            <Stack gap="sm" style={{ flex: 1 }}>
-              <Title order={4}>Active Event Pick Lists</Title>
-              {isLoadingData ? (
-                <Text c="dimmed">Loading pick lists…</Text>
-              ) : !activeEvent ? (
-                <Text c="dimmed">
-                  Set an active event for your organization to start selecting pick lists.
-                </Text>
-              ) : pickListsForActiveEvent.length === 0 ? (
-                <Text c="dimmed">
-                  There are no pick lists for {activeEventName}. Create one to get started.
-                </Text>
-              ) : (
-                <Stack gap="sm">
-                  <Text c="dimmed" size="sm">
-                    Showing pick lists for {activeEventName}.
+          <Stack gap="md" style={{ flex: 1, minHeight: 0 }}>
+            <Card withBorder padding="lg" radius="md" style={{ flex: 1, display: 'flex' }}>
+              <Stack gap="sm" style={{ flex: 1, minHeight: 0 }}>
+                <Title order={4}>Add a Team</Title>
+                {!selectedPickList ? (
+                  <Text c="dimmed">Select a pick list to start adding teams.</Text>
+                ) : !activeEvent ? (
+                  <Text c="dimmed">
+                    Set an active event for your organization to choose from event teams.
                   </Text>
-                  <PickListSelector
-                    pickLists={sortedPickListsForActiveEvent}
-                    selectedPickListId={selectedPickListId}
-                    onSelectPickList={(pickListId) => setSelectedPickListId(pickListId)}
-                  />
+                ) : isLoadingEventTeams ? (
+                  <Text c="dimmed">Loading teams…</Text>
+                ) : availableTeams.length === 0 ? (
                   <Text c="dimmed" size="sm">
-                    Click a pick list to load it in the manager on the left.
+                    Every team at this event is already part of the pick list.
                   </Text>
-                </Stack>
-              )}
-            </Stack>
-          </Card>
+                ) : (
+                  <>
+                    <TextInput
+                      placeholder="Search teams by number or name"
+                      value={addTeamSearchQuery}
+                      onChange={(event) => setAddTeamSearchQuery(event.currentTarget.value)}
+                    />
+                    {filteredTeamsToAdd.length > 0 ? (
+                      <ScrollArea style={{ flex: 1 }}>
+                        <Stack gap="xs" py="xs">
+                          {filteredTeamsToAdd.map((team) => (
+                            <Group key={team.team_number} justify="space-between" wrap="nowrap">
+                              <Stack gap={0}>
+                                <Text fw={600} size="sm">
+                                  Team {team.team_number}
+                                </Text>
+                                <Text c="dimmed" size="sm">
+                                  {team.team_name}
+                                </Text>
+                              </Stack>
+                              <Button
+                                size="xs"
+                                variant="light"
+                                onClick={() => handleAddTeamToPickList(team)}
+                                aria-label={`Add team ${team.team_number} to pick list`}
+                              >
+                                Add
+                              </Button>
+                            </Group>
+                          ))}
+                        </Stack>
+                      </ScrollArea>
+                    ) : (
+                      <Text c="dimmed" size="sm">
+                        No teams match your search.
+                      </Text>
+                    )}
+                  </>
+                )}
+              </Stack>
+            </Card>
+
+            <Card withBorder padding="lg" radius="md" style={{ display: 'flex' }}>
+              <Stack gap="sm" style={{ flex: 1 }}>
+                <Title order={4}>Active Event Pick Lists</Title>
+                {isLoadingData ? (
+                  <Text c="dimmed">Loading pick lists…</Text>
+                ) : !activeEvent ? (
+                  <Text c="dimmed">
+                    Set an active event for your organization to start selecting pick lists.
+                  </Text>
+                ) : pickListsForActiveEvent.length === 0 ? (
+                  <Text c="dimmed">
+                    There are no pick lists for {activeEventName}. Create one to get started.
+                  </Text>
+                ) : (
+                  <Stack gap="sm">
+                    <Text c="dimmed" size="sm">
+                      Showing pick lists for {activeEventName}.
+                    </Text>
+                    <PickListSelector
+                      pickLists={sortedPickListsForActiveEvent}
+                      selectedPickListId={selectedPickListId}
+                      onSelectPickList={(pickListId) => setSelectedPickListId(pickListId)}
+                    />
+                    <Text c="dimmed" size="sm">
+                      Click a pick list to load it in the manager on the left.
+                    </Text>
+                  </Stack>
+                )}
+              </Stack>
+            </Card>
+          </Stack>
         </Flex>
       </Stack>
 

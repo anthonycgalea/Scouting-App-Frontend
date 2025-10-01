@@ -51,10 +51,11 @@ export const eventTeamsQueryKey = (eventCode: string) =>
 
 export const fetchEventTeams = (_eventCode: string) => apiFetch<EventTeam[]>('event/teams');
 
-export const useEventTeams = (eventCode = '2025micmp4') =>
+export const useEventTeams = (eventCode = '2025micmp4', { enabled }: { enabled?: boolean } = {}) =>
   useQuery({
     queryKey: eventTeamsQueryKey(eventCode),
     queryFn: () => fetchEventTeams(eventCode),
+    enabled: enabled ?? true,
   });
 
 export const teamInfoQueryKey = (teamNumber: number) =>
