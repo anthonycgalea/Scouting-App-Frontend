@@ -18,7 +18,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { ActionIcon, Button, Group, Popover, Stack, Text, Textarea } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconNote, IconX } from '@tabler/icons-react';
+import { IconNote, IconSquareCheckFilled, IconSquareXFilled, IconX } from '@tabler/icons-react';
 import clsx from 'clsx';
 
 import type { PickListRank } from '@/api/pickLists';
@@ -32,17 +32,18 @@ interface PickListTeamsListProps {
   onReorder: (nextRanks: PickListRank[]) => void;
   onRemoveTeam: (teamNumber: number) => void;
   onUpdateNotes: (teamNumber: number, notes: string) => void;
+  onToggleDnp: (teamNumber: number) => void;
 }
 
 interface SortableTeamCardProps {
   rank: PickListRank;
-  displayRank: number;
   teamDetails: EventTeam | undefined;
   onRemove: (teamNumber: number) => void;
   onSaveNotes: (teamNumber: number, notes: string) => void;
+  onToggleDnp: (teamNumber: number) => void;
 }
 
-function SortableTeamCard({ rank, displayRank, teamDetails, onRemove, onSaveNotes }: SortableTeamCardProps) {
+function SortableTeamCard({ rank, teamDetails, onRemove, onSaveNotes, onToggleDnp }: SortableTeamCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: rank.team_number.toString(),
   });
@@ -65,6 +66,7 @@ function SortableTeamCard({ rank, displayRank, teamDetails, onRemove, onSaveNote
   );
 
   const hasNotes = (rank.notes ?? '').trim().length > 0;
+  const isDnp = rank.dnp;
 
   return (
     <div
@@ -80,11 +82,24 @@ function SortableTeamCard({ rank, displayRank, teamDetails, onRemove, onSaveNote
           <Text className={classes.teamName} title={teamDetails?.team_name ?? 'Team information unavailable'}>
             {teamDetails?.team_name ?? 'Team information unavailable'}
           </Text>
-          <Text className={classes.rankLabel}>Pick List Rank: {displayRank}</Text>
+          <Text className={classes.rankLabel}>Pick List Rank: {rank.rank}</Text>
         </div>
       </div>
 
       <div className={classes.actions}>
+        <ActionIcon
+          aria-label={
+            isDnp
+              ? `Mark team ${rank.team_number} as available`
+              : `Mark team ${rank.team_number} as do not pick`
+          }
+          variant="subtle"
+          color={isDnp ? 'green' : 'orange'}
+          onClick={() => onToggleDnp(rank.team_number)}
+        >
+          {isDnp ? <IconSquareCheckFilled size={18} /> : <IconSquareXFilled size={18} />}
+        </ActionIcon>
+
         <Popover
           opened={isPopoverOpen}
           onChange={(opened) => (opened ? open() : close())}
@@ -147,6 +162,7 @@ export function PickListTeamsList({
   onReorder,
   onRemoveTeam,
   onUpdateNotes,
+  onToggleDnp,
 }: PickListTeamsListProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -176,14 +192,14 @@ export function PickListTeamsList({
         strategy={verticalListSortingStrategy}
       >
         <div className={classes.list}>
-          {ranks.map((rank, index) => (
+          {ranks.map((rank) => (
             <SortableTeamCard
               key={rank.team_number}
               rank={rank}
-              displayRank={index + 1}
               teamDetails={eventTeamsByNumber.get(rank.team_number)}
               onRemove={onRemoveTeam}
               onSaveNotes={onUpdateNotes}
+              onToggleDnp={onToggleDnp}
             />
           ))}
         </div>
