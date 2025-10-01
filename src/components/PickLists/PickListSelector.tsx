@@ -1,5 +1,5 @@
 import { Stack, Text, Tooltip } from '@mantine/core';
-import { IconInfoCircle } from '@tabler/icons-react';
+import { IconInfoCircle, IconStar, IconStarFilled } from '@tabler/icons-react';
 import cx from 'clsx';
 
 import type { PickList } from '@/api/pickLists';
@@ -36,7 +36,16 @@ export function PickListSelector({
             onClick={() => onSelectPickList(pickList.id)}
           >
             <div className={classes.content}>
-              <Text fw={600}>{pickList.title}</Text>
+              <div className={classes.header}>
+                <span className={classes.favoriteIcon} aria-hidden="true">
+                  {pickList.favorited ? (
+                    <IconStarFilled size={18} stroke={1.5} />
+                  ) : (
+                    <IconStar size={18} stroke={1.5} />
+                  )}
+                </span>
+                <Text fw={600}>{pickList.title}</Text>
+              </div>
               <Text c="dimmed" size="sm">
                 Last updated {formatDateTime(pickList.last_updated)}
               </Text>
