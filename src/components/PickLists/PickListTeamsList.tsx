@@ -82,7 +82,7 @@ function SortableTeamCard({ rank, teamDetails, onRemove, onSaveNotes, onToggleDn
           <Text className={classes.teamName} title={teamDetails?.team_name ?? 'Team information unavailable'}>
             {teamDetails?.team_name ?? 'Team information unavailable'}
           </Text>
-          <Text className={classes.rankLabel}>Pick List Rank: {rank.rank}</Text>
+          {!isDnp && <Text className={classes.rankLabel}>Pick List Rank: {rank.rank}</Text>}
         </div>
       </div>
 
@@ -143,7 +143,7 @@ function SortableTeamCard({ rank, teamDetails, onRemove, onSaveNotes, onToggleDn
                 <Button
                   size="xs"
                   onClick={() => {
-                    onSaveNotes(rank.team_number, draftNotes.trim());
+                    onSaveNotes(rank.team_number, draftNotes);
                     close();
                   }}
                 >
