@@ -16,7 +16,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { ActionIcon, Button, Group, Popover, Stack, Text, Textarea } from '@mantine/core';
+import { ActionIcon, Button, Group, Popover, Stack, Text, Textarea, Tooltip } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconNote, IconSquareCheckFilled, IconSquareXFilled, IconX } from '@tabler/icons-react';
 import clsx from 'clsx';
@@ -87,18 +87,27 @@ function SortableTeamCard({ rank, teamDetails, onRemove, onSaveNotes, onToggleDn
       </div>
 
       <div className={classes.actions}>
-        <ActionIcon
-          aria-label={
+        <Tooltip
+          label={
             isDnp
               ? `Mark team ${rank.team_number} as available`
               : `Mark team ${rank.team_number} as do not pick`
           }
-          variant="subtle"
-          color={isDnp ? 'green' : 'orange'}
-          onClick={() => onToggleDnp(rank.team_number)}
+          withArrow
         >
-          {isDnp ? <IconSquareCheckFilled size={18} /> : <IconSquareXFilled size={18} />}
-        </ActionIcon>
+          <ActionIcon
+            aria-label={
+              isDnp
+                ? `Mark team ${rank.team_number} as available`
+                : `Mark team ${rank.team_number} as do not pick`
+            }
+            variant="subtle"
+            color={isDnp ? 'green' : 'orange'}
+            onClick={() => onToggleDnp(rank.team_number)}
+          >
+            {isDnp ? <IconSquareCheckFilled size={18} /> : <IconSquareXFilled size={18} />}
+          </ActionIcon>
+        </Tooltip>
 
         <Popover
           opened={isPopoverOpen}
@@ -107,14 +116,16 @@ function SortableTeamCard({ rank, teamDetails, onRemove, onSaveNotes, onToggleDn
           shadow="md"
         >
           <Popover.Target>
-            <ActionIcon
-              aria-label={hasNotes ? 'Edit pick list notes' : 'Add pick list notes'}
-              variant="subtle"
-              color={hasNotes ? 'green' : 'gray'}
-              onClick={toggle}
-            >
-              <IconNote size={18} />
-            </ActionIcon>
+            <Tooltip label={hasNotes ? 'Edit pick list notes' : 'Add pick list notes'} withArrow>
+              <ActionIcon
+                aria-label={hasNotes ? 'Edit pick list notes' : 'Add pick list notes'}
+                variant="subtle"
+                color={hasNotes ? 'green' : 'gray'}
+                onClick={toggle}
+              >
+                <IconNote size={18} />
+              </ActionIcon>
+            </Tooltip>
           </Popover.Target>
           <Popover.Dropdown maw={260}>
             <Stack gap="sm">
@@ -143,14 +154,16 @@ function SortableTeamCard({ rank, teamDetails, onRemove, onSaveNotes, onToggleDn
           </Popover.Dropdown>
         </Popover>
 
-        <ActionIcon
-          aria-label={`Remove team ${rank.team_number} from pick list`}
-          color="red"
-          variant="subtle"
-          onClick={() => onRemove(rank.team_number)}
-        >
-          <IconX size={18} />
-        </ActionIcon>
+        <Tooltip label={`Remove team ${rank.team_number} from pick list`} withArrow>
+          <ActionIcon
+            aria-label={`Remove team ${rank.team_number} from pick list`}
+            color="red"
+            variant="subtle"
+            onClick={() => onRemove(rank.team_number)}
+          >
+            <IconX size={18} />
+          </ActionIcon>
+        </Tooltip>
       </div>
     </div>
   );
