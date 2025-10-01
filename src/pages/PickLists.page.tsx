@@ -61,6 +61,10 @@ export function PickListsPage() {
   const [editMetadataModalOpened, { close: closeEditMetadataModal, open: openEditMetadataModal }] =
     useDisclosure(false);
   const [deleteModalOpened, { close: closeDeleteModal, open: openDeleteModal }] = useDisclosure(false);
+  const [
+    unsavedChangesModalOpened,
+    { close: closeUnsavedChangesModal, open: openUnsavedChangesModal },
+  ] = useDisclosure(false);
   const [selectedPickListId, setSelectedPickListId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');
@@ -74,6 +78,17 @@ export function PickListsPage() {
   const [addTeamSearchQuery, setAddTeamSearchQuery] = useState('');
   const [editMetadataDraftTitle, setEditMetadataDraftTitle] = useState('');
   const [editMetadataDraftNotes, setEditMetadataDraftNotes] = useState('');
+  const [pendingSelectedPickListId, setPendingSelectedPickListId] = useState<string | null>(null);
+  const [
+    baselinePickListState,
+    setBaselinePickListState,
+  ] = useState<{
+    id: string;
+    title: string;
+    notes: string;
+    favorited: boolean;
+    ranks: PickListRank[];
+  } | null>(null);
 
   if (isCheckingAccess || !canAccessOrganizationPages) {
     return null;
@@ -141,15 +156,9 @@ export function PickListsPage() {
     [sortedPickListsForActiveEvent, selectedPickListId],
   );
 
-  useEffect(() => {
+  const canonicalSelectedPickList = useMemo(() => {
     if (!selectedPickList) {
-      setEditablePickListRanks([]);
-      setEditablePickListTitle('');
-      setEditablePickListNotes('');
-      setEditablePickListFavorited(false);
-      setActivePickListTeamsTab('teams');
-      setAddTeamSearchQuery('');
-      return;
+      return null;
     }
 
     const sortedRanks = [...selectedPickList.ranks].sort((first, second) => {
@@ -164,13 +173,93 @@ export function PickListsPage() {
       return first.dnp ? 1 : -1;
     });
 
-    setEditablePickListRanks(recalculateRanks(sortedRanks));
-    setEditablePickListTitle(selectedPickList.title);
-    setEditablePickListNotes(selectedPickList.notes ?? '');
-    setEditablePickListFavorited(selectedPickList.favorited);
+    return {
+      id: selectedPickList.id,
+      title: selectedPickList.title.trim(),
+      notes: (selectedPickList.notes ?? '').trim(),
+      favorited: selectedPickList.favorited,
+      ranks: recalculateRanks(sortedRanks).map((rank) => ({
+        ...rank,
+        notes: rank.notes.trim(),
+      })),
+    };
+  }, [selectedPickList]);
+
+  useEffect(() => {
+    if (!canonicalSelectedPickList) {
+      setEditablePickListRanks([]);
+      setEditablePickListTitle('');
+      setEditablePickListNotes('');
+      setEditablePickListFavorited(false);
+      setActivePickListTeamsTab('teams');
+      setAddTeamSearchQuery('');
+      return;
+    }
+
+    setEditablePickListRanks(canonicalSelectedPickList.ranks);
+    setEditablePickListTitle(canonicalSelectedPickList.title);
+    setEditablePickListNotes(canonicalSelectedPickList.notes);
+    setEditablePickListFavorited(canonicalSelectedPickList.favorited);
     setActivePickListTeamsTab('teams');
     setAddTeamSearchQuery('');
-  }, [selectedPickList]);
+  }, [canonicalSelectedPickList]);
+
+  useEffect(() => {
+    if (!canonicalSelectedPickList) {
+      setBaselinePickListState(null);
+      return;
+    }
+
+    setBaselinePickListState({
+      id: canonicalSelectedPickList.id,
+      title: canonicalSelectedPickList.title,
+      notes: canonicalSelectedPickList.notes,
+      favorited: canonicalSelectedPickList.favorited,
+      ranks: canonicalSelectedPickList.ranks.map((rank) => ({ ...rank })),
+    });
+  }, [canonicalSelectedPickList]);
+
+  const hasUnsavedChanges = useMemo(() => {
+    if (!baselinePickListState) {
+      return false;
+    }
+
+    const trimmedTitle = editablePickListTitle.trim();
+    const trimmedNotes = editablePickListNotes.trim();
+
+    if (trimmedTitle !== baselinePickListState.title) {
+      return true;
+    }
+
+    if (trimmedNotes !== baselinePickListState.notes) {
+      return true;
+    }
+
+    if (editablePickListFavorited !== baselinePickListState.favorited) {
+      return true;
+    }
+
+    if (editablePickListRanks.length !== baselinePickListState.ranks.length) {
+      return true;
+    }
+
+    return editablePickListRanks.some((rank, index) => {
+      const baselineRank = baselinePickListState.ranks[index];
+
+      return (
+        rank.team_number !== baselineRank.team_number ||
+        rank.dnp !== baselineRank.dnp ||
+        rank.rank !== baselineRank.rank ||
+        rank.notes.trim() !== baselineRank.notes
+      );
+    });
+  }, [
+    baselinePickListState,
+    editablePickListFavorited,
+    editablePickListNotes,
+    editablePickListRanks,
+    editablePickListTitle,
+  ]);
 
   const pickListTeamNumbers = useMemo(
     () => new Set(editablePickListRanks.map((rank) => rank.team_number)),
@@ -358,7 +447,7 @@ export function PickListsPage() {
 
   const handleSavePickListChanges = useCallback(async () => {
     if (!selectedPickList) {
-      return;
+      return false;
     }
 
     const trimmedTitle = editablePickListTitle.trim();
@@ -370,7 +459,7 @@ export function PickListsPage() {
         title: 'Title required',
         message: 'Please provide a title for the pick list.',
       });
-      return;
+      return false;
     }
 
     const sanitizedRanks = editablePickListRanks.map((rank) => ({
@@ -389,12 +478,21 @@ export function PickListsPage() {
 
       setEditablePickListTitle(trimmedTitle);
       setEditablePickListNotes(trimmedNotes);
+      setEditablePickListRanks(sanitizedRanks);
+      setBaselinePickListState({
+        id: selectedPickList.id,
+        title: trimmedTitle,
+        notes: trimmedNotes,
+        favorited: editablePickListFavorited,
+        ranks: sanitizedRanks.map((rank) => ({ ...rank })),
+      });
 
       notifications.show({
         color: 'green',
         title: 'Pick list saved',
         message: `Saved “${trimmedTitle}”.`,
       });
+      return true;
     } catch (error) {
       notifications.show({
         color: 'red',
@@ -404,17 +502,67 @@ export function PickListsPage() {
             ? error.message
             : 'An unexpected error occurred while saving the pick list.',
       });
+      return false;
     }
   }, [
     editablePickListFavorited,
     editablePickListNotes,
     editablePickListRanks,
     editablePickListTitle,
+    setBaselinePickListState,
     selectedPickList,
     setEditablePickListNotes,
     setEditablePickListTitle,
     updatePickListMutation,
   ]);
+
+  const handleCloseUnsavedChangesPrompt = useCallback(() => {
+    setPendingSelectedPickListId(null);
+    closeUnsavedChangesModal();
+  }, [closeUnsavedChangesModal]);
+
+  const handleDiscardChangesAndSwitch = useCallback(() => {
+    if (pendingSelectedPickListId) {
+      setSelectedPickListId(pendingSelectedPickListId);
+    }
+
+    handleCloseUnsavedChangesPrompt();
+  }, [
+    handleCloseUnsavedChangesPrompt,
+    pendingSelectedPickListId,
+    setSelectedPickListId,
+  ]);
+
+  const handleSaveChangesAndSwitch = useCallback(async () => {
+    const wasSaved = await handleSavePickListChanges();
+
+    if (wasSaved && pendingSelectedPickListId) {
+      setSelectedPickListId(pendingSelectedPickListId);
+      handleCloseUnsavedChangesPrompt();
+    }
+  }, [
+    handleCloseUnsavedChangesPrompt,
+    handleSavePickListChanges,
+    pendingSelectedPickListId,
+    setSelectedPickListId,
+  ]);
+
+  const handleSelectPickList = useCallback(
+    (pickListId: string) => {
+      if (pickListId === selectedPickListId) {
+        return;
+      }
+
+      if (hasUnsavedChanges) {
+        setPendingSelectedPickListId(pickListId);
+        openUnsavedChangesModal();
+        return;
+      }
+
+      setSelectedPickListId(pickListId);
+    },
+    [hasUnsavedChanges, openUnsavedChangesModal, selectedPickListId, setSelectedPickListId],
+  );
 
   const handleCloseCreateModal = () => {
     setTitle('');
@@ -656,8 +804,13 @@ export function PickListsPage() {
                   <Group justify="space-between" mt="auto">
                     <Button
                       type="button"
-                      onClick={handleSavePickListChanges}
+                      onClick={() => {
+                        void handleSavePickListChanges();
+                      }}
                       loading={updatePickListMutation.isPending}
+                      disabled={
+                        !hasUnsavedChanges || !selectedPickList || updatePickListMutation.isPending
+                      }
                     >
                       Save Changes
                     </Button>
@@ -767,7 +920,7 @@ export function PickListsPage() {
                   <PickListSelector
                     pickLists={sortedPickListsForActiveEvent}
                     selectedPickListId={selectedPickListId}
-                    onSelectPickList={(pickListId) => setSelectedPickListId(pickListId)}
+                    onSelectPickList={handleSelectPickList}
                   />
                   <Text c="dimmed" size="sm">
                     Click a pick list to load it in the manager on the left.
@@ -801,6 +954,35 @@ export function PickListsPage() {
               loading={deletePickListMutation.isPending}
             >
               Delete Pick List
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      <Modal
+        opened={unsavedChangesModalOpened}
+        onClose={handleCloseUnsavedChangesPrompt}
+        title="Unsaved Changes"
+        centered
+      >
+        <Stack>
+          <Text>Would you like to save your changes?</Text>
+          <Group justify="flex-end">
+            <Button
+              variant="default"
+              onClick={handleDiscardChangesAndSwitch}
+              disabled={updatePickListMutation.isPending}
+            >
+              Discard
+            </Button>
+            <Button
+              onClick={() => {
+                void handleSaveChangesAndSwitch();
+              }}
+              loading={updatePickListMutation.isPending}
+              disabled={!pendingSelectedPickListId}
+            >
+              Save Changes
             </Button>
           </Group>
         </Stack>
