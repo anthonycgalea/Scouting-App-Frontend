@@ -1,6 +1,7 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
+  ActionIcon,
   Box,
   Button,
   Card,
@@ -11,14 +12,16 @@ import {
   ScrollArea,
   Select,
   Stack,
+  Tabs,
   Text,
   Textarea,
   TextInput,
   Title,
+  Tooltip,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useDisclosure } from '@mantine/hooks';
-import { IconPlus } from '@tabler/icons-react';
+import { IconEdit, IconPlus } from '@tabler/icons-react';
 
 import { useOrganizationEvents } from '@/api/events';
 import {
@@ -33,23 +36,40 @@ import { useRequireOrganizationAccess } from '@/hooks/useRequireOrganizationAcce
 import { PickListSelector } from '@/components/PickLists/PickListSelector';
 import { PickListTeamsList } from '@/components/PickLists/PickListTeamsList';
 
-const recalculateRanks = (ranks: PickListRank[]) =>
-  ranks.map((rank, index) => ({
-    ...rank,
-    rank: index + 1,
-  }));
+const recalculateRanks = (ranks: PickListRank[]) => {
+  const activeRanks = ranks.filter((rank) => !rank.dnp);
+  const dnpRanks = ranks.filter((rank) => rank.dnp);
+
+  return [
+    ...activeRanks.map((rank, index) => ({
+      ...rank,
+      rank: index + 1,
+    })),
+    ...dnpRanks.map((rank, index) => ({
+      ...rank,
+      rank: -(index + 1),
+    })),
+  ];
+};
 
 export function PickListsPage() {
   const { canAccessOrganizationPages, isCheckingAccess } = useRequireOrganizationAccess();
 
   const [createModalOpened, { close: closeCreateModal, open: openCreateModal }] = useDisclosure(false);
+  const [editMetadataModalOpened, { close: closeEditMetadataModal, open: openEditMetadataModal }] =
+    useDisclosure(false);
   const [selectedPickListId, setSelectedPickListId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');
   const [shouldUseGenerator, setShouldUseGenerator] = useState(false);
   const [selectedGeneratorId, setSelectedGeneratorId] = useState<string | null>(null);
   const [editablePickListRanks, setEditablePickListRanks] = useState<PickListRank[]>([]);
+  const [editablePickListTitle, setEditablePickListTitle] = useState('');
+  const [editablePickListNotes, setEditablePickListNotes] = useState('');
+  const [activePickListTeamsTab, setActivePickListTeamsTab] = useState<'teams' | 'dnp'>('teams');
   const [addTeamSearchQuery, setAddTeamSearchQuery] = useState('');
+  const [editMetadataDraftTitle, setEditMetadataDraftTitle] = useState('');
+  const [editMetadataDraftNotes, setEditMetadataDraftNotes] = useState('');
 
   if (isCheckingAccess || !canAccessOrganizationPages) {
     return null;
@@ -113,15 +133,29 @@ export function PickListsPage() {
   useEffect(() => {
     if (!selectedPickList) {
       setEditablePickListRanks([]);
+      setEditablePickListTitle('');
+      setEditablePickListNotes('');
+      setActivePickListTeamsTab('teams');
       setAddTeamSearchQuery('');
       return;
     }
 
-    const sortedRanks = [...selectedPickList.ranks].sort(
-      (first, second) => first.rank - second.rank,
-    );
+    const sortedRanks = [...selectedPickList.ranks].sort((first, second) => {
+      if (first.dnp === second.dnp) {
+        if (first.dnp) {
+          return Math.abs(first.rank) - Math.abs(second.rank);
+        }
 
-    setEditablePickListRanks(sortedRanks);
+        return first.rank - second.rank;
+      }
+
+      return first.dnp ? 1 : -1;
+    });
+
+    setEditablePickListRanks(recalculateRanks(sortedRanks));
+    setEditablePickListTitle(selectedPickList.title);
+    setEditablePickListNotes(selectedPickList.notes ?? '');
+    setActivePickListTeamsTab('teams');
     setAddTeamSearchQuery('');
   }, [selectedPickList]);
 
@@ -155,11 +189,32 @@ export function PickListsPage() {
     [eventTeams],
   );
 
+  const activePickListRanks = useMemo(
+    () => editablePickListRanks.filter((rank) => !rank.dnp),
+    [editablePickListRanks],
+  );
+
+  const dnpPickListRanks = useMemo(
+    () => editablePickListRanks.filter((rank) => rank.dnp),
+    [editablePickListRanks],
+  );
+
+  const trimmedPickListNotes = editablePickListNotes.trim();
+  const hasPickListNotes = trimmedPickListNotes.length > 0;
+  const hasDnpTeams = dnpPickListRanks.length > 0;
+  const hasActiveTeams = activePickListRanks.length > 0;
+
   useEffect(() => {
     if (!shouldUseGenerator) {
       setSelectedGeneratorId(null);
     }
   }, [shouldUseGenerator]);
+
+  useEffect(() => {
+    if (!hasDnpTeams && activePickListTeamsTab === 'dnp') {
+      setActivePickListTeamsTab('teams');
+    }
+  }, [activePickListTeamsTab, hasDnpTeams]);
 
   const handleAddTeamToPickList = (team: EventTeam) => {
     if (!selectedPickList) {
@@ -167,25 +222,38 @@ export function PickListsPage() {
     }
 
     setEditablePickListRanks((current) => {
-      const nextRank = current.length > 0
-        ? Math.max(...current.map((rank) => rank.rank)) + 1
-        : 1;
+      const nonDnpRanks = current.filter((rank) => !rank.dnp);
+      const dnpRanks = current.filter((rank) => rank.dnp);
 
-      return [
-        ...current,
+      return recalculateRanks([
+        ...nonDnpRanks,
         {
-          rank: nextRank,
+          rank: nonDnpRanks.length + 1,
           team_number: team.team_number,
           notes: '',
           dnp: false,
         },
-      ];
+        ...dnpRanks,
+      ]);
     });
   };
 
-  const handleReorderPickListRanks = useCallback(
+  const handleReorderActivePickListRanks = useCallback(
     (nextRanks: PickListRank[]) => {
-      setEditablePickListRanks(recalculateRanks(nextRanks));
+      setEditablePickListRanks((current) => {
+        const dnpRanks = current.filter((rank) => rank.dnp);
+        return recalculateRanks([...nextRanks, ...dnpRanks]);
+      });
+    },
+    [setEditablePickListRanks],
+  );
+
+  const handleReorderDnpPickListRanks = useCallback(
+    (nextRanks: PickListRank[]) => {
+      setEditablePickListRanks((current) => {
+        const activeRanks = current.filter((rank) => !rank.dnp);
+        return recalculateRanks([...activeRanks, ...nextRanks]);
+      });
     },
     [setEditablePickListRanks],
   );
@@ -215,6 +283,64 @@ export function PickListsPage() {
       );
     },
     [setEditablePickListRanks],
+  );
+
+  const handleTogglePickListTeamDnp = useCallback(
+    (teamNumber: number) => {
+      setEditablePickListRanks((current) => {
+        const existingIndex = current.findIndex((rank) => rank.team_number === teamNumber);
+
+        if (existingIndex === -1) {
+          return current;
+        }
+
+        const existingRank = current[existingIndex];
+        const nextIsDnp = !existingRank.dnp;
+        const remaining = current.filter((rank) => rank.team_number !== teamNumber);
+        const activeRanks = remaining.filter((rank) => !rank.dnp);
+        const dnpRanks = remaining.filter((rank) => rank.dnp);
+        const updatedRank: PickListRank = {
+          ...existingRank,
+          dnp: nextIsDnp,
+        };
+
+        if (nextIsDnp) {
+          return recalculateRanks([...activeRanks, ...dnpRanks, updatedRank]);
+        }
+
+        return recalculateRanks([...activeRanks, updatedRank, ...dnpRanks]);
+      });
+    },
+    [setEditablePickListRanks],
+  );
+
+  const handleOpenEditMetadataModal = useCallback(() => {
+    setEditMetadataDraftTitle(editablePickListTitle);
+    setEditMetadataDraftNotes(editablePickListNotes);
+    openEditMetadataModal();
+  }, [editablePickListNotes, editablePickListTitle, openEditMetadataModal]);
+
+  const handleSubmitEditMetadata = useCallback(
+    (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+
+      const trimmedTitle = editMetadataDraftTitle.trim();
+      const trimmedNotes = editMetadataDraftNotes.trim();
+
+      if (!trimmedTitle) {
+        notifications.show({
+          color: 'red',
+          title: 'Title required',
+          message: 'Please provide a title for the pick list.',
+        });
+        return;
+      }
+
+      setEditablePickListTitle(trimmedTitle);
+      setEditablePickListNotes(trimmedNotes);
+      closeEditMetadataModal();
+    },
+    [closeEditMetadataModal, editMetadataDraftNotes, editMetadataDraftTitle],
   );
 
   const handleCloseCreateModal = () => {
@@ -296,9 +422,31 @@ export function PickListsPage() {
               {selectedPickList ? (
                 <>
                   <Stack gap="xs">
-                    <Text fw={600} size="lg">
-                      {selectedPickList.title}
-                    </Text>
+                    <Group gap="xs" align="center" justify="space-between" wrap="nowrap">
+                      <Text
+                        fw={600}
+                        size="lg"
+                        lineClamp={1}
+                        style={{ flex: 1, minWidth: 0 }}
+                      >
+                        {editablePickListTitle}
+                      </Text>
+                      <Tooltip
+                        label={hasPickListNotes ? trimmedPickListNotes : 'Add pick list notes'}
+                        multiline
+                        maw={260}
+                        withinPortal
+                      >
+                        <ActionIcon
+                          aria-label="Edit pick list title and notes"
+                          variant="subtle"
+                          color={hasPickListNotes ? 'green' : 'gray'}
+                          onClick={handleOpenEditMetadataModal}
+                        >
+                          <IconEdit size={18} />
+                        </ActionIcon>
+                      </Tooltip>
+                    </Group>
                     <Text c="dimmed" size="sm">
                       Last updated{' '}
                       {new Date(selectedPickList.last_updated).toLocaleString(undefined, {
@@ -306,31 +454,72 @@ export function PickListsPage() {
                         timeStyle: 'short',
                       })}
                     </Text>
-                    {selectedPickList.notes ? (
-                      <Text size="sm">{selectedPickList.notes}</Text>
-                    ) : (
-                      <Text c="dimmed" size="sm">
-                        This pick list does not have any notes yet.
-                      </Text>
-                    )}
                   </Stack>
                   <Stack gap="sm" style={{ flex: 1, minHeight: 0 }}>
                     <Text fw={600}>Pick List Teams</Text>
-                    {editablePickListRanks.length > 0 ? (
-                      <ScrollArea style={{ flex: 1 }}>
-                        <PickListTeamsList
-                          ranks={editablePickListRanks}
-                          eventTeamsByNumber={eventTeamsByNumber}
-                          onReorder={handleReorderPickListRanks}
-                          onRemoveTeam={handleRemoveTeamFromPickList}
-                          onUpdateNotes={handleUpdatePickListTeamNotes}
-                        />
-                      </ScrollArea>
-                    ) : (
-                      <Text c="dimmed" size="sm">
-                        No teams have been added to this pick list yet.
-                      </Text>
-                    )}
+                    <Tabs
+                      value={activePickListTeamsTab}
+                      onChange={(value) =>
+                        setActivePickListTeamsTab((value ?? 'teams') as 'teams' | 'dnp')
+                      }
+                      keepMounted={false}
+                      style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}
+                    >
+                      <Tabs.List>
+                        <Tabs.Tab value="teams">Teams</Tabs.Tab>
+                        {hasDnpTeams && <Tabs.Tab value="dnp">DNP</Tabs.Tab>}
+                      </Tabs.List>
+
+                      <Tabs.Panel
+                        value="teams"
+                        style={{
+                          flex: 1,
+                          minHeight: 0,
+                          display: 'flex',
+                          paddingTop: 'var(--mantine-spacing-sm)',
+                        }}
+                      >
+                        {hasActiveTeams ? (
+                          <ScrollArea style={{ flex: 1 }}>
+                            <PickListTeamsList
+                              ranks={activePickListRanks}
+                              eventTeamsByNumber={eventTeamsByNumber}
+                              onReorder={handleReorderActivePickListRanks}
+                              onRemoveTeam={handleRemoveTeamFromPickList}
+                              onUpdateNotes={handleUpdatePickListTeamNotes}
+                              onToggleDnp={handleTogglePickListTeamDnp}
+                            />
+                          </ScrollArea>
+                        ) : (
+                          <Text c="dimmed" size="sm">
+                            No active teams have been added to this pick list yet.
+                          </Text>
+                        )}
+                      </Tabs.Panel>
+
+                      {hasDnpTeams && (
+                        <Tabs.Panel
+                          value="dnp"
+                          style={{
+                            flex: 1,
+                            minHeight: 0,
+                            display: 'flex',
+                            paddingTop: 'var(--mantine-spacing-sm)',
+                          }}
+                        >
+                          <ScrollArea style={{ flex: 1 }}>
+                            <PickListTeamsList
+                              ranks={dnpPickListRanks}
+                              eventTeamsByNumber={eventTeamsByNumber}
+                              onReorder={handleReorderDnpPickListRanks}
+                              onRemoveTeam={handleRemoveTeamFromPickList}
+                              onUpdateNotes={handleUpdatePickListTeamNotes}
+                              onToggleDnp={handleTogglePickListTeamDnp}
+                            />
+                          </ScrollArea>
+                        </Tabs.Panel>
+                      )}
+                    </Tabs>
                   </Stack>
                   <Group justify="space-between" mt="auto">
                     <Button>Save Changes</Button>
@@ -446,6 +635,39 @@ export function PickListsPage() {
           </Card>
         </Flex>
       </Stack>
+
+      <Modal
+        opened={editMetadataModalOpened}
+        onClose={closeEditMetadataModal}
+        title="Edit Pick List"
+        centered
+      >
+        <form onSubmit={handleSubmitEditMetadata}>
+          <Stack gap="md">
+            <TextInput
+              required
+              label="Title"
+              placeholder="Enter pick list title"
+              value={editMetadataDraftTitle}
+              onChange={(event) => setEditMetadataDraftTitle(event.currentTarget.value)}
+            />
+            <Textarea
+              label="Notes"
+              placeholder="Add optional notes"
+              minRows={3}
+              autosize
+              value={editMetadataDraftNotes}
+              onChange={(event) => setEditMetadataDraftNotes(event.currentTarget.value)}
+            />
+            <Group justify="flex-end">
+              <Button variant="default" type="button" onClick={closeEditMetadataModal}>
+                Cancel
+              </Button>
+              <Button type="submit">Save Changes</Button>
+            </Group>
+          </Stack>
+        </form>
+      </Modal>
 
       <Modal
         opened={createModalOpened}
