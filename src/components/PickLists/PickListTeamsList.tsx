@@ -12,6 +12,7 @@ import {
 import {
   arrayMove,
   SortableContext,
+  sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
@@ -157,6 +158,10 @@ function SortableTeamCard({ rank, teamDetails, onRemove, onSaveNotes, onToggleDn
                 autosize
                 value={draftNotes}
                 onChange={(event) => setDraftNotes(event.currentTarget.value)}
+                onKeyDownCapture={(event) => {
+                  event.stopPropagation();
+                  event.nativeEvent.stopImmediatePropagation?.();
+                }}
               />
               <Group justify="flex-end" gap="xs">
                 <Button variant="default" size="xs" onClick={close}>
@@ -201,7 +206,14 @@ export function PickListTeamsList({
 }: PickListTeamsListProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+      keyboardCodes: {
+        start: ['Enter'],
+        cancel: ['Escape'],
+        end: ['Enter', 'Space'],
+      },
+    }),
   );
 
   const handleDragEnd = (event: DragEndEvent) => {
