@@ -83,12 +83,14 @@ function SortableTeamCard({ rank, teamDetails, onRemove, onSaveNotes, onToggleDn
       {...listeners}
     >
       <div className={classes.teamInfo}>
-        <Text className={classes.teamNumber}>{rank.team_number}</Text>
+        <div className={classes.rankAndNumber}>
+          {!isDnp && <Text className={classes.rankValue}>{rank.rank}</Text>}
+          <Text className={classes.teamNumber}>{rank.team_number}</Text>
+        </div>
         <div className={classes.teamDetails}>
           <Text className={classes.teamName} title={teamDetails?.team_name ?? 'Team information unavailable'}>
             {teamDetails?.team_name ?? 'Team information unavailable'}
           </Text>
-          {!isDnp && <Text className={classes.rankValue}>{rank.rank}</Text>}
         </div>
       </div>
 

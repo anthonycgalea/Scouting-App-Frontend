@@ -28,8 +28,15 @@
   min-width: 0;
 }
 
+.rankAndNumber {
+  display: flex;
+  align-items: center;
+  gap: var(--mantine-spacing-xs);
+}
+
 .teamNumber {
-  font-size: 28px;
+  font-size: 20px;
+  line-height: 1;
   font-weight: 700;
   width: 64px;
   text-align: center;
@@ -43,8 +50,8 @@
 }
 
 .teamName {
-  font-weight: 600;
-  font-size: var(--mantine-font-size-md);
+  font-weight: 550;
+  font-size: var(--mantine-font-size-sm);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -53,7 +60,7 @@
 
 .rankValue {
   font-weight: 600;
-  font-size: var(--mantine-font-size-md);
+  font-size: var(--mantine-font-size-xs);
   color: var(--mantine-color-dimmed);
   white-space: nowrap;
 }
