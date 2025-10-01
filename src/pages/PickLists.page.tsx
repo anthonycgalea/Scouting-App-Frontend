@@ -423,14 +423,23 @@ export function PickListsPage() {
                 <>
                   <Stack gap="xs">
                     <Group gap="xs" align="center" justify="space-between" wrap="nowrap">
-                      <Text
-                        fw={600}
-                        size="lg"
-                        lineClamp={1}
-                        style={{ flex: 1, minWidth: 0 }}
-                      >
-                        {editablePickListTitle}
-                      </Text>
+                      <Group gap="xs" align="center" wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
+                        <Text
+                          fw={600}
+                          size="lg"
+                          lineClamp={1}
+                          style={{ flex: 1, minWidth: 0 }}
+                        >
+                          {editablePickListTitle}
+                        </Text>
+                        <Text c="dimmed" size="sm" style={{ flexShrink: 0 }}>
+                          Last updated{' '}
+                          {new Date(selectedPickList.last_updated).toLocaleString(undefined, {
+                            dateStyle: 'medium',
+                            timeStyle: 'short',
+                          })}
+                        </Text>
+                      </Group>
                       <Tooltip
                         label={hasPickListNotes ? trimmedPickListNotes : 'Add pick list notes'}
                         multiline
@@ -447,16 +456,8 @@ export function PickListsPage() {
                         </ActionIcon>
                       </Tooltip>
                     </Group>
-                    <Text c="dimmed" size="sm">
-                      Last updated{' '}
-                      {new Date(selectedPickList.last_updated).toLocaleString(undefined, {
-                        dateStyle: 'medium',
-                        timeStyle: 'short',
-                      })}
-                    </Text>
                   </Stack>
                   <Stack gap="sm" style={{ flex: 1, minHeight: 0 }}>
-                    <Text fw={600}>Pick List Teams</Text>
                     <Tabs
                       value={activePickListTeamsTab}
                       onChange={(value) =>
