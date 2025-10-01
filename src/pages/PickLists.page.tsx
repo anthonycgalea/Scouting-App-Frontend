@@ -109,10 +109,15 @@ export function PickListsPage() {
   }, [activeEvent, pickLists]);
 
   const sortedPickListsForActiveEvent = useMemo<PickList[]>(() => {
-    return [...pickListsForActiveEvent].sort(
-      (first, second) =>
-        new Date(second.last_updated).getTime() - new Date(first.last_updated).getTime(),
-    );
+    return [...pickListsForActiveEvent].sort((first, second) => {
+      if (first.favorited !== second.favorited) {
+        return first.favorited ? -1 : 1;
+      }
+
+      return (
+        new Date(second.last_updated).getTime() - new Date(first.last_updated).getTime()
+      );
+    });
   }, [pickListsForActiveEvent]);
 
   useEffect(() => {
