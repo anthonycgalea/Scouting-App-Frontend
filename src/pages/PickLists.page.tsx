@@ -28,6 +28,7 @@ import {
   useCreatePickList,
   usePickListGenerators,
   usePickLists,
+  useUpdatePickList,
   type PickList,
   type PickListRank,
 } from '@/api/pickLists';
@@ -82,6 +83,7 @@ export function PickListsPage() {
     isLoading: isLoadingPickListGenerators,
   } = usePickListGenerators({ enabled: createModalOpened });
   const createPickListMutation = useCreatePickList();
+  const updatePickListMutation = useUpdatePickList();
 
   const activeEvent = useMemo(
     () => organizationEvents?.find((event) => event.isActive) ?? null,
@@ -343,6 +345,65 @@ export function PickListsPage() {
     [closeEditMetadataModal, editMetadataDraftNotes, editMetadataDraftTitle],
   );
 
+  const handleSavePickListChanges = useCallback(async () => {
+    if (!selectedPickList) {
+      return;
+    }
+
+    const trimmedTitle = editablePickListTitle.trim();
+    const trimmedNotes = editablePickListNotes.trim();
+
+    if (!trimmedTitle) {
+      notifications.show({
+        color: 'red',
+        title: 'Title required',
+        message: 'Please provide a title for the pick list.',
+      });
+      return;
+    }
+
+    const sanitizedRanks = editablePickListRanks.map((rank) => ({
+      ...rank,
+      notes: rank.notes.trim(),
+    }));
+
+    try {
+      await updatePickListMutation.mutateAsync({
+        id: selectedPickList.id,
+        title: trimmedTitle,
+        notes: trimmedNotes,
+        favorited: selectedPickList.favorited,
+        ranks: sanitizedRanks,
+      });
+
+      setEditablePickListTitle(trimmedTitle);
+      setEditablePickListNotes(trimmedNotes);
+
+      notifications.show({
+        color: 'green',
+        title: 'Pick list saved',
+        message: `Saved “${trimmedTitle}”.`,
+      });
+    } catch (error) {
+      notifications.show({
+        color: 'red',
+        title: 'Unable to save pick list',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'An unexpected error occurred while saving the pick list.',
+      });
+    }
+  }, [
+    editablePickListNotes,
+    editablePickListRanks,
+    editablePickListTitle,
+    selectedPickList,
+    setEditablePickListNotes,
+    setEditablePickListTitle,
+    updatePickListMutation,
+  ]);
+
   const handleCloseCreateModal = () => {
     setTitle('');
     setNotes('');
@@ -523,7 +584,13 @@ export function PickListsPage() {
                     </Tabs>
                   </Stack>
                   <Group justify="space-between" mt="auto">
-                    <Button>Save Changes</Button>
+                    <Button
+                      type="button"
+                      onClick={handleSavePickListChanges}
+                      loading={updatePickListMutation.isPending}
+                    >
+                      Save Changes
+                    </Button>
                     <Button color="red" variant="light">
                       Delete Pick List
                     </Button>

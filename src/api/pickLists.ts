@@ -112,3 +112,28 @@ export const useCreatePickListGenerator = () => {
     },
   });
 };
+
+export interface UpdatePickListRequest {
+  id: string;
+  title: string;
+  notes: string;
+  favorited: boolean;
+  ranks: PickListRank[];
+}
+
+export const updatePickList = (payload: UpdatePickListRequest) =>
+  apiFetch<PickList>('picklists', {
+    method: 'PATCH',
+    json: [payload],
+  });
+
+export const useUpdatePickList = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updatePickList,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: pickListsQueryKey() });
+    },
+  });
+};
