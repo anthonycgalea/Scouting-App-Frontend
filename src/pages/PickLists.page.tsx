@@ -192,7 +192,7 @@ export function PickListsPage() {
                   <Group justify="space-between" mt="auto">
                     <Button>Save Changes</Button>
                     <Button color="red" variant="light">
-                      delete pick list
+                      Delete Pick List
                     </Button>
                   </Group>
                 </>
