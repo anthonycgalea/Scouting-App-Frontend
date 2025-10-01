@@ -110,16 +110,16 @@ function SortableTeamCard({ rank, teamDetails, onRemove, onSaveNotes, onToggleDn
         <Tooltip
           label={
             isDnp
-              ? `Mark team ${rank.team_number} as available`
-              : `Mark team ${rank.team_number} as do not pick`
+              ? `Remove ${rank.team_number} from DNP`
+              : "DNP"
           }
           withArrow
         >
           <ActionIcon
             aria-label={
               isDnp
-                ? `Mark team ${rank.team_number} as available`
-                : `Mark team ${rank.team_number} as do not pick`
+                ? `Remove ${rank.team_number} from DNP`
+                : `DNP ${rank.team_number}`
             }
             variant="subtle"
             color={isDnp ? 'green' : 'orange'}
@@ -136,9 +136,9 @@ function SortableTeamCard({ rank, teamDetails, onRemove, onSaveNotes, onToggleDn
           shadow="md"
         >
           <Popover.Target>
-            <Tooltip label={hasNotes ? 'Edit pick list notes' : 'Add pick list notes'} withArrow>
+            <Tooltip label={hasNotes ? 'Edit Notes' : 'Add Notes'} withArrow>
               <ActionIcon
-                aria-label={hasNotes ? 'Edit pick list notes' : 'Add pick list notes'}
+                aria-label={hasNotes ? 'Edit Notes' : 'Add Notes'}
                 variant="subtle"
                 color={hasNotes ? 'green' : 'gray'}
                 onClick={toggle}
@@ -174,9 +174,9 @@ function SortableTeamCard({ rank, teamDetails, onRemove, onSaveNotes, onToggleDn
           </Popover.Dropdown>
         </Popover>
 
-        <Tooltip label={`Remove team ${rank.team_number} from pick list`} withArrow>
+        <Tooltip label="Remove" withArrow>
           <ActionIcon
-            aria-label={`Remove team ${rank.team_number} from pick list`}
+            aria-label="Remove"
             color="red"
             variant="subtle"
             onClick={() => onRemove(rank.team_number)}
