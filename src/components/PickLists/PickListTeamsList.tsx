@@ -18,7 +18,13 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { ActionIcon, Button, Group, Popover, Stack, Text, Textarea, Tooltip } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconNote, IconSquareCheckFilled, IconSquareXFilled, IconX } from '@tabler/icons-react';
+import {
+  IconExternalLink,
+  IconNote,
+  IconSquareCheckFilled,
+  IconSquareXFilled,
+  IconX,
+} from '@tabler/icons-react';
 import clsx from 'clsx';
 
 import type { PickListRank } from '@/api/pickLists';
@@ -87,6 +93,20 @@ function SortableTeamCard({ rank, teamDetails, onRemove, onSaveNotes, onToggleDn
       </div>
 
       <div className={classes.actions}>
+        <Tooltip label={`Open team ${rank.team_number} page`} withArrow>
+          <ActionIcon
+            component="a"
+            href={`/teams/${rank.team_number}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Open team ${rank.team_number} page`}
+            variant="subtle"
+            color="blue"
+          >
+            <IconExternalLink size={18} />
+          </ActionIcon>
+        </Tooltip>
+
         <Tooltip
           label={
             isDnp

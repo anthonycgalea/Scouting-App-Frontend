@@ -465,7 +465,7 @@ export function PickListsPage() {
                       keepMounted={false}
                       style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}
                     >
-                      <Tabs.List>
+                      <Tabs.List grow style={{ width: '100%' }}>
                         <Tabs.Tab value="teams">Teams</Tabs.Tab>
                         {hasDnpTeams && <Tabs.Tab value="dnp">DNP</Tabs.Tab>}
                       </Tabs.List>
