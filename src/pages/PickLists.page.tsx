@@ -5,9 +5,9 @@ import {
   Button,
   Card,
   Checkbox,
+  Flex,
   Group,
   Modal,
-  SimpleGrid,
   Stack,
   Text,
   Textarea,
@@ -160,38 +160,44 @@ export function PickListsPage() {
           </Button>
         </Group>
 
-        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
-          <Card withBorder padding="lg" radius="md">
-            <Stack gap="sm">
-              <Title order={4}>Manage Pick Lists</Title>
+        <Flex direction={{ base: 'column', md: 'row' }} gap="md">
+          <Card withBorder padding="lg" radius="md" style={{ flex: 2 }}>
+            <Stack gap="md" h="100%">
               {selectedPickList ? (
-                <Stack gap="xs">
-                  <Text c="dimmed" size="sm">
-                    Selected pick list for {activeEventName}
-                  </Text>
-                  <Text fw={600}>{selectedPickList.title}</Text>
-                  <Text c="dimmed" size="sm">
-                    Last updated{' '}
-                    {new Date(selectedPickList.last_updated).toLocaleString(undefined, {
-                      dateStyle: 'medium',
-                      timeStyle: 'short',
-                    })}
-                  </Text>
-                  {selectedPickList.notes ? (
-                    <Text size="sm">{selectedPickList.notes}</Text>
-                  ) : (
-                    <Text c="dimmed" size="sm">
-                      This pick list does not have any notes yet.
+                <>
+                  <Stack gap="xs">
+                    <Text fw={600} size="lg">
+                      {selectedPickList.title}
                     </Text>
-                  )}
-                </Stack>
+                    <Text c="dimmed" size="sm">
+                      Last updated{' '}
+                      {new Date(selectedPickList.last_updated).toLocaleString(undefined, {
+                        dateStyle: 'medium',
+                        timeStyle: 'short',
+                      })}
+                    </Text>
+                    {selectedPickList.notes ? (
+                      <Text size="sm">{selectedPickList.notes}</Text>
+                    ) : (
+                      <Text c="dimmed" size="sm">
+                        This pick list does not have any notes yet.
+                      </Text>
+                    )}
+                  </Stack>
+                  <Group justify="space-between" mt="auto">
+                    <Button>Save Changes</Button>
+                    <Button color="red" variant="light">
+                      delete pick list
+                    </Button>
+                  </Group>
+                </>
               ) : (
                 <Text c="dimmed">Select a pick list to view its details.</Text>
               )}
             </Stack>
           </Card>
 
-          <Card withBorder padding="lg" radius="md">
+          <Card withBorder padding="lg" radius="md" style={{ flex: 1 }}>
             <Stack gap="sm">
               <Title order={4}>Active Event Pick Lists</Title>
               {isLoadingData ? (
@@ -221,7 +227,7 @@ export function PickListsPage() {
               )}
             </Stack>
           </Card>
-        </SimpleGrid>
+        </Flex>
       </Stack>
 
       <Modal
