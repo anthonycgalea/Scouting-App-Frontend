@@ -246,12 +246,16 @@ export function PickListsPage() {
           </Button>
         </Group>
 
-        <Flex direction={{ base: 'column', md: 'row' }} gap="md" style={{ flex: 1 }}>
+        <Flex
+          direction={{ base: 'column', md: 'row' }}
+          gap="md"
+          style={{ flex: 1, minHeight: 0 }}
+        >
           <Card
             withBorder
             padding="lg"
             radius="md"
-            style={{ flex: 2, display: 'flex' }}
+            style={{ flex: 4, display: 'flex', minHeight: 0 }}
           >
             <Stack gap="md" style={{ flex: 1, minHeight: 0 }}>
               {selectedPickList ? (
@@ -347,31 +351,36 @@ export function PickListsPage() {
             </Stack>
           </Card>
 
-          <Stack gap="md" style={{ flex: 1, minHeight: 0 }}>
-            <Card withBorder padding="lg" radius="md" style={{ flex: 1, display: 'flex' }}>
-              <Stack gap="sm" style={{ flex: 1, minHeight: 0 }}>
-                <Title order={4}>Add a Team</Title>
-                {!selectedPickList ? (
-                  <Text c="dimmed">Select a pick list to start adding teams.</Text>
-                ) : !activeEvent ? (
-                  <Text c="dimmed">
-                    Set an active event for your organization to choose from event teams.
-                  </Text>
-                ) : isLoadingEventTeams ? (
-                  <Text c="dimmed">Loading teams…</Text>
-                ) : availableTeams.length === 0 ? (
-                  <Text c="dimmed" size="sm">
-                    Every team at this event is already part of the pick list.
-                  </Text>
-                ) : (
-                  <>
-                    <TextInput
-                      placeholder="Search teams by number or name"
-                      value={addTeamSearchQuery}
-                      onChange={(event) => setAddTeamSearchQuery(event.currentTarget.value)}
-                    />
-                    {filteredTeamsToAdd.length > 0 ? (
-                      <ScrollArea style={{ flex: 1 }}>
+          <Card
+            withBorder
+            padding="lg"
+            radius="md"
+            style={{ flex: 1, display: 'flex', minHeight: 0 }}
+          >
+            <Stack gap="sm" style={{ flex: 1, minHeight: 0 }}>
+              <Title order={4}>Add Teams to Pick List</Title>
+              <ScrollArea style={{ flex: 1 }} offsetScrollbars>
+                <Stack gap="sm" p="xs">
+                  {!selectedPickList ? (
+                    <Text c="dimmed">Select a pick list to start adding teams.</Text>
+                  ) : !activeEvent ? (
+                    <Text c="dimmed">
+                      Set an active event for your organization to choose from event teams.
+                    </Text>
+                  ) : isLoadingEventTeams ? (
+                    <Text c="dimmed">Loading teams…</Text>
+                  ) : availableTeams.length === 0 ? (
+                    <Text c="dimmed" size="sm">
+                      Every team at this event is already part of the pick list.
+                    </Text>
+                  ) : (
+                    <Stack gap="sm">
+                      <TextInput
+                        placeholder="Search teams by number or name"
+                        value={addTeamSearchQuery}
+                        onChange={(event) => setAddTeamSearchQuery(event.currentTarget.value)}
+                      />
+                      {filteredTeamsToAdd.length > 0 ? (
                         <Stack gap="xs" py="xs">
                           {filteredTeamsToAdd.map((team) => (
                             <Group key={team.team_number} justify="space-between" wrap="nowrap">
@@ -394,48 +403,53 @@ export function PickListsPage() {
                             </Group>
                           ))}
                         </Stack>
-                      </ScrollArea>
-                    ) : (
-                      <Text c="dimmed" size="sm">
-                        No teams match your search.
-                      </Text>
-                    )}
-                  </>
-                )}
-              </Stack>
-            </Card>
+                      ) : (
+                        <Text c="dimmed" size="sm">
+                          No teams match your search.
+                        </Text>
+                      )}
+                    </Stack>
+                  )}
+                </Stack>
+              </ScrollArea>
+            </Stack>
+          </Card>
 
-            <Card withBorder padding="lg" radius="md" style={{ display: 'flex' }}>
-              <Stack gap="sm" style={{ flex: 1 }}>
-                <Title order={4}>Active Event Pick Lists</Title>
-                {isLoadingData ? (
-                  <Text c="dimmed">Loading pick lists…</Text>
-                ) : !activeEvent ? (
-                  <Text c="dimmed">
-                    Set an active event for your organization to start selecting pick lists.
+          <Card
+            withBorder
+            padding="lg"
+            radius="md"
+            style={{ flex: 2, display: 'flex', minHeight: 0 }}
+          >
+            <Stack gap="sm" style={{ flex: 1, minHeight: 0 }}>
+              <Title order={4}>Active Event Pick Lists</Title>
+              {isLoadingData ? (
+                <Text c="dimmed">Loading pick lists…</Text>
+              ) : !activeEvent ? (
+                <Text c="dimmed">
+                  Set an active event for your organization to start selecting pick lists.
+                </Text>
+              ) : pickListsForActiveEvent.length === 0 ? (
+                <Text c="dimmed">
+                  There are no pick lists for {activeEventName}. Create one to get started.
+                </Text>
+              ) : (
+                <Stack gap="sm">
+                  <Text c="dimmed" size="sm">
+                    Showing pick lists for {activeEventName}.
                   </Text>
-                ) : pickListsForActiveEvent.length === 0 ? (
-                  <Text c="dimmed">
-                    There are no pick lists for {activeEventName}. Create one to get started.
+                  <PickListSelector
+                    pickLists={sortedPickListsForActiveEvent}
+                    selectedPickListId={selectedPickListId}
+                    onSelectPickList={(pickListId) => setSelectedPickListId(pickListId)}
+                  />
+                  <Text c="dimmed" size="sm">
+                    Click a pick list to load it in the manager on the left.
                   </Text>
-                ) : (
-                  <Stack gap="sm">
-                    <Text c="dimmed" size="sm">
-                      Showing pick lists for {activeEventName}.
-                    </Text>
-                    <PickListSelector
-                      pickLists={sortedPickListsForActiveEvent}
-                      selectedPickListId={selectedPickListId}
-                      onSelectPickList={(pickListId) => setSelectedPickListId(pickListId)}
-                    />
-                    <Text c="dimmed" size="sm">
-                      Click a pick list to load it in the manager on the left.
-                    </Text>
-                  </Stack>
-                )}
-              </Stack>
-            </Card>
-          </Stack>
+                </Stack>
+              )}
+            </Stack>
+          </Card>
         </Flex>
       </Stack>
 
