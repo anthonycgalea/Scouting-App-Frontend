@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useMemo, useState } from 'react';
+import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
   Box,
@@ -11,7 +11,6 @@ import {
   ScrollArea,
   Select,
   Stack,
-  Table,
   Text,
   Textarea,
   TextInput,
@@ -32,6 +31,13 @@ import {
 import { useEventTeams, type EventTeam } from '@/api/teams';
 import { useRequireOrganizationAccess } from '@/hooks/useRequireOrganizationAccess';
 import { PickListSelector } from '@/components/PickLists/PickListSelector';
+import { PickListTeamsList } from '@/components/PickLists/PickListTeamsList';
+
+const recalculateRanks = (ranks: PickListRank[]) =>
+  ranks.map((rank, index) => ({
+    ...rank,
+    rank: index + 1,
+  }));
 
 export function PickListsPage() {
   const { canAccessOrganizationPages, isCheckingAccess } = useRequireOrganizationAccess();
@@ -124,11 +130,6 @@ export function PickListsPage() {
     [editablePickListRanks],
   );
 
-  const sortedEditablePickListRanks = useMemo(
-    () => [...editablePickListRanks].sort((first, second) => first.rank - second.rank),
-    [editablePickListRanks],
-  );
-
   const availableTeams = useMemo(
     () => eventTeams.filter((team) => !pickListTeamNumbers.has(team.team_number)),
     [eventTeams, pickListTeamNumbers],
@@ -181,6 +182,40 @@ export function PickListsPage() {
       ];
     });
   };
+
+  const handleReorderPickListRanks = useCallback(
+    (nextRanks: PickListRank[]) => {
+      setEditablePickListRanks(recalculateRanks(nextRanks));
+    },
+    [setEditablePickListRanks],
+  );
+
+  const handleRemoveTeamFromPickList = useCallback(
+    (teamNumber: number) => {
+      setEditablePickListRanks((current) =>
+        recalculateRanks(current.filter((rank) => rank.team_number !== teamNumber)),
+      );
+    },
+    [setEditablePickListRanks],
+  );
+
+  const handleUpdatePickListTeamNotes = useCallback(
+    (teamNumber: number, notes: string) => {
+      setEditablePickListRanks((current) =>
+        recalculateRanks(
+          current.map((rank) =>
+            rank.team_number === teamNumber
+              ? {
+                  ...rank,
+                  notes,
+                }
+              : rank,
+          ),
+        ),
+      );
+    },
+    [setEditablePickListRanks],
+  );
 
   const handleCloseCreateModal = () => {
     setTitle('');
@@ -281,56 +316,15 @@ export function PickListsPage() {
                   </Stack>
                   <Stack gap="sm" style={{ flex: 1, minHeight: 0 }}>
                     <Text fw={600}>Pick List Teams</Text>
-                    {sortedEditablePickListRanks.length > 0 ? (
+                    {editablePickListRanks.length > 0 ? (
                       <ScrollArea style={{ flex: 1 }}>
-                        <Table highlightOnHover withRowBorders={false} verticalSpacing="sm">
-                          <Table.Thead>
-                            <Table.Tr>
-                              <Table.Th style={{ width: '4rem' }}>Rank</Table.Th>
-                              <Table.Th style={{ width: '6rem' }}>Team #</Table.Th>
-                              <Table.Th>Team Name</Table.Th>
-                              <Table.Th style={{ width: '6rem' }}>Status</Table.Th>
-                              <Table.Th>Notes</Table.Th>
-                            </Table.Tr>
-                          </Table.Thead>
-                          <Table.Tbody>
-                            {sortedEditablePickListRanks.map((rank) => {
-                              const teamDetails = eventTeamsByNumber.get(rank.team_number);
-
-                              return (
-                                <Table.Tr key={`${rank.team_number}-${rank.rank}`}>
-                                  <Table.Td>{rank.rank}</Table.Td>
-                                  <Table.Td>{rank.team_number}</Table.Td>
-                                  <Table.Td>
-                                    {teamDetails ? (
-                                      <Text fw={500} size="sm">
-                                        {teamDetails.team_name}
-                                      </Text>
-                                    ) : (
-                                      <Text c="dimmed" size="sm">
-                                        Team information unavailable
-                                      </Text>
-                                    )}
-                                  </Table.Td>
-                                  <Table.Td>
-                                    <Text size="sm" fw={500} c={rank.dnp ? 'red.6' : undefined}>
-                                      {rank.dnp ? 'DNP' : 'Active'}
-                                    </Text>
-                                  </Table.Td>
-                                  <Table.Td>
-                                    {rank.notes ? (
-                                      <Text size="sm">{rank.notes}</Text>
-                                    ) : (
-                                      <Text c="dimmed" size="sm">
-                                        No notes yet
-                                      </Text>
-                                    )}
-                                  </Table.Td>
-                                </Table.Tr>
-                              );
-                            })}
-                          </Table.Tbody>
-                        </Table>
+                        <PickListTeamsList
+                          ranks={editablePickListRanks}
+                          eventTeamsByNumber={eventTeamsByNumber}
+                          onReorder={handleReorderPickListRanks}
+                          onRemoveTeam={handleRemoveTeamFromPickList}
+                          onUpdateNotes={handleUpdatePickListTeamNotes}
+                        />
                       </ScrollArea>
                     ) : (
                       <Text c="dimmed" size="sm">

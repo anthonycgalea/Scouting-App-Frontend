@@ -1,0 +1,62 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-sm);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mantine-spacing-md);
+  padding: var(--mantine-spacing-sm) var(--mantine-spacing-lg);
+  border-radius: var(--mantine-radius-md);
+  border: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-5));
+  background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-5));
+  box-shadow: var(--mantine-shadow-xs);
+}
+
+.itemDragging {
+  box-shadow: var(--mantine-shadow-md);
+}
+
+.teamInfo {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: var(--mantine-spacing-md);
+  min-width: 0;
+}
+
+.teamNumber {
+  font-size: 28px;
+  font-weight: 700;
+  width: 64px;
+  text-align: center;
+}
+
+.teamDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+}
+
+.teamName {
+  font-weight: 600;
+  font-size: var(--mantine-font-size-md);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rankLabel {
+  font-size: var(--mantine-font-size-sm);
+  color: var(--mantine-color-dimmed);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--mantine-spacing-xs);
+}
