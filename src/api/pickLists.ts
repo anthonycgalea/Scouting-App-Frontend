@@ -137,3 +137,24 @@ export const useUpdatePickList = () => {
     },
   });
 };
+
+export interface DeletePickListRequest {
+  id: string;
+}
+
+export const deletePickList = (payload: DeletePickListRequest) =>
+  apiFetch<void>('picklists', {
+    method: 'DELETE',
+    json: payload,
+  });
+
+export const useDeletePickList = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deletePickList,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: pickListsQueryKey() });
+    },
+  });
+};
