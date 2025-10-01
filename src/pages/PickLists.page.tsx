@@ -21,7 +21,7 @@ import {
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useDisclosure } from '@mantine/hooks';
-import { IconEdit, IconPlus } from '@tabler/icons-react';
+import { IconEdit, IconPlus, IconStar, IconStarFilled } from '@tabler/icons-react';
 
 import { useOrganizationEvents } from '@/api/events';
 import {
@@ -69,6 +69,7 @@ export function PickListsPage() {
   const [editablePickListRanks, setEditablePickListRanks] = useState<PickListRank[]>([]);
   const [editablePickListTitle, setEditablePickListTitle] = useState('');
   const [editablePickListNotes, setEditablePickListNotes] = useState('');
+  const [editablePickListFavorited, setEditablePickListFavorited] = useState(false);
   const [activePickListTeamsTab, setActivePickListTeamsTab] = useState<'teams' | 'dnp'>('teams');
   const [addTeamSearchQuery, setAddTeamSearchQuery] = useState('');
   const [editMetadataDraftTitle, setEditMetadataDraftTitle] = useState('');
@@ -145,6 +146,7 @@ export function PickListsPage() {
       setEditablePickListRanks([]);
       setEditablePickListTitle('');
       setEditablePickListNotes('');
+      setEditablePickListFavorited(false);
       setActivePickListTeamsTab('teams');
       setAddTeamSearchQuery('');
       return;
@@ -165,6 +167,7 @@ export function PickListsPage() {
     setEditablePickListRanks(recalculateRanks(sortedRanks));
     setEditablePickListTitle(selectedPickList.title);
     setEditablePickListNotes(selectedPickList.notes ?? '');
+    setEditablePickListFavorited(selectedPickList.favorited);
     setActivePickListTeamsTab('teams');
     setAddTeamSearchQuery('');
   }, [selectedPickList]);
@@ -380,7 +383,7 @@ export function PickListsPage() {
         id: selectedPickList.id,
         title: trimmedTitle,
         notes: trimmedNotes,
-        favorited: selectedPickList.favorited,
+        favorited: editablePickListFavorited,
         ranks: sanitizedRanks,
       });
 
@@ -403,6 +406,7 @@ export function PickListsPage() {
       });
     }
   }, [
+    editablePickListFavorited,
     editablePickListNotes,
     editablePickListRanks,
     editablePickListTitle,
@@ -524,6 +528,33 @@ export function PickListsPage() {
                   <Stack gap="xs">
                     <Group gap="xs" align="center" justify="space-between" wrap="nowrap">
                       <Group gap="xs" align="center" wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
+                        <Tooltip
+                          label={
+                            editablePickListFavorited
+                              ? 'Remove pick list from favorites'
+                              : 'Mark pick list as favorite'
+                          }
+                          withinPortal
+                        >
+                          <ActionIcon
+                            variant="subtle"
+                            color={editablePickListFavorited ? 'yellow' : 'gray'}
+                            aria-label={
+                              editablePickListFavorited
+                                ? 'Remove pick list from favorites'
+                                : 'Mark pick list as favorite'
+                            }
+                            onClick={() =>
+                              setEditablePickListFavorited((current) => !current)
+                            }
+                          >
+                            {editablePickListFavorited ? (
+                              <IconStarFilled size={18} />
+                            ) : (
+                              <IconStar size={18} />
+                            )}
+                          </ActionIcon>
+                        </Tooltip>
                         <Text
                           fw={600}
                           size="lg"
