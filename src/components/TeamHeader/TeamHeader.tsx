@@ -1,7 +1,19 @@
-import { useEffect, useState } from 'react';
-import { Alert, ActionIcon, Box, Flex, Image, Skeleton, Text, Title } from '@mantine/core';
-import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
-import { TeamImage, useTeamImages, useTeamInfo } from '@/api';
+import { ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
+import {
+  Alert,
+  ActionIcon,
+  Box,
+  Flex,
+  Image,
+  Loader,
+  Skeleton,
+  Text,
+  Title,
+  Tooltip,
+} from '@mantine/core';
+import { notifications } from '@mantine/notifications';
+import { IconChevronLeft, IconChevronRight, IconLibraryPlus } from '@tabler/icons-react';
+import { ApiError, TeamImage, useTeamImages, useTeamInfo, useUploadTeamImage } from '@/api';
 import classes from './TeamHeader.module.css';
 
 interface TeamHeaderProps {
@@ -11,6 +23,138 @@ interface TeamHeaderProps {
 interface TeamImageCarouselProps {
   images: TeamImage[];
 }
+
+const ACCEPTED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'];
+const ACCEPTED_IMAGE_MIME_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/bmp',
+  'image/webp',
+];
+const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
+
+interface TeamImageUploadButtonProps {
+  teamNumber: number;
+}
+
+const TeamImageUploadButton = ({ teamNumber }: TeamImageUploadButtonProps) => {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const { mutateAsync: uploadImage, isPending } = useUploadTeamImage(teamNumber);
+
+  const resetInput = useCallback(() => {
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }, []);
+
+  const handleFileSelection = useCallback(
+    async (file: File | null) => {
+      if (!file) {
+        resetInput();
+        return;
+      }
+
+      if (file.size === 0) {
+        notifications.show({
+          color: 'red',
+          title: 'Upload failed',
+          message: 'Selected file is empty. Please choose a different file.',
+        });
+        resetInput();
+        return;
+      }
+
+      if (file.size > MAX_IMAGE_SIZE_BYTES) {
+        notifications.show({
+          color: 'red',
+          title: 'Upload failed',
+          message: 'Images must be 10 MB or smaller.',
+        });
+        resetInput();
+        return;
+      }
+
+      const extension = `.${file.name.split('.').pop()?.toLowerCase() ?? ''}`;
+      const hasValidExtension = ACCEPTED_IMAGE_EXTENSIONS.includes(extension);
+      const hasValidMimeType =
+        file.type === '' || ACCEPTED_IMAGE_MIME_TYPES.includes(file.type);
+
+      if (!hasValidExtension || !hasValidMimeType) {
+        notifications.show({
+          color: 'red',
+          title: 'Upload failed',
+          message: 'Images must be one of: JPG, JPEG, PNG, GIF, BMP, or WEBP.',
+        });
+        resetInput();
+        return;
+      }
+
+      try {
+        await uploadImage({ file });
+        notifications.show({
+          color: 'green',
+          title: 'Image uploaded',
+          message: 'Your image has been uploaded successfully.',
+        });
+      } catch (error) {
+        let message = 'We could not upload your image. Please try again.';
+
+        if (
+          error instanceof ApiError &&
+          typeof error.metadata.body === 'object' &&
+          error.metadata.body !== null
+        ) {
+          const { detail } = error.metadata.body as { detail?: unknown };
+
+          if (typeof detail === 'string') {
+            message = detail;
+          }
+        }
+
+        notifications.show({
+          color: 'red',
+          title: 'Upload failed',
+          message,
+        });
+      } finally {
+        resetInput();
+      }
+    },
+    [resetInput, uploadImage],
+  );
+
+  const handleFileChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const file = event.currentTarget.files?.[0] ?? null;
+      void handleFileSelection(file);
+    },
+    [handleFileSelection],
+  );
+
+  return (
+    <>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept={[...ACCEPTED_IMAGE_EXTENSIONS, ...ACCEPTED_IMAGE_MIME_TYPES].join(',')}
+        className={classes.FileInput}
+        onChange={handleFileChange}
+      />
+      <Tooltip label="Upload team image" position="bottom">
+        <ActionIcon
+          variant="light"
+          size="lg"
+          aria-label="Upload team image"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isPending}
+        >
+          {isPending ? <Loader size="sm" /> : <IconLibraryPlus size={18} stroke={1.5} />}
+        </ActionIcon>
+      </Tooltip>
+    </>
+  );
+};
 
 const TeamImageCarousel = ({ images }: TeamImageCarouselProps) => {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -96,15 +240,22 @@ export const TeamHeader = ({ teamNumber }: TeamHeaderProps) => {
     </Title>
   );
 
+  const headerTitle = (
+    <Flex className={classes.TitleRow} align="center" gap="sm">
+      <TeamImageUploadButton teamNumber={teamNumber} />
+      {titleContent}
+    </Flex>
+  );
+
   const hasImages = (teamImages?.length ?? 0) > 0;
 
   if (!hasImages) {
-    return titleContent;
+    return headerTitle;
   }
 
   return (
     <Flex className={classes.HeaderContent} align="center" gap="md">
-      {titleContent}
+      {headerTitle}
       <TeamImageCarousel images={teamImages ?? []} />
     </Flex>
   );
