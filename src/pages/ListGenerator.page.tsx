@@ -17,12 +17,15 @@ import {
   Title,
   Tooltip,
 } from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { IconInfoCircle, IconPlus, IconStar, IconStarFilled } from '@tabler/icons-react';
 
 import {
   useCreatePickListGenerator,
+  useDeletePickListGenerator,
   usePickListGenerators,
+  useUpdatePickListGenerator,
   type CreatePickListGeneratorRequest,
 } from '@/api/pickLists';
 import { useRequireOrganizationAccess } from '@/hooks/useRequireOrganizationAccess';
@@ -97,15 +100,19 @@ export function ListGeneratorPage() {
   const { canAccessOrganizationPages, isCheckingAccess } = useRequireOrganizationAccess();
   const { data: generators, isLoading } = usePickListGenerators({ enabled: canAccessOrganizationPages });
   const createGeneratorMutation = useCreatePickListGenerator();
+  const updateGeneratorMutation = useUpdatePickListGenerator();
+  const deleteGeneratorMutation = useDeletePickListGenerator();
 
   const [selectedSeason, setSelectedSeason] = useState<string | null>(null);
   const [hasInitializedSeason, setHasInitializedSeason] = useState(false);
   const [selectedGeneratorId, setSelectedGeneratorId] = useState<string | null>(null);
   const [weightsDraft, setWeightsDraft] = useState<Record<string, number>>({});
+  const [savedWeightsSnapshot, setSavedWeightsSnapshot] = useState<Record<string, number>>({});
   const [configuredWeightKeys, setConfiguredWeightKeys] = useState<Set<string>>(new Set());
   const [createModalOpened, setCreateModalOpened] = useState(false);
   const [createGeneratorTitle, setCreateGeneratorTitle] = useState('');
   const [createGeneratorNotes, setCreateGeneratorNotes] = useState('');
+  const [deleteModalOpened, { open: openDeleteModal, close: closeDeleteModal }] = useDisclosure(false);
 
   useEffect(() => {
     if (!generators || generators.length === 0) {
@@ -187,6 +194,7 @@ export function ListGeneratorPage() {
     if (!selectedGenerator) {
       setWeightsDraft({});
       setConfiguredWeightKeys(new Set());
+      setSavedWeightsSnapshot({});
       return;
     }
 
@@ -200,10 +208,33 @@ export function ListGeneratorPage() {
     }, {});
 
     setWeightsDraft(nextWeights);
+    setSavedWeightsSnapshot(nextWeights);
     setConfiguredWeightKeys(
       new Set(draftEntries.filter(([, value]) => value > 0).map(([key]) => key)),
     );
   }, [selectedGenerator]);
+
+  const hasUnsavedChanges = useMemo(() => {
+    if (!selectedGenerator) {
+      return false;
+    }
+
+    const keys = new Set([
+      ...Object.keys(savedWeightsSnapshot),
+      ...Object.keys(weightsDraft),
+    ]);
+
+    for (const key of keys) {
+      const originalValue = savedWeightsSnapshot[key] ?? 0;
+      const draftValue = weightsDraft[key] ?? 0;
+
+      if (Math.abs(originalValue - draftValue) > 1e-6) {
+        return true;
+      }
+    }
+
+    return false;
+  }, [savedWeightsSnapshot, selectedGenerator, weightsDraft]);
 
   const selectedSeasonNumber = selectedSeason ? Number.parseInt(selectedSeason, 10) : null;
   const weightLabels = useMemo(
@@ -340,6 +371,88 @@ export function ListGeneratorPage() {
     ],
   );
 
+  const handleSaveGeneratorChanges = useCallback(async () => {
+    if (!selectedGenerator || !hasUnsavedChanges) {
+      return;
+    }
+
+    const generatorId = selectedGenerator.id;
+    const payloadWeights = Array.from(
+      new Set([
+        ...Object.keys(savedWeightsSnapshot),
+        ...Object.keys(weightsDraft),
+      ]),
+    ).reduce<Record<string, number>>((accumulator, key) => {
+      const value = weightsDraft[key] ?? 0;
+      accumulator[key] = Number.isFinite(value) ? Number(value) : 0;
+      return accumulator;
+    }, {});
+
+    try {
+      await updateGeneratorMutation.mutateAsync({
+        id: generatorId,
+        attributes: payloadWeights,
+      });
+
+      setSavedWeightsSnapshot(payloadWeights);
+      notifications.show({
+        color: 'green',
+        title: 'Generator updated',
+        message: `Saved changes to “${selectedGenerator.title}”.`,
+      });
+    } catch (error) {
+      notifications.show({
+        color: 'red',
+        title: 'Unable to save changes',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'An unexpected error occurred while updating the pick list generator.',
+      });
+    }
+  }, [
+    hasUnsavedChanges,
+    savedWeightsSnapshot,
+    selectedGenerator,
+    updateGeneratorMutation,
+    weightsDraft,
+  ]);
+
+  const handleConfirmDeleteGenerator = useCallback(async () => {
+    if (!selectedGenerator) {
+      return;
+    }
+
+    const generatorId = selectedGenerator.id;
+    const generatorTitle = selectedGenerator.title;
+
+    try {
+      await deleteGeneratorMutation.mutateAsync({ id: generatorId });
+      setSelectedGeneratorId((current) => (current === generatorId ? null : current));
+      closeDeleteModal();
+
+      notifications.show({
+        color: 'green',
+        title: 'Generator deleted',
+        message: `Deleted “${generatorTitle}”.`,
+      });
+    } catch (error) {
+      notifications.show({
+        color: 'red',
+        title: 'Unable to delete generator',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'An unexpected error occurred while deleting the pick list generator.',
+      });
+    }
+  }, [
+    closeDeleteModal,
+    deleteGeneratorMutation,
+    selectedGenerator,
+    setSelectedGeneratorId,
+  ]);
+
   if (isCheckingAccess || !canAccessOrganizationPages) {
     return null;
   }
@@ -368,11 +481,12 @@ export function ListGeneratorPage() {
 
         <Flex direction={{ base: 'column', md: 'row' }} gap="md" style={{ flex: 1, minHeight: 0 }}>
           <Card withBorder padding="lg" radius="md" style={{ flex: 4, display: 'flex', minHeight: 0 }}>
-            <Stack gap="md" style={{ flex: 1, minHeight: 0 }}>
-              {selectedGenerator ? (
-                <>
-                  <Stack gap="xs">
-                    <Group gap="xs" justify="space-between" align="flex-start" wrap="wrap">
+            <Flex direction="column" gap="md" style={{ flex: 1, minHeight: 0 }}>
+              <Stack gap="md" style={{ flex: 1, minHeight: 0 }}>
+                {selectedGenerator ? (
+                  <>
+                    <Stack gap="xs">
+                      <Group gap="xs" justify="space-between" align="flex-start" wrap="wrap">
                       <Group
                         gap="xs"
                         align="center"
@@ -504,7 +618,27 @@ export function ListGeneratorPage() {
               ) : (
                 <Text c="dimmed">Select a pick list generator to view its details.</Text>
               )}
-            </Stack>
+              </Stack>
+              <Group justify="space-between">
+                <Button
+                  onClick={() => {
+                    void handleSaveGeneratorChanges();
+                  }}
+                  disabled={!selectedGenerator || !hasUnsavedChanges}
+                  loading={updateGeneratorMutation.isPending}
+                >
+                  Save Changes
+                </Button>
+                <Button
+                  color="red"
+                  onClick={openDeleteModal}
+                  disabled={!selectedGenerator}
+                  loading={deleteGeneratorMutation.isPending}
+                >
+                  Delete Generator
+                </Button>
+              </Group>
+            </Flex>
           </Card>
 
           <Card withBorder padding="lg" radius="md" style={{ flex: 2, display: 'flex', minHeight: 0 }}>
@@ -576,6 +710,36 @@ export function ListGeneratorPage() {
           </Card>
         </Flex>
       </Stack>
+      <Modal
+        opened={deleteModalOpened}
+        onClose={closeDeleteModal}
+        title="Delete Generator"
+        centered
+      >
+        <Stack>
+          <Text>Are you sure you want to delete this generator?</Text>
+          <Group justify="flex-end">
+            <Button
+              variant="default"
+              onClick={closeDeleteModal}
+              disabled={deleteGeneratorMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              color="red"
+              onClick={() => {
+                void handleConfirmDeleteGenerator();
+              }}
+              loading={deleteGeneratorMutation.isPending}
+              disabled={!selectedGenerator}
+            >
+              Delete Generator
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
       <Modal
         opened={createModalOpened}
         onClose={handleCloseCreateModal}
