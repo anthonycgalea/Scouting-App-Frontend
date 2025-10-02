@@ -66,7 +66,7 @@ export interface UpdatePickListGeneratorRequest {
 export const updatePickListGenerator = ({ generator }: UpdatePickListGeneratorRequest) =>
   apiFetch<PickListGenerator>('picklists/generators', {
     method: 'PATCH',
-    json: [generator],
+    json: generator,
   });
 
 export const useUpdatePickListGenerator = () => {
