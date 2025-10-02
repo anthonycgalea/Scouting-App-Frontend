@@ -61,7 +61,7 @@ export const usePickListGenerators = ({ enabled }: { enabled?: boolean } = {}) =
 
 export interface UpdatePickListGeneratorRequest {
   id: string;
-  attributes: Record<string, number>;
+  attributes: Record<string, number | string>;
 }
 
 export const updatePickListGenerator = ({ id, attributes }: UpdatePickListGeneratorRequest) =>

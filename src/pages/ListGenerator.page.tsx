@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 
 import {
-  Button,
+  ActionIcon,
   Badge,
   Box,
+  Button,
   Card,
   Flex,
   Group,
@@ -19,7 +20,7 @@ import {
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { IconInfoCircle, IconPlus, IconStar, IconStarFilled } from '@tabler/icons-react';
+import { IconNotes, IconPlus, IconStar, IconStarFilled } from '@tabler/icons-react';
 
 import {
   useCreatePickListGenerator,
@@ -108,10 +109,17 @@ export function ListGeneratorPage() {
   const [selectedGeneratorId, setSelectedGeneratorId] = useState<string | null>(null);
   const [weightsDraft, setWeightsDraft] = useState<Record<string, number>>({});
   const [savedWeightsSnapshot, setSavedWeightsSnapshot] = useState<Record<string, number>>({});
+  const [titleDraft, setTitleDraft] = useState('');
+  const [savedTitleSnapshot, setSavedTitleSnapshot] = useState('');
+  const [notesDraft, setNotesDraft] = useState('');
+  const [savedNotesSnapshot, setSavedNotesSnapshot] = useState('');
+  const [titleModalDraft, setTitleModalDraft] = useState('');
+  const [notesModalDraft, setNotesModalDraft] = useState('');
   const [configuredWeightKeys, setConfiguredWeightKeys] = useState<Set<string>>(new Set());
   const [createModalOpened, setCreateModalOpened] = useState(false);
   const [createGeneratorTitle, setCreateGeneratorTitle] = useState('');
   const [createGeneratorNotes, setCreateGeneratorNotes] = useState('');
+  const [notesModalOpened, { open: openNotesModal, close: closeNotesModal }] = useDisclosure(false);
   const [deleteModalOpened, { open: openDeleteModal, close: closeDeleteModal }] = useDisclosure(false);
 
   useEffect(() => {
@@ -195,6 +203,13 @@ export function ListGeneratorPage() {
       setWeightsDraft({});
       setConfiguredWeightKeys(new Set());
       setSavedWeightsSnapshot({});
+      setTitleDraft('');
+      setSavedTitleSnapshot('');
+      setNotesDraft('');
+      setSavedNotesSnapshot('');
+      setTitleModalDraft('');
+      setNotesModalDraft('');
+      closeNotesModal();
       return;
     }
 
@@ -212,9 +227,34 @@ export function ListGeneratorPage() {
     setConfiguredWeightKeys(
       new Set(draftEntries.filter(([, value]) => value > 0).map(([key]) => key)),
     );
-  }, [selectedGenerator]);
+    const nextTitle = selectedGenerator.title ?? '';
+    setTitleDraft(nextTitle);
+    setSavedTitleSnapshot(nextTitle);
+    setTitleModalDraft(nextTitle);
 
-  const hasUnsavedChanges = useMemo(() => {
+    const nextNotes = selectedGenerator.notes ?? '';
+    setNotesDraft(nextNotes);
+    setSavedNotesSnapshot(nextNotes);
+    setNotesModalDraft(nextNotes);
+  }, [closeNotesModal, selectedGenerator]);
+
+  const hasUnsavedTitleChanges = useMemo(() => {
+    if (!selectedGenerator) {
+      return false;
+    }
+
+    return titleDraft !== savedTitleSnapshot;
+  }, [savedTitleSnapshot, selectedGenerator, titleDraft]);
+
+  const hasUnsavedNoteChanges = useMemo(() => {
+    if (!selectedGenerator) {
+      return false;
+    }
+
+    return notesDraft !== savedNotesSnapshot;
+  }, [notesDraft, savedNotesSnapshot, selectedGenerator]);
+
+  const hasUnsavedWeightChanges = useMemo(() => {
     if (!selectedGenerator) {
       return false;
     }
@@ -236,14 +276,21 @@ export function ListGeneratorPage() {
     return false;
   }, [savedWeightsSnapshot, selectedGenerator, weightsDraft]);
 
+  const hasUnsavedChanges =
+    hasUnsavedTitleChanges || hasUnsavedNoteChanges || hasUnsavedWeightChanges;
+
   const selectedSeasonNumber = selectedSeason ? Number.parseInt(selectedSeason, 10) : null;
   const weightLabels = useMemo(
     () => (selectedSeasonNumber != null ? WEIGHT_LABELS_BY_SEASON[selectedSeasonNumber] ?? {} : {}),
     [selectedSeasonNumber],
   );
 
-  const trimmedSelectedGeneratorNotes = selectedGenerator?.notes.trim() ?? '';
+  const trimmedSelectedGeneratorNotes = notesDraft.trim();
   const hasSelectedGeneratorNotes = trimmedSelectedGeneratorNotes.length > 0;
+  const generatorNotesSummary = hasSelectedGeneratorNotes
+    ? `Generator notes: ${trimmedSelectedGeneratorNotes}`
+    : 'No notes have been added for this generator.';
+  const generatorNotesTooltipLabel = `${generatorNotesSummary}\nClick to edit the generator name and notes.`;
   const selectedGeneratorSeasonLabel =
     selectedGenerator != null
       ? formatSeasonLabel(
@@ -377,46 +424,129 @@ export function ListGeneratorPage() {
     }
 
     const generatorId = selectedGenerator.id;
-    const payloadWeights = Array.from(
-      new Set([
-        ...Object.keys(savedWeightsSnapshot),
-        ...Object.keys(weightsDraft),
-      ]),
-    ).reduce<Record<string, number>>((accumulator, key) => {
-      const value = weightsDraft[key] ?? 0;
-      accumulator[key] = Number.isFinite(value) ? Number(value) : 0;
-      return accumulator;
-    }, {});
+    const payloadAttributes: Record<string, number | string> = {};
+    let nextWeightSnapshot: Record<string, number> | null = null;
 
-    try {
-      await updateGeneratorMutation.mutateAsync({
-        id: generatorId,
-        attributes: payloadWeights,
-      });
+    if (hasUnsavedWeightChanges) {
+      nextWeightSnapshot = Array.from(
+        new Set([
+          ...Object.keys(savedWeightsSnapshot),
+          ...Object.keys(weightsDraft),
+        ]),
+      ).reduce<Record<string, number>>((accumulator, key) => {
+        const value = weightsDraft[key] ?? 0;
+        accumulator[key] = Number.isFinite(value) ? Number(value) : 0;
+        return accumulator;
+      }, {});
 
-      setSavedWeightsSnapshot(payloadWeights);
-      notifications.show({
-        color: 'green',
-        title: 'Generator updated',
-        message: `Saved changes to “${selectedGenerator.title}”.`,
-      });
-    } catch (error) {
-      notifications.show({
-        color: 'red',
-        title: 'Unable to save changes',
-        message:
-          error instanceof Error
-            ? error.message
-            : 'An unexpected error occurred while updating the pick list generator.',
-      });
+      Object.assign(payloadAttributes, nextWeightSnapshot);
+    }
+
+    if (hasUnsavedTitleChanges) {
+      const trimmedTitle = titleDraft.trim();
+
+      if (!trimmedTitle) {
+        notifications.show({
+          color: 'red',
+          title: 'Unable to save changes',
+          message: 'A title is required for the pick list generator.',
+        });
+        return;
+      }
+
+      payloadAttributes.title = trimmedTitle;
+    }
+
+    if (Object.keys(payloadAttributes).length > 0) {
+      const updatedTitleForMessage =
+        (payloadAttributes.title as string | undefined) ?? titleDraft;
+
+      try {
+        await updateGeneratorMutation.mutateAsync({
+          id: generatorId,
+          attributes: payloadAttributes,
+        });
+
+        if (nextWeightSnapshot) {
+          setSavedWeightsSnapshot(nextWeightSnapshot);
+        }
+
+        if (hasUnsavedTitleChanges) {
+          setSavedTitleSnapshot(payloadAttributes.title as string);
+          setTitleDraft(payloadAttributes.title as string);
+        }
+
+        notifications.show({
+          color: 'green',
+          title: 'Generator updated',
+          message: `Saved changes to “${updatedTitleForMessage}”.`,
+        });
+      } catch (error) {
+        notifications.show({
+          color: 'red',
+          title: 'Unable to save changes',
+          message:
+            error instanceof Error
+              ? error.message
+              : 'An unexpected error occurred while updating the pick list generator.',
+        });
+        return;
+      }
+    }
+
+    if (hasUnsavedNoteChanges) {
+      setSavedNotesSnapshot(notesDraft);
+
+      if (!hasUnsavedWeightChanges && !hasUnsavedTitleChanges) {
+        notifications.show({
+          color: 'blue',
+          title: 'Notes updated',
+          message: 'Notes have been updated locally.',
+        });
+      }
     }
   }, [
     hasUnsavedChanges,
+    hasUnsavedTitleChanges,
+    hasUnsavedNoteChanges,
+    hasUnsavedWeightChanges,
+    titleDraft,
+    notesDraft,
     savedWeightsSnapshot,
     selectedGenerator,
     updateGeneratorMutation,
     weightsDraft,
   ]);
+
+  const handleOpenNotesModal = useCallback(() => {
+    setTitleModalDraft(titleDraft);
+    setNotesModalDraft(notesDraft);
+    openNotesModal();
+  }, [notesDraft, openNotesModal, titleDraft]);
+
+  const handleCloseNotesModal = useCallback(() => {
+    setTitleModalDraft(titleDraft);
+    setNotesModalDraft(notesDraft);
+    closeNotesModal();
+  }, [closeNotesModal, notesDraft, titleDraft]);
+
+  const handleConfirmNotesModal = useCallback(() => {
+    const trimmedTitle = titleModalDraft.trim();
+
+    if (!trimmedTitle) {
+      notifications.show({
+        color: 'red',
+        title: 'Unable to apply changes',
+        message: 'A title is required for the pick list generator.',
+      });
+      return;
+    }
+
+    setTitleDraft(trimmedTitle);
+    setTitleModalDraft(trimmedTitle);
+    setNotesDraft(notesModalDraft);
+    closeNotesModal();
+  }, [closeNotesModal, notesModalDraft, titleModalDraft]);
 
   const handleConfirmDeleteGenerator = useCallback(async () => {
     if (!selectedGenerator) {
@@ -424,7 +554,7 @@ export function ListGeneratorPage() {
     }
 
     const generatorId = selectedGenerator.id;
-    const generatorTitle = selectedGenerator.title;
+    const generatorTitle = titleDraft || selectedGenerator.title;
 
     try {
       await deleteGeneratorMutation.mutateAsync({ id: generatorId });
@@ -451,6 +581,7 @@ export function ListGeneratorPage() {
     deleteGeneratorMutation,
     selectedGenerator,
     setSelectedGeneratorId,
+    titleDraft,
   ]);
 
   if (isCheckingAccess || !canAccessOrganizationPages) {
@@ -531,7 +662,7 @@ export function ListGeneratorPage() {
                           lineClamp={2}
                           style={{ flex: 1, minWidth: 0 }}
                         >
-                          {selectedGenerator.title}
+                          {titleDraft || selectedGenerator.title}
                         </Text>
                         {selectedGeneratorSeasonLabel && (
                           <Badge variant="light" color="blue" style={{ flexShrink: 0 }}>
@@ -554,34 +685,21 @@ export function ListGeneratorPage() {
                           })}
                         </Text>
                         <Tooltip
-                          label={
-                            hasSelectedGeneratorNotes
-                              ? trimmedSelectedGeneratorNotes
-                              : 'No notes have been added for this generator.'
-                          }
+                          label={generatorNotesTooltipLabel}
                           multiline
                           maw={260}
                           withinPortal
                         >
-                          <Box
-                            component="span"
-                            role="img"
+                          <ActionIcon
+                            variant="subtle"
+                            color={hasSelectedGeneratorNotes ? 'green' : 'gray'}
                             aria-label={
-                              hasSelectedGeneratorNotes
-                                ? `Generator notes: ${trimmedSelectedGeneratorNotes}`
-                                : 'No notes have been added for this generator.'
+                              `${generatorNotesSummary} Click to edit the generator name and notes.`
                             }
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              color: hasSelectedGeneratorNotes
-                                ? 'var(--mantine-color-green-6)'
-                                : 'var(--mantine-color-dimmed)',
-                              cursor: 'default',
-                            }}
+                            onClick={handleOpenNotesModal}
                           >
-                            <IconInfoCircle size={18} />
-                          </Box>
+                            <IconNotes size={18} />
+                          </ActionIcon>
                         </Tooltip>
                       </Group>
                     </Group>
@@ -710,6 +828,45 @@ export function ListGeneratorPage() {
           </Card>
         </Flex>
       </Stack>
+      <Modal
+        opened={notesModalOpened}
+        onClose={handleCloseNotesModal}
+        title="Edit Generator"
+        centered
+      >
+        <Stack>
+          <TextInput
+            required
+            label="Title"
+            placeholder="Enter generator title"
+            value={titleModalDraft}
+            onChange={(event) => setTitleModalDraft(event.currentTarget.value)}
+          />
+          <Textarea
+            label="Notes"
+            placeholder="Add optional notes"
+            minRows={3}
+            autosize
+            value={notesModalDraft}
+            onChange={(event) => setNotesModalDraft(event.currentTarget.value)}
+          />
+          <Group justify="flex-end">
+            <Button variant="default" onClick={handleCloseNotesModal}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleConfirmNotesModal}
+              disabled={
+                titleModalDraft.trim().length === 0 ||
+                (titleModalDraft === titleDraft && notesModalDraft === notesDraft)
+              }
+            >
+              Save
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
       <Modal
         opened={deleteModalOpened}
         onClose={closeDeleteModal}
