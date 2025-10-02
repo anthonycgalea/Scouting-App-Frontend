@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from './httpClient';
 
 export interface EventTeam {
@@ -92,6 +92,36 @@ export const useTeamImages = (teamNumber: number) =>
     queryFn: () => fetchTeamImages(teamNumber),
     enabled: Number.isFinite(teamNumber),
   });
+
+export interface UploadTeamImageInput {
+  file: File;
+  description?: string;
+}
+
+export const uploadTeamImage = (teamNumber: number, { file, description }: UploadTeamImageInput) => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  if (description) {
+    formData.append('description', description);
+  }
+
+  return apiFetch<TeamImage>(`teams/${teamNumber}/images`, {
+    method: 'POST',
+    body: formData,
+  });
+};
+
+export const useUploadTeamImage = (teamNumber: number) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: UploadTeamImageInput) => uploadTeamImage(teamNumber, input),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: teamImagesQueryKey(teamNumber) });
+    },
+  });
+};
 
 export const teamMatchDataQueryKey = (teamNumber: number) =>
   ['team-match-data', teamNumber] as const;

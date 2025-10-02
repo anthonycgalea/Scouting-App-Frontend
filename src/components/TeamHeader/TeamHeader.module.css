@@ -10,6 +10,14 @@
     text-align: center;
 }
 
+.TitleRow{
+    align-items: center;
+    display: flex;
+    gap: var(--mantine-spacing-sm);
+    justify-content: center;
+    text-align: center;
+}
+
 .Carousel{
     flex-direction: column;
     gap: var(--mantine-spacing-xs);
@@ -31,6 +39,10 @@
     text-align: center;
 }
 
+.FileInput{
+    display: none;
+}
+
 @media (min-width: 48rem){
     .HeaderContent{
         flex-direction: row;
@@ -40,5 +52,9 @@
     .Carousel{
         flex-direction: row;
         align-items: center;
+    }
+
+    .TitleRow{
+        justify-content: flex-start;
     }
 }
