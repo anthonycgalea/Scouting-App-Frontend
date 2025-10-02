@@ -1,5 +1,6 @@
-import { Card, Group, Slider, Stack, Text } from '@mantine/core';
+import { ActionIcon, Card, Group, Slider, Stack, Text, Tooltip } from '@mantine/core';
 import { useMemo } from 'react';
+import { IconTrash } from '@tabler/icons-react';
 
 import classes from './WeightSlider.module.css';
 
@@ -7,9 +8,10 @@ interface WeightSliderProps {
   label: string;
   value: number;
   onChange: (value: number) => void;
+  onRemove: () => void;
 }
 
-export function WeightSlider({ label, value, onChange }: WeightSliderProps) {
+export function WeightSlider({ label, value, onChange, onRemove }: WeightSliderProps) {
   const sliderValue = useMemo(() => Math.round(value * 100), [value]);
 
   return (
@@ -19,9 +21,21 @@ export function WeightSlider({ label, value, onChange }: WeightSliderProps) {
           <Text fw={600} size="sm">
             {label}
           </Text>
-          <Text fw={600} size="sm">
-            {sliderValue}
-          </Text>
+          <Group gap="xs" align="center">
+            <Text fw={600} size="sm">
+              {sliderValue}
+            </Text>
+            <Tooltip label="Remove weight" withArrow>
+              <ActionIcon
+                aria-label={`Remove ${label} weight`}
+                color="red"
+                variant="subtle"
+                onClick={onRemove}
+              >
+                <IconTrash size={16} />
+              </ActionIcon>
+            </Tooltip>
+          </Group>
         </Group>
         <Slider
           min={0}
@@ -35,7 +49,7 @@ export function WeightSlider({ label, value, onChange }: WeightSliderProps) {
           }}
         />
         <Text size="xs" c="dimmed">
-          Set the weight to 0 to remove it from the configured list.
+          Use the trash icon to remove this weight from the configured list.
         </Text>
       </Stack>
     </Card>

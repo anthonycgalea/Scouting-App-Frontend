@@ -101,6 +101,7 @@ export function ListGeneratorPage() {
   const [hasInitializedSeason, setHasInitializedSeason] = useState(false);
   const [selectedGeneratorId, setSelectedGeneratorId] = useState<string | null>(null);
   const [weightsDraft, setWeightsDraft] = useState<Record<string, number>>({});
+  const [configuredWeightKeys, setConfiguredWeightKeys] = useState<Set<string>>(new Set());
   const [createModalOpened, setCreateModalOpened] = useState(false);
   const [createGeneratorTitle, setCreateGeneratorTitle] = useState('');
   const [createGeneratorNotes, setCreateGeneratorNotes] = useState('');
@@ -184,6 +185,7 @@ export function ListGeneratorPage() {
   useEffect(() => {
     if (!selectedGenerator) {
       setWeightsDraft({});
+      setConfiguredWeightKeys(new Set());
       return;
     }
 
@@ -191,11 +193,14 @@ export function ListGeneratorPage() {
       .filter((entry): entry is [string, number] => typeof entry[1] === 'number')
       .filter(([key]) => !BASE_GENERATOR_FIELDS.has(key));
 
-    setWeightsDraft(
-      draftEntries.reduce<Record<string, number>>((accumulator, [key, value]) => {
-        accumulator[key] = value;
-        return accumulator;
-      }, {}),
+    const nextWeights = draftEntries.reduce<Record<string, number>>((accumulator, [key, value]) => {
+      accumulator[key] = value;
+      return accumulator;
+    }, {});
+
+    setWeightsDraft(nextWeights);
+    setConfiguredWeightKeys(
+      new Set(draftEntries.filter(([, value]) => value > 0).map(([key]) => key)),
     );
   }, [selectedGenerator]);
 
@@ -229,13 +234,13 @@ export function ListGeneratorPage() {
   }, [weightsDraft, weightLabels]);
 
   const activeWeightFields = useMemo(
-    () => weightFields.filter(([, value]) => value > 0),
-    [weightFields],
+    () => weightFields.filter(([key]) => configuredWeightKeys.has(key)),
+    [weightFields, configuredWeightKeys],
   );
 
   const availableWeightFields = useMemo(
-    () => weightFields.filter(([, value]) => value <= 0),
-    [weightFields],
+    () => weightFields.filter(([key]) => !configuredWeightKeys.has(key)),
+    [weightFields, configuredWeightKeys],
   );
 
   const handleAddWeight = useCallback((key: string) => {
@@ -243,6 +248,23 @@ export function ListGeneratorPage() {
       ...current,
       [key]: 0.1,
     }));
+    setConfiguredWeightKeys((current) => {
+      const next = new Set(current);
+      next.add(key);
+      return next;
+    });
+  }, []);
+
+  const handleRemoveWeight = useCallback((key: string) => {
+    setWeightsDraft((current) => ({
+      ...current,
+      [key]: 0,
+    }));
+    setConfiguredWeightKeys((current) => {
+      const next = new Set(current);
+      next.delete(key);
+      return next;
+    });
   }, []);
 
   const handleOpenCreateModal = useCallback(() => {
@@ -389,6 +411,7 @@ export function ListGeneratorPage() {
                                   [key]: nextValue,
                                 }));
                               }}
+                              onRemove={() => handleRemoveWeight(key)}
                             />
                           ))}
                         </Stack>
