@@ -89,17 +89,19 @@ export const useCreatePickList = () => {
   });
 };
 
-export type CreatePickListGeneratorRequest = {
+export interface CreatePickListGeneratorRequest {
   title: string;
   notes?: string;
-} & {
-  [key: string]: string | number | boolean | null | undefined;
-};
+}
 
-export const createPickListGenerator = (payload: CreatePickListGeneratorRequest) =>
+export const createPickListGenerator = ({ title, notes }: CreatePickListGeneratorRequest) =>
   apiFetch<PickListGenerator>('picklists/generators', {
     method: 'POST',
-    json: payload,
+    json: {
+      title,
+      favorited: false,
+      ...(notes ? { notes } : {}),
+    },
   });
 
 export const useCreatePickListGenerator = () => {
