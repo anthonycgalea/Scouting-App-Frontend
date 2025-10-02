@@ -59,6 +59,54 @@ export const usePickListGenerators = ({ enabled }: { enabled?: boolean } = {}) =
     enabled: enabled ?? true,
   });
 
+export interface UpdatePickListGeneratorRequest {
+  id: string;
+  attributes: Record<string, number>;
+}
+
+export const updatePickListGenerator = ({ id, attributes }: UpdatePickListGeneratorRequest) =>
+  apiFetch<PickListGenerator>('picklists/generators', {
+    method: 'PATCH',
+    json: [
+      {
+        id,
+        ...attributes,
+      },
+    ],
+  });
+
+export const useUpdatePickListGenerator = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updatePickListGenerator,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: pickListGeneratorsQueryKey() });
+    },
+  });
+};
+
+export interface DeletePickListGeneratorRequest {
+  id: string;
+}
+
+export const deletePickListGenerator = (payload: DeletePickListGeneratorRequest) =>
+  apiFetch<void>('picklists/generators', {
+    method: 'DELETE',
+    json: payload,
+  });
+
+export const useDeletePickListGenerator = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deletePickListGenerator,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: pickListGeneratorsQueryKey() });
+    },
+  });
+};
+
 export interface CreatePickListRank {
   rank: number;
   team_number: number;
