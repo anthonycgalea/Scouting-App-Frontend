@@ -99,18 +99,18 @@ const syncTokensFromSupabaseStorage = (): StoredTokens | null => {
   }
 
   if (isBrowser) {
-    window.sessionStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(supabaseTokens));
+    window.localStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(supabaseTokens));
   }
 
   return supabaseTokens;
 };
 
-const readSessionTokens = (): StoredTokens | null => {
+const readPersistedTokens = (): StoredTokens | null => {
   if (!isBrowser) {
     return null;
   }
 
-  const rawValue = window.sessionStorage.getItem(TOKEN_STORAGE_KEY);
+  const rawValue = window.localStorage.getItem(TOKEN_STORAGE_KEY);
   if (!rawValue) {
     return null;
   }
@@ -123,18 +123,19 @@ const readSessionTokens = (): StoredTokens | null => {
     }
 
     if (parsedValue.expiresAt && Date.now() >= parsedValue.expiresAt) {
-      window.sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+      window.localStorage.removeItem(TOKEN_STORAGE_KEY);
       return null;
     }
 
     return parsedValue;
   } catch (error) {
-    window.sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+    window.localStorage.removeItem(TOKEN_STORAGE_KEY);
     return null;
   }
 };
 
-const readStoredTokens = (): StoredTokens | null => syncTokensFromSupabaseStorage() ?? readSessionTokens();
+const readStoredTokens = (): StoredTokens | null =>
+  syncTokensFromSupabaseStorage() ?? readPersistedTokens();
 
 type StoredAuthUser = {
   displayName: string;
@@ -146,7 +147,7 @@ const readStoredAuthUser = (): StoredAuthUser | null => {
     return null;
   }
 
-  const rawValue = window.sessionStorage.getItem(USER_STORAGE_KEY);
+  const rawValue = window.localStorage.getItem(USER_STORAGE_KEY);
   if (!rawValue) {
     return null;
   }
@@ -160,7 +161,7 @@ const readStoredAuthUser = (): StoredAuthUser | null => {
 
     return parsedValue;
   } catch (error) {
-    window.sessionStorage.removeItem(USER_STORAGE_KEY);
+    window.localStorage.removeItem(USER_STORAGE_KEY);
     return null;
   }
 };
@@ -190,7 +191,7 @@ export const persistTokensFromUrl = () => {
         expiresAt,
       } satisfies StoredTokens;
 
-      window.sessionStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(storedValue));
+      window.localStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(storedValue));
     }
 
     window.history.replaceState(null, document.title, `${pathname}${search}`);
@@ -208,7 +209,7 @@ export const clearStoredTokens = () => {
     return;
   }
 
-  window.sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+  window.localStorage.removeItem(TOKEN_STORAGE_KEY);
 };
 
 export const persistAuthUser = (user: StoredAuthUser) => {
@@ -216,7 +217,7 @@ export const persistAuthUser = (user: StoredAuthUser) => {
     return;
   }
 
-  window.sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+  window.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
 };
 
 export const clearStoredAuthUser = () => {
@@ -224,5 +225,5 @@ export const clearStoredAuthUser = () => {
     return;
   }
 
-  window.sessionStorage.removeItem(USER_STORAGE_KEY);
+  window.localStorage.removeItem(USER_STORAGE_KEY);
 };
