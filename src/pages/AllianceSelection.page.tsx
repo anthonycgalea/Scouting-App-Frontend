@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
   ActionIcon,
@@ -21,7 +21,7 @@ import {
   rgba,
   useMantineColorScheme,
 } from '@mantine/core';
-import { IconRefresh, IconSettings } from '@tabler/icons-react';
+import { IconRefresh, IconSettings, IconStarFilled } from '@tabler/icons-react';
 import { useRequireOrganizationAccess } from '@/hooks/useRequireOrganizationAccess';
 import { syncEventRankings, useEventRankings } from '@/api';
 import { useOrganizationEvents } from '@/api/events';
@@ -127,8 +127,18 @@ export function AllianceSelectionPage() {
     [eventTeams],
   );
 
+  const favoritedPickListIds = useMemo(
+    () =>
+      new Set(sortedPickLists.filter((list) => list.favorited).map((list) => list.id)),
+    [sortedPickLists],
+  );
+
   const pickListSelectOptions = useMemo(
-    () => sortedPickLists.map((list) => ({ value: list.id, label: list.title })),
+    () =>
+      sortedPickLists.map((list) => ({
+        value: list.id,
+        label: list.favorited ? `★ ${list.title}` : list.title,
+      })),
     [sortedPickLists],
   );
 
@@ -136,6 +146,38 @@ export function AllianceSelectionPage() {
 
   const isPickListPanelLoading =
     isLoadingPickLists || isLoadingEvents || (Boolean(activeEvent) && isLoadingEventTeams);
+
+  const validateTeamNumber = useCallback(
+    (value: string) => {
+      if (isLoadingEventTeams) {
+        return true;
+      }
+
+      const trimmed = value.trim();
+      if (trimmed.length === 0) {
+        return true;
+      }
+
+      const numericValue = Number(trimmed);
+      if (!Number.isInteger(numericValue)) {
+        return false;
+      }
+
+      return eventTeamsByNumber.has(numericValue);
+    },
+    [eventTeamsByNumber, isLoadingEventTeams],
+  );
+
+  const allianceEntryValidity = useMemo(
+    () =>
+      allianceEntries.map((entry) => ({
+        captain: validateTeamNumber(entry.captain),
+        firstPick: validateTeamNumber(entry.firstPick),
+        secondPick: validateTeamNumber(entry.secondPick),
+        thirdPick: validateTeamNumber(entry.thirdPick),
+      })),
+    [allianceEntries, validateTeamNumber],
+  );
 
   const handleRefreshRankings = async () => {
     try {
@@ -397,19 +439,23 @@ export function AllianceSelectionPage() {
                     </Table.Tr>
                   </Table.Thead>
                   <Table.Tbody>
-                    {allianceEntries.map((entry, index) => (
-                      <Table.Tr key={`alliance-${index}`}>
-                        <Table.Td>
-                          <Text fw={600}>Alliance {index + 1}</Text>
-                        </Table.Td>
-                        <Table.Td>
-                          <TextInput
+                    {allianceEntries.map((entry, index) => {
+                      const entryValidity = allianceEntryValidity[index];
+
+                      return (
+                        <Table.Tr key={`alliance-${index}`}>
+                          <Table.Td>
+                            <Text fw={600}>Alliance {index + 1}</Text>
+                          </Table.Td>
+                          <Table.Td>
+                            <TextInput
                             aria-label={`Alliance ${index + 1} captain`}
                             placeholder="Team number"
                             value={entry.captain}
                             onChange={(event) =>
                               handleAllianceEntryChange(index, 'captain', event.currentTarget.value)
                             }
+                            error={entryValidity?.captain ? undefined : 'Invalid team number'}
                           />
                         </Table.Td>
                         <Table.Td>
@@ -420,6 +466,7 @@ export function AllianceSelectionPage() {
                             onChange={(event) =>
                               handleAllianceEntryChange(index, 'firstPick', event.currentTarget.value)
                             }
+                            error={entryValidity?.firstPick ? undefined : 'Invalid team number'}
                           />
                         </Table.Td>
                         <Table.Td>
@@ -430,6 +477,7 @@ export function AllianceSelectionPage() {
                             onChange={(event) =>
                               handleAllianceEntryChange(index, 'secondPick', event.currentTarget.value)
                             }
+                            error={entryValidity?.secondPick ? undefined : 'Invalid team number'}
                           />
                         </Table.Td>
                         {includeThirdPicks ? (
@@ -441,11 +489,13 @@ export function AllianceSelectionPage() {
                               onChange={(event) =>
                                 handleAllianceEntryChange(index, 'thirdPick', event.currentTarget.value)
                               }
+                              error={entryValidity?.thirdPick ? undefined : 'Invalid team number'}
                             />
                           </Table.Td>
                         ) : null}
-                      </Table.Tr>
-                    ))}
+                        </Table.Tr>
+                      );
+                    })}
                   </Table.Tbody>
                 </Table>
               </ScrollArea>
@@ -474,6 +524,25 @@ export function AllianceSelectionPage() {
                     value={selectedPickListId}
                     onChange={setSelectedPickListId}
                     withinPortal
+                    renderOption={({ option }) => {
+                      const isFavorited = favoritedPickListIds.has(option.value);
+                      const optionLabel = isFavorited
+                        ? option.label.replace(/^★\s*/u, '')
+                        : option.label;
+
+                      return (
+                        <Group gap="xs">
+                          {isFavorited ? (
+                            <IconStarFilled
+                              size={16}
+                              color={theme.colors.yellow[5]}
+                              aria-hidden="true"
+                            />
+                          ) : null}
+                          <Text>{optionLabel}</Text>
+                        </Group>
+                      );
+                    }}
                   />
                   <ScrollArea style={{ flex: 1 }}>
                     <PickListPreview
