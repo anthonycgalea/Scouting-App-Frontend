@@ -18,6 +18,13 @@ import {
   persistAuthUser,
   persistTokensFromUrl,
 } from './tokenStorage';
+import {
+  SUPABASE_CUSTOM_STORAGE_KEY,
+  SUPABASE_PROJECT_ID,
+  SUPABASE_STORAGE_KEY_SUFFIX,
+  SUPABASE_URL,
+} from './supabaseConfig';
+import { loadSupabaseClient } from './supabaseClient';
 
 export interface AuthUser {
   displayName: string;
@@ -32,13 +39,10 @@ interface AuthContextValue {
   logout: () => void;
 }
 
-const SUPABASE_PROJECT_ID = 'vjrtjqnvatjfokogdhej';
-const SUPABASE_STORAGE_KEY_SUFFIX = '-auth-token';
-
 const isBrowser = typeof window !== 'undefined';
 
 const getSupabaseOAuthUrl = (provider: 'discord' | 'google') => {
-  const baseUrl = `https://${SUPABASE_PROJECT_ID}.supabase.co/auth/v1/authorize?provider=${provider}`;
+  const baseUrl = `${SUPABASE_URL}/auth/v1/authorize?provider=${provider}`;
 
   if (!isBrowser) {
     return baseUrl;
@@ -76,9 +80,14 @@ const clearSupabaseSessions = () => {
   }
 
   const keysToRemove: string[] = [];
+  const customStoragePrefix = `sb-${SUPABASE_CUSTOM_STORAGE_KEY}`;
   for (let index = 0; index < window.localStorage.length; index += 1) {
     const key = window.localStorage.key(index);
-    if (key && key.startsWith('sb-') && key.includes(SUPABASE_STORAGE_KEY_SUFFIX)) {
+    if (
+      key &&
+      key.startsWith('sb-') &&
+      (key.includes(SUPABASE_STORAGE_KEY_SUFFIX) || key.startsWith(customStoragePrefix))
+    ) {
       keysToRemove.push(key);
     }
   }
@@ -145,11 +154,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    if (isBrowser) {
-      persistTokensFromUrl();
+    if (!isBrowser) {
+      void refreshUserInfo();
+      return;
     }
 
-    void refreshUserInfo();
+    let isMounted = true;
+
+    const initialize = async () => {
+      await loadSupabaseClient();
+      if (!isMounted) {
+        return;
+      }
+
+      persistTokensFromUrl();
+      void refreshUserInfo();
+    };
+
+    void initialize();
+
+    return () => {
+      isMounted = false;
+    };
   }, [refreshUserInfo]);
 
   useEffect(() => {
