@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { ActionIcon, Box, Stack, Tabs, Text, Tooltip } from '@mantine/core';
+import { ActionIcon, Box, Popover, Stack, Tabs, Text, Tooltip } from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
 import { IconExternalLink, IconNote } from '@tabler/icons-react';
 
 import type { PickListRank } from '@/api/pickLists';
@@ -66,6 +67,58 @@ const normalizeRanks = (
   };
 };
 
+function TeamNotesPopover({
+  teamNumber,
+  note,
+}: {
+  teamNumber: number;
+  note: string;
+}) {
+  const hasNotes = note.trim().length > 0;
+  const [opened, { toggle, close, open }] = useDisclosure(false);
+
+  return (
+    <Popover
+      opened={opened}
+      onChange={(isOpen) => (isOpen ? open() : close())}
+      withArrow
+      shadow="md"
+      position="top"
+      withinPortal
+    >
+      <Popover.Target>
+        <Tooltip
+          label={hasNotes ? 'View notes' : 'No notes available'}
+          withinPortal
+          withArrow
+        >
+          <ActionIcon
+            aria-label={
+              hasNotes
+                ? `View note for team ${teamNumber}`
+                : `No notes for team ${teamNumber}`
+            }
+            variant="subtle"
+            color={hasNotes ? 'green' : 'gray'}
+            onClick={toggle}
+          >
+            <IconNote size={18} />
+          </ActionIcon>
+        </Tooltip>
+      </Popover.Target>
+      <Popover.Dropdown maw={260}>
+        {hasNotes ? (
+          <Text size="sm">{note}</Text>
+        ) : (
+          <Text size="sm" c="dimmed">
+            No notes have been added for this team yet.
+          </Text>
+        )}
+      </Popover.Dropdown>
+    </Popover>
+  );
+}
+
 function PickListPreviewSection({
   ranks,
   eventTeamsByNumber,
@@ -89,7 +142,6 @@ function PickListPreviewSection({
     <div className={classes.list}>
       {ranks.map((rank) => {
         const teamDetails = eventTeamsByNumber.get(rank.team_number);
-        const hasNotes = (rank.notes ?? '').trim().length > 0;
         const teamNote = (rank.notes ?? '').trim();
 
         return (
@@ -111,24 +163,7 @@ function PickListPreviewSection({
               </div>
             </div>
             <div className={classes.actions}>
-              {hasNotes ? (
-                <Tooltip
-                  label={teamNote}
-                  withinPortal
-                  withArrow
-                  maw={280}
-                  position="top"
-                >
-                  <ActionIcon
-                    component="span"
-                    variant="subtle"
-                    color="grape"
-                    aria-label={`View note for team ${rank.team_number}`}
-                  >
-                    <IconNote size={18} />
-                  </ActionIcon>
-                </Tooltip>
-              ) : null}
+              <TeamNotesPopover teamNumber={rank.team_number} note={teamNote} />
               <Tooltip
                 label={`Open team ${rank.team_number} page`}
                 withinPortal
