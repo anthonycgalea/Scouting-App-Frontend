@@ -30,7 +30,7 @@ export function TeamDetailPage() {
   const renderActiveSection = () => {
     switch (activeSection) {
       case 'analytics':
-        return <TeamAnalytics />;
+        return <TeamAnalytics teamNumber={teamNumber} />;
       case 'pit-scouting':
         return <TeamPitScout />;
       default:
