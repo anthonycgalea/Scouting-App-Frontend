@@ -228,6 +228,23 @@ export function ListGeneratorPage() {
     });
   }, [weightsDraft, weightLabels]);
 
+  const activeWeightFields = useMemo(
+    () => weightFields.filter(([, value]) => value > 0),
+    [weightFields],
+  );
+
+  const availableWeightFields = useMemo(
+    () => weightFields.filter(([, value]) => value <= 0),
+    [weightFields],
+  );
+
+  const handleAddWeight = useCallback((key: string) => {
+    setWeightsDraft((current) => ({
+      ...current,
+      [key]: 0.1,
+    }));
+  }, []);
+
   const handleOpenCreateModal = useCallback(() => {
     setCreateGeneratorTitle('');
     setCreateGeneratorNotes('');
@@ -344,7 +361,7 @@ export function ListGeneratorPage() {
                       </Badge>
                     </Group>
                     <Text c="dimmed" size="sm">
-                      Configure how this generator scores each attribute using the weights panel.
+                      Configure how this generator scores each attribute using the configured weights below.
                     </Text>
                   </Stack>
 
@@ -354,6 +371,33 @@ export function ListGeneratorPage() {
                       <Text>{selectedGenerator.notes}</Text>
                     ) : (
                       <Text c="dimmed">No notes have been added for this generator.</Text>
+                    )}
+                  </Stack>
+
+                  <Stack gap="sm" style={{ flex: 1, minHeight: 0 }}>
+                    <Title order={4}>Configured Weights</Title>
+                    {activeWeightFields.length > 0 ? (
+                      <ScrollArea style={{ flex: 1 }} offsetScrollbars>
+                        <Stack gap="sm" py="xs">
+                          {activeWeightFields.map(([key, value]) => (
+                            <WeightSlider
+                              key={key}
+                              label={weightLabels[key] ?? formatWeightKey(key)}
+                              value={value}
+                              onChange={(nextValue) => {
+                                setWeightsDraft((current) => ({
+                                  ...current,
+                                  [key]: nextValue,
+                                }));
+                              }}
+                            />
+                          ))}
+                        </Stack>
+                      </ScrollArea>
+                    ) : (
+                      <Text c="dimmed">
+                        No weights have been configured yet. Use the weights panel to add attributes.
+                      </Text>
                     )}
                   </Stack>
                 </>
@@ -370,23 +414,27 @@ export function ListGeneratorPage() {
               <Title order={4}>Weights</Title>
               {selectedGenerator ? (
                 weightFields.length > 0 ? (
-                  <ScrollArea style={{ flex: 1 }} offsetScrollbars>
-                    <Stack gap="md" py="xs">
-                      {weightFields.map(([key, value]) => (
-                        <WeightSlider
-                          key={key}
-                          label={weightLabels[key] ?? formatWeightKey(key)}
-                          value={value}
-                          onChange={(nextValue) => {
-                            setWeightsDraft((current) => ({
-                              ...current,
-                              [key]: nextValue,
-                            }));
-                          }}
-                        />
-                      ))}
-                    </Stack>
-                  </ScrollArea>
+                  availableWeightFields.length > 0 ? (
+                    <ScrollArea style={{ flex: 1 }} offsetScrollbars>
+                      <Stack gap="sm" py="xs">
+                        {availableWeightFields.map(([key]) => (
+                          <Group key={key} justify="space-between" align="center">
+                            <Text fw={500}>{weightLabels[key] ?? formatWeightKey(key)}</Text>
+                            <Button
+                              size="xs"
+                              variant="light"
+                              leftSection={<IconPlus size={14} stroke={1.5} />}
+                              onClick={() => handleAddWeight(key)}
+                            >
+                              Add
+                            </Button>
+                          </Group>
+                        ))}
+                      </Stack>
+                    </ScrollArea>
+                  ) : (
+                    <Text c="dimmed">All weights have been configured. Adjust them on the left.</Text>
+                  )
                 ) : (
                   <Text c="dimmed">This generator does not expose any adjustable weights.</Text>
                 )
