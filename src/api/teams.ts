@@ -14,6 +14,15 @@ export interface TeamInfo {
   rookieYear: number | null;
 }
 
+export interface TeamImage {
+  id: string;
+  team_number: number;
+  event_key: string;
+  image_url: string;
+  description: string;
+  uploaded_at: string;
+}
+
 export type Endgame2025 = 'NONE' | 'PARK' | 'SHALLOW' | 'DEEP';
 
 export interface BaseTeamMatchData {
@@ -71,6 +80,19 @@ export const useTeamInfo = (teamNumber: number) =>
     enabled: Number.isFinite(teamNumber),
   });
 
+export const teamImagesQueryKey = (teamNumber: number) =>
+  ['team-images', teamNumber] as const;
+
+export const fetchTeamImages = (teamNumber: number) =>
+  apiFetch<TeamImage[]>(`teams/${teamNumber}/images`);
+
+export const useTeamImages = (teamNumber: number) =>
+  useQuery({
+    queryKey: teamImagesQueryKey(teamNumber),
+    queryFn: () => fetchTeamImages(teamNumber),
+    enabled: Number.isFinite(teamNumber),
+  });
+
 export const teamMatchDataQueryKey = (teamNumber: number) =>
   ['team-match-data', teamNumber] as const;
 
@@ -83,3 +105,4 @@ export const useTeamMatchData = (teamNumber: number) =>
     queryFn: () => fetchTeamMatchData(teamNumber),
     enabled: Number.isFinite(teamNumber),
   });
+
