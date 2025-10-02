@@ -593,7 +593,7 @@ export function PickListsPage() {
         ...(trimmedNotes ? { notes: trimmedNotes } : {}),
         ranks: [],
         ...(shouldUseGenerator && selectedGeneratorId
-          ? { generatorId: selectedGeneratorId }
+          ? { generator_id: selectedGeneratorId }
           : {}),
       });
 
