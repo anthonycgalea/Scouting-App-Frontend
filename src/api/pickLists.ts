@@ -112,6 +112,7 @@ export interface CreatePickListRequest {
   title: string;
   notes?: string;
   ranks: CreatePickListRank[];
+  generatorId?: string;
 }
 
 export const createPickList = (payload: CreatePickListRequest) =>
