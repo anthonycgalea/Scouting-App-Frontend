@@ -1,4 +1,4 @@
-import { getStoredAccessToken } from '../auth/tokenStorage';
+import { ensureValidAccessToken } from '../auth/tokenStorage';
 import { createApiUrl } from './config';
 
 export type JsonBody = Record<string, unknown> | Array<unknown>;
@@ -29,9 +29,9 @@ export class ApiError extends Error {
   }
 }
 
-const buildRequestInit = ({ json, headers, body, ...rest }: RequestOptions = {}): RequestInit => {
+const buildRequestInit = async ({ json, headers, body, ...rest }: RequestOptions = {}): Promise<RequestInit> => {
   const requestHeaders = new Headers(headers);
-  const accessToken = getStoredAccessToken();
+  const accessToken = await ensureValidAccessToken();
 
   if (accessToken && !requestHeaders.has('Authorization')) {
     requestHeaders.set('Authorization', `Bearer ${accessToken}`);
@@ -73,7 +73,7 @@ const handleError = async (response: Response): Promise<never> => {
 };
 
 export const apiFetchResponse = async (path: string, options?: RequestOptions) => {
-  const response = await fetch(createApiUrl(path), buildRequestInit(options));
+  const response = await fetch(createApiUrl(path), await buildRequestInit(options));
 
   if (!response.ok) {
     await handleError(response);

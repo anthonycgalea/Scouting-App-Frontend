@@ -1,8 +1,10 @@
+import { loadSupabaseClient } from './supabaseClient';
 import { SUPABASE_CUSTOM_STORAGE_KEY, SUPABASE_STORAGE_KEY_SUFFIX } from './supabaseConfig';
 
 const TOKEN_STORAGE_KEY = 'scouting-app.auth.tokens';
 const USER_STORAGE_KEY = 'scouting-app.auth.user';
 const SUPABASE_STORAGE_PREFIX = 'sb-';
+const TOKEN_EXPIRATION_BUFFER_MS = 60_000;
 
 const isBrowser = typeof window !== 'undefined';
 
@@ -23,6 +25,13 @@ type SupabaseSessionPayload = {
   expires_in?: number | null;
   currentSession?: SupabaseSessionPayload | null;
   session?: SupabaseSessionPayload | null;
+};
+
+type SupabaseAuthLike = {
+  refreshSession: (input: { refresh_token?: string | null }) => Promise<{
+    data: { session?: unknown } | null;
+    error: unknown;
+  }>;
 };
 
 const isSupabaseStorageKey = (key: string) =>
@@ -88,6 +97,14 @@ const readSupabaseStoredTokens = (): StoredTokens | null => {
   return null;
 };
 
+const persistStoredTokens = (tokens: StoredTokens) => {
+  if (!isBrowser) {
+    return;
+  }
+
+  window.localStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(tokens));
+};
+
 const syncTokensFromSupabaseStorage = (): StoredTokens | null => {
   const supabaseTokens = readSupabaseStoredTokens();
   if (!supabaseTokens) {
@@ -98,9 +115,7 @@ const syncTokensFromSupabaseStorage = (): StoredTokens | null => {
     return null;
   }
 
-  if (isBrowser) {
-    window.localStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(supabaseTokens));
-  }
+  persistStoredTokens(supabaseTokens);
 
   return supabaseTokens;
 };
@@ -136,6 +151,51 @@ const readPersistedTokens = (): StoredTokens | null => {
 
 const readStoredTokens = (): StoredTokens | null =>
   syncTokensFromSupabaseStorage() ?? readPersistedTokens();
+
+const shouldRefreshTokens = (tokens: StoredTokens) => {
+  if (!tokens.expiresAt) {
+    return false;
+  }
+
+  return Date.now() >= tokens.expiresAt - TOKEN_EXPIRATION_BUFFER_MS;
+};
+
+const refreshSupabaseTokens = async (tokens: StoredTokens): Promise<StoredTokens | null> => {
+  const supabaseClient = await loadSupabaseClient();
+  if (!supabaseClient) {
+    return null;
+  }
+
+  if (!tokens.refreshToken) {
+    return syncTokensFromSupabaseStorage();
+  }
+
+  const authClient = supabaseClient.auth as SupabaseAuthLike | undefined;
+  if (!authClient) {
+    return null;
+  }
+
+  const { data, error } = await authClient.refreshSession({
+    refresh_token: tokens.refreshToken,
+  });
+
+  if (error) {
+    return null;
+  }
+
+  const refreshedTokens =
+    syncTokensFromSupabaseStorage() ??
+    toStoredTokens((data?.session as SupabaseSessionPayload | null) ?? null) ??
+    toStoredTokens((data?.session as SupabaseSessionPayload | null)?.currentSession);
+
+  if (!refreshedTokens) {
+    return null;
+  }
+
+  persistStoredTokens(refreshedTokens);
+
+  return refreshedTokens;
+};
 
 type StoredAuthUser = {
   displayName: string;
@@ -191,13 +251,29 @@ export const persistTokensFromUrl = () => {
         expiresAt,
       } satisfies StoredTokens;
 
-      window.localStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(storedValue));
+      persistStoredTokens(storedValue);
     }
 
     window.history.replaceState(null, document.title, `${pathname}${search}`);
   }
 
   syncTokensFromSupabaseStorage();
+};
+
+export const ensureValidAccessToken = async (): Promise<string | null> => {
+  const storedTokens = readStoredTokens();
+  if (!storedTokens) {
+    return null;
+  }
+
+  if (!shouldRefreshTokens(storedTokens)) {
+    return storedTokens.accessToken;
+  }
+
+  const refreshedTokens = await refreshSupabaseTokens(storedTokens);
+  const nextTokens = refreshedTokens ?? storedTokens;
+
+  return nextTokens.accessToken;
 };
 
 export const getStoredAccessToken = () => readStoredTokens()?.accessToken ?? null;
