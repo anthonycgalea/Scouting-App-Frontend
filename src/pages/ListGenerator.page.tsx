@@ -376,7 +376,6 @@ export function ListGeneratorPage() {
       return;
     }
 
-    const generatorId = selectedGenerator.id;
     const payloadWeights = Array.from(
       new Set([
         ...Object.keys(savedWeightsSnapshot),
@@ -390,8 +389,10 @@ export function ListGeneratorPage() {
 
     try {
       await updateGeneratorMutation.mutateAsync({
-        id: generatorId,
-        attributes: payloadWeights,
+        generator: {
+          ...selectedGenerator,
+          ...payloadWeights,
+        },
       });
 
       setSavedWeightsSnapshot(payloadWeights);

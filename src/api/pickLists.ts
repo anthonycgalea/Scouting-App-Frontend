@@ -60,19 +60,13 @@ export const usePickListGenerators = ({ enabled }: { enabled?: boolean } = {}) =
   });
 
 export interface UpdatePickListGeneratorRequest {
-  id: string;
-  attributes: Record<string, number>;
+  generator: PickListGenerator;
 }
 
-export const updatePickListGenerator = ({ id, attributes }: UpdatePickListGeneratorRequest) =>
+export const updatePickListGenerator = ({ generator }: UpdatePickListGeneratorRequest) =>
   apiFetch<PickListGenerator>('picklists/generators', {
     method: 'PATCH',
-    json: [
-      {
-        id,
-        ...attributes,
-      },
-    ],
+    json: [generator],
   });
 
 export const useUpdatePickListGenerator = () => {
