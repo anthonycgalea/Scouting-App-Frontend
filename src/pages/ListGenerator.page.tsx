@@ -272,11 +272,10 @@ export function ListGeneratorPage() {
       }
 
       try {
-        const payload: CreatePickListGeneratorRequest = { title: trimmedTitle };
-
-        if (trimmedNotes) {
-          payload.notes = trimmedNotes;
-        }
+        const payload: CreatePickListGeneratorRequest = {
+          title: trimmedTitle,
+          notes: trimmedNotes,
+        };
 
         const createdGenerator = await createGeneratorMutation.mutateAsync(payload);
 

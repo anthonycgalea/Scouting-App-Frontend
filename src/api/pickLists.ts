@@ -94,13 +94,13 @@ export interface CreatePickListGeneratorRequest {
   notes?: string;
 }
 
-export const createPickListGenerator = ({ title, notes }: CreatePickListGeneratorRequest) =>
+export const createPickListGenerator = ({ title, notes = '' }: CreatePickListGeneratorRequest) =>
   apiFetch<PickListGenerator>('picklists/generators', {
     method: 'POST',
     json: {
       title,
       favorited: false,
-      ...(notes ? { notes } : {}),
+      notes,
     },
   });
 
