@@ -15,9 +15,10 @@ import {
   TextInput,
   Textarea,
   Title,
+  Tooltip,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { IconPlus } from '@tabler/icons-react';
+import { IconInfoCircle, IconPlus, IconStar, IconStarFilled } from '@tabler/icons-react';
 
 import {
   useCreatePickListGenerator,
@@ -210,6 +211,15 @@ export function ListGeneratorPage() {
     [selectedSeasonNumber],
   );
 
+  const trimmedSelectedGeneratorNotes = selectedGenerator?.notes.trim() ?? '';
+  const hasSelectedGeneratorNotes = trimmedSelectedGeneratorNotes.length > 0;
+  const selectedGeneratorSeasonLabel =
+    selectedGenerator != null
+      ? formatSeasonLabel(
+          selectedSeasonNumber != null ? selectedSeasonNumber : selectedGenerator.season,
+        )
+      : null;
+
   const seasonOptions = useMemo(() => {
     if (!generators) {
       return [];
@@ -363,36 +373,107 @@ export function ListGeneratorPage() {
                 <>
                   <Stack gap="xs">
                     <Group gap="xs" justify="space-between" align="flex-start" wrap="wrap">
-                      <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
-                        <Text fw={600} size="lg" lineClamp={2}>
+                      <Group
+                        gap="xs"
+                        align="center"
+                        wrap="wrap"
+                        style={{ flex: 1, minWidth: 0 }}
+                      >
+                        <Tooltip
+                          label={
+                            selectedGenerator.favorited
+                              ? 'Favorited generator'
+                              : 'Generator not favorited'
+                          }
+                          withinPortal
+                        >
+                          <Box
+                            component="span"
+                            role="img"
+                            aria-label={
+                              selectedGenerator.favorited
+                                ? 'Generator is favorited'
+                                : 'Generator is not favorited'
+                            }
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              color: selectedGenerator.favorited
+                                ? 'var(--mantine-color-yellow-6)'
+                                : 'var(--mantine-color-dimmed)',
+                              cursor: 'default',
+                            }}
+                          >
+                            {selectedGenerator.favorited ? (
+                              <IconStarFilled size={18} />
+                            ) : (
+                              <IconStar size={18} />
+                            )}
+                          </Box>
+                        </Tooltip>
+                        <Text
+                          fw={600}
+                          size="lg"
+                          lineClamp={2}
+                          style={{ flex: 1, minWidth: 0 }}
+                        >
                           {selectedGenerator.title}
                         </Text>
-                        <Text c="dimmed" size="sm">
+                        {selectedGeneratorSeasonLabel && (
+                          <Badge variant="light" color="blue" style={{ flexShrink: 0 }}>
+                            {selectedGeneratorSeasonLabel}
+                          </Badge>
+                        )}
+                      </Group>
+                      <Group
+                        gap="xs"
+                        align="center"
+                        justify="flex-end"
+                        wrap="wrap"
+                        style={{ flexShrink: 0 }}
+                      >
+                        <Text c="dimmed" size="sm" style={{ flexShrink: 0 }}>
                           Last updated{' '}
                           {new Date(selectedGenerator.timestamp).toLocaleString(undefined, {
                             dateStyle: 'medium',
                             timeStyle: 'short',
                           })}
                         </Text>
-                      </Stack>
-                      <Badge variant="light" color="blue">
-                        {selectedSeasonNumber != null
-                          ? formatSeasonLabel(selectedSeasonNumber)
-                          : formatSeasonLabel(selectedGenerator.season)}
-                      </Badge>
+                        <Tooltip
+                          label={
+                            hasSelectedGeneratorNotes
+                              ? trimmedSelectedGeneratorNotes
+                              : 'No notes have been added for this generator.'
+                          }
+                          multiline
+                          maw={260}
+                          withinPortal
+                        >
+                          <Box
+                            component="span"
+                            role="img"
+                            aria-label={
+                              hasSelectedGeneratorNotes
+                                ? `Generator notes: ${trimmedSelectedGeneratorNotes}`
+                                : 'No notes have been added for this generator.'
+                            }
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              color: hasSelectedGeneratorNotes
+                                ? 'var(--mantine-color-green-6)'
+                                : 'var(--mantine-color-dimmed)',
+                              cursor: 'default',
+                            }}
+                          >
+                            <IconInfoCircle size={18} />
+                          </Box>
+                        </Tooltip>
+                      </Group>
                     </Group>
                     <Text c="dimmed" size="sm">
                       Configure how this generator scores each attribute using the configured weights below.
                     </Text>
-                  </Stack>
-
-                  <Stack gap="sm">
-                    <Title order={4}>Notes</Title>
-                    {selectedGenerator.notes ? (
-                      <Text>{selectedGenerator.notes}</Text>
-                    ) : (
-                      <Text c="dimmed">No notes have been added for this generator.</Text>
-                    )}
                   </Stack>
 
                   <Stack gap="sm" style={{ flex: 1, minHeight: 0 }}>
