@@ -471,13 +471,8 @@ export function ListGeneratorPage() {
                         </Tooltip>
                       </Group>
                     </Group>
-                    <Text c="dimmed" size="sm">
-                      Configure how this generator scores each attribute using the configured weights below.
-                    </Text>
                   </Stack>
-
                   <Stack gap="sm" style={{ flex: 1, minHeight: 0 }}>
-                    <Title order={4}>Configured Weights</Title>
                     {activeWeightFields.length > 0 ? (
                       <ScrollArea style={{ flex: 1 }} offsetScrollbars>
                         <Stack gap="sm" py="xs">
