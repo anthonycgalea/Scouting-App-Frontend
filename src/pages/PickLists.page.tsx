@@ -592,6 +592,9 @@ export function PickListsPage() {
         title: trimmedTitle,
         ...(trimmedNotes ? { notes: trimmedNotes } : {}),
         ranks: [],
+        ...(shouldUseGenerator && selectedGeneratorId
+          ? { generatorId: selectedGeneratorId }
+          : {}),
       });
 
       notifications.show({
