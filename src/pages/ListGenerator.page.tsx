@@ -20,7 +20,7 @@ import {
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { IconNotes, IconPlus, IconStar, IconStarFilled } from '@tabler/icons-react';
+import { IconEdit, IconPlus, IconStar, IconStarFilled } from '@tabler/icons-react';
 
 import {
   useCreatePickListGenerator,
@@ -656,7 +656,7 @@ export function ListGeneratorPage() {
                                 : 'var(--mantine-color-dimmed)',
                             }}
                           >
-                            <IconNotes size={18} />
+                            <IconEdit size={18} />
                           </ActionIcon>
                         </Tooltip>
                       </Group>
