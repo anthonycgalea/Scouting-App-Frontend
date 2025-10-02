@@ -1,19 +1,32 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 
 import {
+  Button,
   Badge,
   Box,
   Card,
+  Checkbox,
+  Code,
   Flex,
   Group,
+  Modal,
+  NumberInput,
   ScrollArea,
   Select,
   Stack,
   Text,
+  TextInput,
+  Textarea,
   Title,
 } from '@mantine/core';
+import { notifications } from '@mantine/notifications';
+import { IconPlus } from '@tabler/icons-react';
 
-import { usePickListGenerators } from '@/api/pickLists';
+import {
+  useCreatePickListGenerator,
+  usePickListGenerators,
+  type CreatePickListGeneratorRequest,
+} from '@/api/pickLists';
 import { useRequireOrganizationAccess } from '@/hooks/useRequireOrganizationAccess';
 
 import { PickListGeneratorSelector } from '@/components/PickListGenerators/PickListGeneratorSelector';
@@ -82,14 +95,36 @@ const formatWeightKey = (key: string) =>
 const formatSeasonLabel = (season: number) =>
   SEASON_LABELS[season] ?? (season >= 1900 ? `${season}` : `Season ${season}`);
 
+const buildDefaultWeightsForSeason = (season: number) => {
+  const labels = WEIGHT_LABELS_BY_SEASON[season];
+
+  if (!labels) {
+    return {};
+  }
+
+  return Object.keys(labels).reduce<Record<string, number>>((accumulator, key) => {
+    accumulator[key] = 0.5;
+    return accumulator;
+  }, {});
+};
+
 export function ListGeneratorPage() {
   const { canAccessOrganizationPages, isCheckingAccess } = useRequireOrganizationAccess();
   const { data: generators, isLoading } = usePickListGenerators({ enabled: canAccessOrganizationPages });
+  const createGeneratorMutation = useCreatePickListGenerator();
 
   const [selectedSeason, setSelectedSeason] = useState<string | null>(null);
   const [hasInitializedSeason, setHasInitializedSeason] = useState(false);
   const [selectedGeneratorId, setSelectedGeneratorId] = useState<string | null>(null);
   const [weightsDraft, setWeightsDraft] = useState<Record<string, number>>({});
+  const [createModalOpened, setCreateModalOpened] = useState(false);
+  const [createGeneratorTitle, setCreateGeneratorTitle] = useState('');
+  const [createGeneratorNotes, setCreateGeneratorNotes] = useState('');
+  const [createGeneratorFavorited, setCreateGeneratorFavorited] = useState(false);
+  const [createGeneratorSeason, setCreateGeneratorSeason] = useState<number>(DEFAULT_SEASON_ID);
+  const [createGeneratorWeights, setCreateGeneratorWeights] = useState<Record<string, number>>(
+    () => buildDefaultWeightsForSeason(DEFAULT_SEASON_ID),
+  );
 
   useEffect(() => {
     if (!generators || generators.length === 0) {
@@ -214,6 +249,126 @@ export function ListGeneratorPage() {
     });
   }, [weightsDraft, weightLabels]);
 
+  const createModalWeightLabels = useMemo(
+    () => WEIGHT_LABELS_BY_SEASON[createGeneratorSeason] ?? {},
+    [createGeneratorSeason],
+  );
+
+  const createModalWeightFields = useMemo(() => {
+    const entries = Object.entries(createGeneratorWeights);
+
+    return entries.sort((a, b) => {
+      const labelA = (createModalWeightLabels[a[0]] ?? formatWeightKey(a[0])).toLowerCase();
+      const labelB = (createModalWeightLabels[b[0]] ?? formatWeightKey(b[0])).toLowerCase();
+      return labelA.localeCompare(labelB);
+    });
+  }, [createGeneratorWeights, createModalWeightLabels]);
+
+  const handleOpenCreateModal = useCallback(() => {
+    const initialSeason = selectedSeasonNumber ?? DEFAULT_SEASON_ID;
+    setCreateGeneratorTitle('');
+    setCreateGeneratorNotes('');
+    setCreateGeneratorFavorited(false);
+    setCreateGeneratorSeason(initialSeason);
+    setCreateGeneratorWeights(buildDefaultWeightsForSeason(initialSeason));
+    setCreateModalOpened(true);
+  }, [selectedSeasonNumber]);
+
+  const handleCloseCreateModal = useCallback(() => {
+    setCreateModalOpened(false);
+  }, []);
+
+  const handleCreateGeneratorSeasonChange = useCallback((value: string | number) => {
+    if (value === '' || value === null) {
+      return;
+    }
+
+    const numericValue = Number(value);
+
+    if (Number.isNaN(numericValue)) {
+      return;
+    }
+
+    setCreateGeneratorSeason(numericValue);
+    setCreateGeneratorWeights(buildDefaultWeightsForSeason(numericValue));
+  }, []);
+
+  const createGeneratorPayload = useMemo(() => {
+    const trimmedTitle = createGeneratorTitle.trim();
+    const trimmedNotes = createGeneratorNotes.trim();
+
+    const payload: CreatePickListGeneratorRequest = {
+      title: trimmedTitle,
+      favorited: createGeneratorFavorited,
+      season: createGeneratorSeason,
+      ...createGeneratorWeights,
+    };
+
+    if (trimmedNotes) {
+      payload.notes = trimmedNotes;
+    }
+
+    return payload;
+  }, [
+    createGeneratorFavorited,
+    createGeneratorNotes,
+    createGeneratorSeason,
+    createGeneratorTitle,
+    createGeneratorWeights,
+  ]);
+
+  const createGeneratorPayloadPreview = useMemo(
+    () => JSON.stringify(createGeneratorPayload, null, 2),
+    [createGeneratorPayload],
+  );
+
+  const handleSubmitCreateGenerator = useCallback(
+    async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+
+      const trimmedTitle = createGeneratorTitle.trim();
+
+      if (!trimmedTitle) {
+        notifications.show({
+          color: 'red',
+          title: 'Unable to create generator',
+          message: 'A title is required to create a pick list generator.',
+        });
+        return;
+      }
+
+      try {
+        const createdGenerator = await createGeneratorMutation.mutateAsync(createGeneratorPayload);
+
+        notifications.show({
+          color: 'green',
+          title: 'Generator created',
+          message: `Created “${trimmedTitle}”.`,
+        });
+
+        setSelectedSeason(`${createdGenerator.season}`);
+        setSelectedGeneratorId(createdGenerator.id);
+        setCreateModalOpened(false);
+      } catch (error) {
+        notifications.show({
+          color: 'red',
+          title: 'Unable to create generator',
+          message:
+            error instanceof Error
+              ? error.message
+              : 'An unexpected error occurred while creating the pick list generator.',
+        });
+      }
+    },
+    [
+      createGeneratorMutation,
+      createGeneratorPayload,
+      createGeneratorTitle,
+      setSelectedSeason,
+      setSelectedGeneratorId,
+    ],
+  );
+
   if (isCheckingAccess || !canAccessOrganizationPages) {
     return null;
   }
@@ -223,16 +378,21 @@ export function ListGeneratorPage() {
       <Stack gap="lg" h="100%">
         <Group align="center" justify="space-between" wrap="wrap" gap="sm">
           <Title order={2}>Pick List Generators</Title>
-          <Select
-            placeholder="Select season"
-            data={seasonOptions}
-            value={selectedSeason}
-            onChange={setSelectedSeason}
-            clearable
-            searchable={seasonOptions.length > 6}
-            disabled={seasonOptions.length === 0}
-            w={{ base: '100%', sm: '240px' }}
-          />
+          <Group gap="xs" wrap="wrap" justify="flex-end">
+            <Select
+              placeholder="Select season"
+              data={seasonOptions}
+              value={selectedSeason}
+              onChange={setSelectedSeason}
+              clearable
+              searchable={seasonOptions.length > 6}
+              disabled={seasonOptions.length === 0}
+              w={{ base: '100%', sm: '240px' }}
+            />
+            <Button leftSection={<IconPlus stroke={1.5} size={16} />} onClick={handleOpenCreateModal}>
+              Create Generator
+            </Button>
+          </Group>
         </Group>
 
         <Flex direction={{ base: 'column', md: 'row' }} gap="md" style={{ flex: 1, minHeight: 0 }}>
@@ -347,6 +507,86 @@ export function ListGeneratorPage() {
           </Card>
         </Flex>
       </Stack>
+      <Modal
+        opened={createModalOpened}
+        onClose={handleCloseCreateModal}
+        title="Create Pick List Generator"
+        centered
+        size="lg"
+      >
+        <form onSubmit={handleSubmitCreateGenerator}>
+          <Stack gap="md">
+            <TextInput
+              required
+              label="Title"
+              placeholder="Enter generator title"
+              value={createGeneratorTitle}
+              onChange={(event) => setCreateGeneratorTitle(event.currentTarget.value)}
+            />
+            <Textarea
+              label="Notes"
+              placeholder="Add optional notes"
+              minRows={3}
+              autosize
+              value={createGeneratorNotes}
+              onChange={(event) => setCreateGeneratorNotes(event.currentTarget.value)}
+            />
+            <Checkbox
+              label="Mark as favorite"
+              checked={createGeneratorFavorited}
+              onChange={(event) => setCreateGeneratorFavorited(event.currentTarget.checked)}
+            />
+            <NumberInput
+              label="Season"
+              value={createGeneratorSeason}
+              min={0}
+              allowDecimal={false}
+              onChange={handleCreateGeneratorSeasonChange}
+            />
+            <Stack gap="sm">
+              <Title order={5}>Weights</Title>
+              {createModalWeightFields.length > 0 ? (
+                <ScrollArea.Autosize mah={240} offsetScrollbars>
+                  <Stack gap="md" py="xs">
+                    {createModalWeightFields.map(([key, value]) => (
+                      <WeightSlider
+                        key={key}
+                        label={createModalWeightLabels[key] ?? formatWeightKey(key)}
+                        value={value}
+                        onChange={(nextValue) => {
+                          setCreateGeneratorWeights((current) => ({
+                            ...current,
+                            [key]: nextValue,
+                          }));
+                        }}
+                      />
+                    ))}
+                  </Stack>
+                </ScrollArea.Autosize>
+              ) : (
+                <Text c="dimmed" size="sm">
+                  This season does not expose any configurable weights. You can update the generator after it is
+                  created.
+                </Text>
+              )}
+            </Stack>
+            <Stack gap={4}>
+              <Text fw={600} size="sm">
+                JSON request preview
+              </Text>
+              <Code block>{createGeneratorPayloadPreview}</Code>
+            </Stack>
+            <Group justify="flex-end">
+              <Button variant="default" type="button" onClick={handleCloseCreateModal}>
+                Cancel
+              </Button>
+              <Button type="submit" loading={createGeneratorMutation.isPending}>
+                Create
+              </Button>
+            </Group>
+          </Stack>
+        </form>
+      </Modal>
     </Box>
   );
 }
