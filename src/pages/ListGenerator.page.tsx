@@ -5,12 +5,9 @@ import {
   Badge,
   Box,
   Card,
-  Checkbox,
-  Code,
   Flex,
   Group,
   Modal,
-  NumberInput,
   ScrollArea,
   Select,
   Stack,
@@ -95,19 +92,6 @@ const formatWeightKey = (key: string) =>
 const formatSeasonLabel = (season: number) =>
   SEASON_LABELS[season] ?? (season >= 1900 ? `${season}` : `Season ${season}`);
 
-const buildDefaultWeightsForSeason = (season: number) => {
-  const labels = WEIGHT_LABELS_BY_SEASON[season];
-
-  if (!labels) {
-    return {};
-  }
-
-  return Object.keys(labels).reduce<Record<string, number>>((accumulator, key) => {
-    accumulator[key] = 0.5;
-    return accumulator;
-  }, {});
-};
-
 export function ListGeneratorPage() {
   const { canAccessOrganizationPages, isCheckingAccess } = useRequireOrganizationAccess();
   const { data: generators, isLoading } = usePickListGenerators({ enabled: canAccessOrganizationPages });
@@ -120,11 +104,6 @@ export function ListGeneratorPage() {
   const [createModalOpened, setCreateModalOpened] = useState(false);
   const [createGeneratorTitle, setCreateGeneratorTitle] = useState('');
   const [createGeneratorNotes, setCreateGeneratorNotes] = useState('');
-  const [createGeneratorFavorited, setCreateGeneratorFavorited] = useState(false);
-  const [createGeneratorSeason, setCreateGeneratorSeason] = useState<number>(DEFAULT_SEASON_ID);
-  const [createGeneratorWeights, setCreateGeneratorWeights] = useState<Record<string, number>>(
-    () => buildDefaultWeightsForSeason(DEFAULT_SEASON_ID),
-  );
 
   useEffect(() => {
     if (!generators || generators.length === 0) {
@@ -249,84 +228,22 @@ export function ListGeneratorPage() {
     });
   }, [weightsDraft, weightLabels]);
 
-  const createModalWeightLabels = useMemo(
-    () => WEIGHT_LABELS_BY_SEASON[createGeneratorSeason] ?? {},
-    [createGeneratorSeason],
-  );
-
-  const createModalWeightFields = useMemo(() => {
-    const entries = Object.entries(createGeneratorWeights);
-
-    return entries.sort((a, b) => {
-      const labelA = (createModalWeightLabels[a[0]] ?? formatWeightKey(a[0])).toLowerCase();
-      const labelB = (createModalWeightLabels[b[0]] ?? formatWeightKey(b[0])).toLowerCase();
-      return labelA.localeCompare(labelB);
-    });
-  }, [createGeneratorWeights, createModalWeightLabels]);
-
   const handleOpenCreateModal = useCallback(() => {
-    const initialSeason = selectedSeasonNumber ?? DEFAULT_SEASON_ID;
     setCreateGeneratorTitle('');
     setCreateGeneratorNotes('');
-    setCreateGeneratorFavorited(false);
-    setCreateGeneratorSeason(initialSeason);
-    setCreateGeneratorWeights(buildDefaultWeightsForSeason(initialSeason));
     setCreateModalOpened(true);
-  }, [selectedSeasonNumber]);
+  }, []);
 
   const handleCloseCreateModal = useCallback(() => {
     setCreateModalOpened(false);
   }, []);
-
-  const handleCreateGeneratorSeasonChange = useCallback((value: string | number) => {
-    if (value === '' || value === null) {
-      return;
-    }
-
-    const numericValue = Number(value);
-
-    if (Number.isNaN(numericValue)) {
-      return;
-    }
-
-    setCreateGeneratorSeason(numericValue);
-    setCreateGeneratorWeights(buildDefaultWeightsForSeason(numericValue));
-  }, []);
-
-  const createGeneratorPayload = useMemo(() => {
-    const trimmedTitle = createGeneratorTitle.trim();
-    const trimmedNotes = createGeneratorNotes.trim();
-
-    const payload: CreatePickListGeneratorRequest = {
-      title: trimmedTitle,
-      favorited: createGeneratorFavorited,
-      season: createGeneratorSeason,
-      ...createGeneratorWeights,
-    };
-
-    if (trimmedNotes) {
-      payload.notes = trimmedNotes;
-    }
-
-    return payload;
-  }, [
-    createGeneratorFavorited,
-    createGeneratorNotes,
-    createGeneratorSeason,
-    createGeneratorTitle,
-    createGeneratorWeights,
-  ]);
-
-  const createGeneratorPayloadPreview = useMemo(
-    () => JSON.stringify(createGeneratorPayload, null, 2),
-    [createGeneratorPayload],
-  );
 
   const handleSubmitCreateGenerator = useCallback(
     async (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
 
       const trimmedTitle = createGeneratorTitle.trim();
+      const trimmedNotes = createGeneratorNotes.trim();
 
       if (!trimmedTitle) {
         notifications.show({
@@ -338,7 +255,13 @@ export function ListGeneratorPage() {
       }
 
       try {
-        const createdGenerator = await createGeneratorMutation.mutateAsync(createGeneratorPayload);
+        const payload: CreatePickListGeneratorRequest = { title: trimmedTitle };
+
+        if (trimmedNotes) {
+          payload.notes = trimmedNotes;
+        }
+
+        const createdGenerator = await createGeneratorMutation.mutateAsync(payload);
 
         notifications.show({
           color: 'green',
@@ -362,8 +285,8 @@ export function ListGeneratorPage() {
     },
     [
       createGeneratorMutation,
-      createGeneratorPayload,
       createGeneratorTitle,
+      createGeneratorNotes,
       setSelectedSeason,
       setSelectedGeneratorId,
     ],
@@ -531,51 +454,6 @@ export function ListGeneratorPage() {
               value={createGeneratorNotes}
               onChange={(event) => setCreateGeneratorNotes(event.currentTarget.value)}
             />
-            <Checkbox
-              label="Mark as favorite"
-              checked={createGeneratorFavorited}
-              onChange={(event) => setCreateGeneratorFavorited(event.currentTarget.checked)}
-            />
-            <NumberInput
-              label="Season"
-              value={createGeneratorSeason}
-              min={0}
-              allowDecimal={false}
-              onChange={handleCreateGeneratorSeasonChange}
-            />
-            <Stack gap="sm">
-              <Title order={5}>Weights</Title>
-              {createModalWeightFields.length > 0 ? (
-                <ScrollArea.Autosize mah={240} offsetScrollbars>
-                  <Stack gap="md" py="xs">
-                    {createModalWeightFields.map(([key, value]) => (
-                      <WeightSlider
-                        key={key}
-                        label={createModalWeightLabels[key] ?? formatWeightKey(key)}
-                        value={value}
-                        onChange={(nextValue) => {
-                          setCreateGeneratorWeights((current) => ({
-                            ...current,
-                            [key]: nextValue,
-                          }));
-                        }}
-                      />
-                    ))}
-                  </Stack>
-                </ScrollArea.Autosize>
-              ) : (
-                <Text c="dimmed" size="sm">
-                  This season does not expose any configurable weights. You can update the generator after it is
-                  created.
-                </Text>
-              )}
-            </Stack>
-            <Stack gap={4}>
-              <Text fw={600} size="sm">
-                JSON request preview
-              </Text>
-              <Code block>{createGeneratorPayloadPreview}</Code>
-            </Stack>
             <Group justify="flex-end">
               <Button variant="default" type="button" onClick={handleCloseCreateModal}>
                 Cancel
