@@ -31,62 +31,44 @@ const BASE_GENERATOR_FIELDS = new Set([
   'last_updated',
 ]);
 
+const DEFAULT_SEASON_ID = 1;
+
+const REEFSCAPE_WEIGHT_LABELS = {
+  al4c: 'Autonomous Level 4 Coral',
+  al3c: 'Autonomous Level 3 Coral',
+  al2c: 'Autonomous Level 2 Coral',
+  al1c: 'Autonomous Level 1 Coral',
+  autonomous_coral: 'Autonomous Coral',
+  autonomous_algae: 'Autonomous Algae',
+  autonomous_points: 'Autonomous Points',
+  tl4c: 'Teleop Level 4 Coral',
+  tl3c: 'Teleop Level 3 Coral',
+  tl2c: 'Teleop Level 2 Coral',
+  tl1c: 'Teleop Level 1 Coral',
+  teleop_coral: 'Teleop Coral',
+  teleop_algae: 'Teleop Algae',
+  teleop_points: 'Teleop Points',
+  aNet: 'Autonomous Net Algae',
+  tNet: 'Teleop Net Algae',
+  aProcessor: 'Autonomous Processor Algae',
+  tProcessor: 'Teleop Processor Algae',
+  endgame_points: 'Endgame Points',
+  total_coral: 'Total Coral',
+  total_algae: 'Total Algae',
+  total_game_pieces: 'Total Game Pieces',
+  total_points: 'Total Points',
+} as const;
+
 const WEIGHT_LABELS_BY_SEASON: Record<number, Record<string, string>> = {
-  0: {
-    al4c: 'Autonomous Level 4 Coral',
-    al3c: 'Autonomous Level 3 Coral',
-    al2c: 'Autonomous Level 2 Coral',
-    al1c: 'Autonomous Level 1 Coral',
-    autonomous_coral: 'Autonomous Coral',
-    autonomous_algae: 'Autonomous Algae',
-    autonomous_points: 'Autonomous Points',
-    tl4c: 'Teleop Level 4 Coral',
-    tl3c: 'Teleop Level 3 Coral',
-    tl2c: 'Teleop Level 2 Coral',
-    tl1c: 'Teleop Level 1 Coral',
-    teleop_coral: 'Teleop Coral',
-    teleop_algae: 'Teleop Algae',
-    teleop_points: 'Teleop Points',
-    aNet: 'Autonomous Net Algae',
-    tNet: 'Teleop Net Algae',
-    aProcessor: 'Autonomous Processor Algae',
-    tProcessor: 'Teleop Processor Algae',
-    endgame_points: 'Endgame Points',
-    total_coral: 'Total Coral',
-    total_algae: 'Total Algae',
-    total_game_pieces: 'Total Game Pieces',
-    total_points: 'Total Points',
-  },
-  2025: {
-    al4c: 'Autonomous Level 4 Coral',
-    al3c: 'Autonomous Level 3 Coral',
-    al2c: 'Autonomous Level 2 Coral',
-    al1c: 'Autonomous Level 1 Coral',
-    autonomous_coral: 'Autonomous Coral',
-    autonomous_algae: 'Autonomous Algae',
-    autonomous_points: 'Autonomous Points',
-    tl4c: 'Teleop Level 4 Coral',
-    tl3c: 'Teleop Level 3 Coral',
-    tl2c: 'Teleop Level 2 Coral',
-    tl1c: 'Teleop Level 1 Coral',
-    teleop_coral: 'Teleop Coral',
-    teleop_algae: 'Teleop Algae',
-    teleop_points: 'Teleop Points',
-    aNet: 'Autonomous Net Algae',
-    tNet: 'Teleop Net Algae',
-    aProcessor: 'Autonomous Processor Algae',
-    tProcessor: 'Teleop Processor Algae',
-    endgame_points: 'Endgame Points',
-    total_coral: 'Total Coral',
-    total_algae: 'Total Algae',
-    total_game_pieces: 'Total Game Pieces',
-    total_points: 'Total Points',
-  },
+  0: REEFSCAPE_WEIGHT_LABELS,
+  [DEFAULT_SEASON_ID]: REEFSCAPE_WEIGHT_LABELS,
+  2025: REEFSCAPE_WEIGHT_LABELS,
 };
 
-const SEASON_YEAR_LABELS: Record<number, string> = {
-  0: '2025',
-  2025: '2025',
+const SEASON_LABELS: Record<number, string> = {
+  0: '2025: REEFSCAPE',
+  [DEFAULT_SEASON_ID]: '2025: REEFSCAPE',
+  2025: '2025: REEFSCAPE',
 };
 
 const formatWeightKey = (key: string) =>
@@ -98,7 +80,7 @@ const formatWeightKey = (key: string) =>
     .join(' ');
 
 const formatSeasonLabel = (season: number) =>
-  SEASON_YEAR_LABELS[season] ?? (season >= 1900 ? `${season}` : `Season ${season}`);
+  SEASON_LABELS[season] ?? (season >= 1900 ? `${season}` : `Season ${season}`);
 
 export function ListGeneratorPage() {
   const { canAccessOrganizationPages, isCheckingAccess } = useRequireOrganizationAccess();
@@ -121,6 +103,12 @@ export function ListGeneratorPage() {
     );
 
     if (!hasInitializedSeason) {
+      if (sortedSeasons.includes(DEFAULT_SEASON_ID)) {
+        setSelectedSeason(`${DEFAULT_SEASON_ID}`);
+        setHasInitializedSeason(true);
+        return;
+      }
+
       const [firstSeason] = sortedSeasons;
 
       if (firstSeason !== undefined) {
