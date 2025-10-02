@@ -1,4 +1,13 @@
-import { ActionIcon, Card, Group, Slider, Stack, Text, Tooltip } from '@mantine/core';
+import {
+  ActionIcon,
+  Card,
+  Group,
+  NumberInput,
+  Slider,
+  Stack,
+  Text,
+  Tooltip,
+} from '@mantine/core';
 import { useMemo } from 'react';
 import { IconTrash } from '@tabler/icons-react';
 
@@ -22,9 +31,35 @@ export function WeightSlider({ label, value, onChange, onRemove }: WeightSliderP
             {label}
           </Text>
           <Group gap="xs" align="center">
-            <Text fw={600} size="sm">
-              {sliderValue}
-            </Text>
+            <NumberInput
+              value={sliderValue}
+              min={0}
+              max={100}
+              step={1}
+              clampBehavior="strict"
+              allowDecimal={false}
+              size="xs"
+              aria-label={`Set ${label} weight`}
+              w={74}
+              onChange={(nextValue) => {
+                if (nextValue === '') {
+                  return;
+                }
+
+                const parsedValue =
+                  typeof nextValue === 'number'
+                    ? nextValue
+                    : Number.parseInt(nextValue, 10);
+
+                if (Number.isNaN(parsedValue)) {
+                  return;
+                }
+
+                const clampedValue = Math.min(100, Math.max(0, Math.round(parsedValue)));
+
+                onChange(clampedValue / 100);
+              }}
+            />
             <Tooltip label="Remove weight" withArrow>
               <ActionIcon
                 aria-label={`Remove ${label} weight`}
