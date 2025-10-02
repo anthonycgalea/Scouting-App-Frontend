@@ -425,6 +425,7 @@ export function ListGeneratorPage() {
 
     const generatorId = selectedGenerator.id;
     const payloadAttributes: Record<string, number | string> = {};
+    let trimmedTitleForSave: string | null = null;
     let nextWeightSnapshot: Record<string, number> | null = null;
 
     if (hasUnsavedWeightChanges) {
@@ -443,9 +444,9 @@ export function ListGeneratorPage() {
     }
 
     if (hasUnsavedTitleChanges) {
-      const trimmedTitle = titleDraft.trim();
+      trimmedTitleForSave = titleDraft.trim();
 
-      if (!trimmedTitle) {
+      if (!trimmedTitleForSave) {
         notifications.show({
           color: 'red',
           title: 'Unable to save changes',
@@ -454,12 +455,14 @@ export function ListGeneratorPage() {
         return;
       }
 
-      payloadAttributes.title = trimmedTitle;
+      payloadAttributes.title = trimmedTitleForSave;
     }
 
     if (Object.keys(payloadAttributes).length > 0) {
-      const updatedTitleForMessage =
-        (payloadAttributes.title as string | undefined) ?? titleDraft;
+      const trimmedDraftTitle = titleDraft.trim();
+      const fallbackTitle =
+        trimmedDraftTitle || savedTitleSnapshot || selectedGenerator.title || 'generator';
+      const updatedTitleForMessage = trimmedTitleForSave ?? fallbackTitle;
 
       try {
         await updateGeneratorMutation.mutateAsync({
@@ -471,9 +474,10 @@ export function ListGeneratorPage() {
           setSavedWeightsSnapshot(nextWeightSnapshot);
         }
 
-        if (hasUnsavedTitleChanges) {
-          setSavedTitleSnapshot(payloadAttributes.title as string);
-          setTitleDraft(payloadAttributes.title as string);
+        if (hasUnsavedTitleChanges && trimmedTitleForSave) {
+          setSavedTitleSnapshot(trimmedTitleForSave);
+          setTitleDraft(trimmedTitleForSave);
+          setTitleModalDraft(trimmedTitleForSave);
         }
 
         notifications.show({
@@ -513,9 +517,11 @@ export function ListGeneratorPage() {
     titleDraft,
     notesDraft,
     savedWeightsSnapshot,
+    savedTitleSnapshot,
     selectedGenerator,
     updateGeneratorMutation,
     weightsDraft,
+    setTitleModalDraft,
   ]);
 
   const handleOpenNotesModal = useCallback(() => {
