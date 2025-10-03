@@ -104,6 +104,10 @@ export const useUpdatePitScoutRecord = (teamNumber: number) => {
     mutationFn: updatePitScoutRecord,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: pitScoutQueryKey(teamNumber) });
+      await queryClient.fetchQuery({
+        queryKey: pitScoutQueryKey(teamNumber),
+        queryFn: () => fetchPitScoutRecords(teamNumber),
+      });
     },
   });
 };
