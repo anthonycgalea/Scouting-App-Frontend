@@ -64,7 +64,7 @@ type TextField =
   | 'overallNotes';
 
 const ENDGAME_OPTIONS: PitScout['endgame'][] = ['NONE', 'PARK', 'SHALLOW', 'DEEP'];
-const NULLABLE_NUMBER_FIELDS: NumberField[] = ['robot_weight', 'autoCoralCount'];
+const NULLABLE_NUMBER_FIELDS: NumberField[] = ['robot_weight'];
 
 const DRIVETRAIN_OPTIONS = [
   { value: 'SWERVE', label: 'SWERVE' },
@@ -94,7 +94,7 @@ const getEmptyFormValues = (teamNumber: number): PitScoutFormValues => ({
   autoL3Coral: false,
   autoL2Coral: false,
   autoL1Coral: false,
-  autoCoralCount: null,
+  autoCoralCount: 0,
   autoAlgaeNet: 0,
   autoAlgaeProcessor: 0,
   autoNotes: '',
@@ -128,7 +128,7 @@ const normalizeRecord = (record: PitScout | undefined, teamNumber: number): PitS
     user_id: record.user_id ?? '',
     organization_id: record.organization_id ?? null,
     robot_weight: record.robot_weight ?? null,
-    autoCoralCount: record.autoCoralCount ?? null,
+    autoCoralCount: record.autoCoralCount ?? 0,
     autoAlgaeNet: record.autoAlgaeNet ?? 0,
     autoAlgaeProcessor: record.autoAlgaeProcessor ?? 0,
   } satisfies PitScoutFormValues;
@@ -332,7 +332,7 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
       autoL3Coral: formValues.autoL3Coral,
       autoL2Coral: formValues.autoL2Coral,
       autoL1Coral: formValues.autoL1Coral,
-      autoCoralCount: formValues.autoCoralCount ?? null,
+      autoCoralCount: formValues.autoCoralCount ?? 0,
       autoAlgaeNet: formValues.autoAlgaeNet ?? 0,
       autoAlgaeProcessor: formValues.autoAlgaeProcessor ?? 0,
       autoNotes: formValues.autoNotes ?? '',
@@ -563,7 +563,7 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
           <Grid.Col span={{ base: 12, md: 4 }}>
             <NumberInput
               label="Coral Count"
-              value={formValues.autoCoralCount ?? undefined}
+              value={formValues.autoCoralCount ?? 0}
               onChange={handleNumberChange('autoCoralCount')}
               disabled={!isEditing}
               min={0}
