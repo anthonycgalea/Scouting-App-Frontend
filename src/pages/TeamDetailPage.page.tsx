@@ -32,7 +32,7 @@ export function TeamDetailPage() {
       case 'analytics':
         return <TeamAnalytics teamNumber={teamNumber} />;
       case 'pit-scouting':
-        return <TeamPitScout />;
+        return <TeamPitScout teamNumber={teamNumber} />;
       default:
         return <TeamMatchTable teamNumber={teamNumber} />;
     }
