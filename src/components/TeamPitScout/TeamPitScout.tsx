@@ -13,6 +13,7 @@ import {
   Textarea,
   TextInput,
   Title,
+  type MantineTheme,
 } from '@mantine/core';
 import {
   type PitScout,
@@ -158,6 +159,44 @@ const getErrorMessage = (error: unknown) => {
   return 'An unexpected error occurred.';
 };
 
+type ThemeWithColorScheme = MantineTheme & { colorScheme?: 'light' | 'dark' };
+
+const getReadOnlyFieldStyles = (theme: MantineTheme) => {
+  const colorScheme = (theme as ThemeWithColorScheme).colorScheme ?? 'light';
+
+  return {
+    label: {
+      color: colorScheme === 'dark' ? theme.colors.gray[4] : theme.colors.gray[7],
+    },
+    input: {
+      color: colorScheme === 'dark' ? theme.white : theme.colors.dark[9],
+      backgroundColor: colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[1],
+      opacity: 1,
+      WebkitTextFillColor: colorScheme === 'dark' ? theme.white : theme.colors.dark[9],
+      cursor: 'default',
+    },
+  };
+};
+
+const getReadOnlyCheckboxStyles = (theme: MantineTheme) => {
+  const colorScheme = (theme as ThemeWithColorScheme).colorScheme ?? 'light';
+
+  return {
+    label: {
+      color: colorScheme === 'dark' ? theme.white : theme.colors.dark[9],
+    },
+    input: {
+      opacity: 1,
+      backgroundColor: colorScheme === 'dark' ? theme.colors.dark[6] : theme.white,
+      borderColor: theme.colors.gray[5],
+      cursor: 'default',
+    },
+    icon: {
+      color: theme.white,
+    },
+  };
+};
+
 export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [formValues, setFormValues] = useState<PitScoutFormValues>(() => getEmptyFormValues(teamNumber));
@@ -260,6 +299,16 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
 
   const isSubmitting = createPitScout.isPending || updatePitScout.isPending;
   const isDeleting = deletePitScout.isPending;
+
+  const fieldStyles = useMemo(
+    () => (theme: MantineTheme) => (isEditing ? {} : getReadOnlyFieldStyles(theme)),
+    [isEditing],
+  );
+
+  const checkboxStyles = useMemo(
+    () => (theme: MantineTheme) => (isEditing ? {} : getReadOnlyCheckboxStyles(theme)),
+    [isEditing],
+  );
 
   const handlePrimaryAction = async () => {
     if (!isEditing) {
@@ -389,6 +438,7 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               disabled={!isEditing}
               min={0}
               placeholder="Enter robot weight"
+              styles={fieldStyles}
             />
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 6 }}>
@@ -400,6 +450,7 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               disabled={!isEditing}
               placeholder="Select drivetrain"
               allowDeselect
+              styles={fieldStyles}
             />
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 6 }}>
@@ -409,6 +460,7 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               onChange={handleTextChange('driveteam')}
               disabled={!isEditing}
               placeholder="Enter drive team names"
+              styles={fieldStyles}
             />
           </Grid.Col>
           <Grid.Col span={12}>
@@ -419,6 +471,7 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               disabled={!isEditing}
               minRows={2}
               placeholder="General notes"
+              styles={fieldStyles}
             />
           </Grid.Col>
         </Grid>
@@ -431,18 +484,21 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
             checked={formValues.startPositionLeft}
             onChange={handleBooleanChange('startPositionLeft')}
             disabled={!isEditing}
+            styles={checkboxStyles}
           />
           <Checkbox
             label="Center"
             checked={formValues.startPositionCenter}
             onChange={handleBooleanChange('startPositionCenter')}
             disabled={!isEditing}
+            styles={checkboxStyles}
           />
           <Checkbox
             label="Right"
             checked={formValues.startPositionRight}
             onChange={handleBooleanChange('startPositionRight')}
             disabled={!isEditing}
+            styles={checkboxStyles}
           />
         </Group>
       </Box>
@@ -454,12 +510,14 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
             checked={formValues.pickupGround}
             onChange={handleBooleanChange('pickupGround')}
             disabled={!isEditing}
+            styles={checkboxStyles}
           />
           <Checkbox
             label="Feeder"
             checked={formValues.pickupFeeder}
             onChange={handleBooleanChange('pickupFeeder')}
             disabled={!isEditing}
+            styles={checkboxStyles}
           />
         </Group>
       </Box>
@@ -472,6 +530,7 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               checked={formValues.autoL4Coral}
               onChange={handleBooleanChange('autoL4Coral')}
               disabled={!isEditing}
+              styles={checkboxStyles}
             />
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 3 }}>
@@ -480,6 +539,7 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               checked={formValues.autoL3Coral}
               onChange={handleBooleanChange('autoL3Coral')}
               disabled={!isEditing}
+              styles={checkboxStyles}
             />
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 3 }}>
@@ -488,6 +548,7 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               checked={formValues.autoL2Coral}
               onChange={handleBooleanChange('autoL2Coral')}
               disabled={!isEditing}
+              styles={checkboxStyles}
             />
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 3 }}>
@@ -496,6 +557,7 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               checked={formValues.autoL1Coral}
               onChange={handleBooleanChange('autoL1Coral')}
               disabled={!isEditing}
+              styles={checkboxStyles}
             />
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 4 }}>
@@ -506,6 +568,7 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               disabled={!isEditing}
               min={0}
               placeholder="0"
+              styles={fieldStyles}
             />
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 4 }}>
@@ -516,6 +579,7 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               disabled={!isEditing}
               min={0}
               placeholder="0"
+              styles={fieldStyles}
             />
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 4 }}>
@@ -526,6 +590,7 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               disabled={!isEditing}
               min={0}
               placeholder="0"
+              styles={fieldStyles}
             />
           </Grid.Col>
           <Grid.Col span={12}>
@@ -536,6 +601,7 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               disabled={!isEditing}
               minRows={2}
               placeholder="Describe autonomous performance"
+              styles={fieldStyles}
             />
           </Grid.Col>
         </Grid>
@@ -549,6 +615,7 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               checked={formValues.teleL4Coral}
               onChange={handleBooleanChange('teleL4Coral')}
               disabled={!isEditing}
+              styles={checkboxStyles}
             />
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 3 }}>
@@ -557,6 +624,7 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               checked={formValues.teleL3Coral}
               onChange={handleBooleanChange('teleL3Coral')}
               disabled={!isEditing}
+              styles={checkboxStyles}
             />
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 3 }}>
@@ -565,6 +633,7 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               checked={formValues.teleL2Coral}
               onChange={handleBooleanChange('teleL2Coral')}
               disabled={!isEditing}
+              styles={checkboxStyles}
             />
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 3 }}>
@@ -573,6 +642,7 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               checked={formValues.teleL1Coral}
               onChange={handleBooleanChange('teleL1Coral')}
               disabled={!isEditing}
+              styles={checkboxStyles}
             />
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 6 }}>
@@ -581,6 +651,7 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               checked={formValues.teleAlgaeNet}
               onChange={handleBooleanChange('teleAlgaeNet')}
               disabled={!isEditing}
+              styles={checkboxStyles}
             />
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 6 }}>
@@ -589,6 +660,7 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               checked={formValues.teleAlgaeProcessor}
               onChange={handleBooleanChange('teleAlgaeProcessor')}
               disabled={!isEditing}
+              styles={checkboxStyles}
             />
           </Grid.Col>
           <Grid.Col span={12}>
@@ -599,6 +671,7 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               disabled={!isEditing}
               minRows={2}
               placeholder="Describe teleop performance"
+              styles={fieldStyles}
             />
           </Grid.Col>
         </Grid>
@@ -613,6 +686,7 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               data={ENDGAME_OPTIONS.map((option) => ({ value: option, label: option }))}
               onChange={handleEndgameChange}
               disabled={!isEditing}
+              styles={fieldStyles}
             />
           </Grid.Col>
           <Grid.Col span={12}>
@@ -623,6 +697,7 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               disabled={!isEditing}
               minRows={2}
               placeholder="Summarize the robot"
+              styles={fieldStyles}
             />
           </Grid.Col>
         </Grid>
