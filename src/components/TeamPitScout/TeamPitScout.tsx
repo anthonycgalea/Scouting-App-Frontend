@@ -476,7 +476,7 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
         </Group>
       </Box>
       <Box>
-        <Title order={4}>Autonomous Performance</Title>
+        <Title order={4}>Autonomous</Title>
         <Grid gutter="md">
           <Grid.Col span={{ base: 12, md: 3 }}>
             <Checkbox
@@ -547,13 +547,13 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               onChange={handleTextChange('autoNotes')}
               disabled={!isEditing}
               minRows={2}
-              placeholder="Describe autonomous performance"
+              placeholder="Describe autonomous actions"
             />
           </Grid.Col>
         </Grid>
       </Box>
       <Box>
-        <Title order={4}>Teleop Performance</Title>
+        <Title order={4}>Teleop</Title>
         <Grid gutter="md">
           <Grid.Col span={{ base: 12, md: 3 }}>
             <Checkbox
@@ -610,7 +610,7 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               onChange={handleTextChange('teleNotes')}
               disabled={!isEditing}
               minRows={2}
-              placeholder="Describe teleop performance"
+              placeholder="Describe teleop actions"
             />
           </Grid.Col>
         </Grid>
@@ -725,7 +725,7 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
           {renderBooleanTable(pickupFields)}
         </Box>
         <Box>
-          <Title order={4}>Autonomous Performance</Title>
+          <Title order={4}>Autonomous</Title>
           <Stack gap="sm">
             {renderBooleanTable(autoCoralFields)}
             <Table withColumnBorders highlightOnHover={false} verticalSpacing="xs" horizontalSpacing="sm">
@@ -757,7 +757,7 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
           </Stack>
         </Box>
         <Box>
-          <Title order={4}>Teleop Performance</Title>
+          <Title order={4}>Teleop</Title>
           <Stack gap="sm">
             {renderBooleanTable(telePerformanceFields)}
             <Table withColumnBorders highlightOnHover={false} verticalSpacing="xs" horizontalSpacing="sm">
