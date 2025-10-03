@@ -31,8 +31,6 @@ interface TeamPitScoutProps {
 type PitScoutFormValues = PitScout2025;
 
 type NumberField =
-  | 'season'
-  | 'organization_id'
   | 'robot_weight'
   | 'autoCoralCount'
   | 'autoAlgaeNet'
@@ -56,9 +54,6 @@ type BooleanField =
   | 'teleAlgaeProcessor';
 
 type TextField =
-  | 'event_key'
-  | 'user_id'
-  | 'timestamp'
   | 'notes'
   | 'drivetrain'
   | 'driveteam'
@@ -68,12 +63,19 @@ type TextField =
 
 const ENDGAME_OPTIONS: PitScout['endgame'][] = ['NONE', 'PARK', 'SHALLOW', 'DEEP'];
 const NULLABLE_NUMBER_FIELDS: NumberField[] = [
-  'organization_id',
   'robot_weight',
   'autoCoralCount',
   'autoAlgaeNet',
   'autoAlgaeProcessor',
 ];
+
+const DRIVETRAIN_OPTIONS = [
+  { value: 'SWERVE', label: 'SWERVE' },
+  { value: 'TANK', label: 'TANK' },
+  { value: 'MECANUM', label: 'MECANUM' },
+  { value: 'H-DRIVE', label: 'H-DRIVE' },
+  { value: 'OTHER', label: 'OTHER' },
+] as const;
 
 const getEmptyFormValues = (teamNumber: number): PitScoutFormValues => ({
   season: 5,
@@ -224,6 +226,32 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
     }));
   };
 
+  const handleDrivetrainChange = (value: string | null) => {
+    setFormValues((prev) => ({
+      ...prev,
+      drivetrain: value ?? '',
+    }));
+  };
+
+  const drivetrainOptions = useMemo(() => {
+    if (!formValues.drivetrain) {
+      return DRIVETRAIN_OPTIONS;
+    }
+
+    const hasExistingOption = DRIVETRAIN_OPTIONS.some(
+      (option) => option.value === formValues.drivetrain,
+    );
+
+    if (hasExistingOption) {
+      return DRIVETRAIN_OPTIONS;
+    }
+
+    return [
+      ...DRIVETRAIN_OPTIONS,
+      { value: formValues.drivetrain, label: formValues.drivetrain },
+    ];
+  }, [formValues.drivetrain]);
+
   const handleEndgameChange = (value: string | null) => {
     setFormValues((prev) => ({
       ...prev,
@@ -343,55 +371,6 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
       ) : null}
       <Box>
         <Grid gutter="md">
-          <Grid.Col span={{ base: 12, md: 4 }}>
-            <NumberInput
-              label="Season"
-              value={formValues.season}
-              onChange={handleNumberChange('season')}
-              disabled={!isEditing}
-              min={0}
-            />
-          </Grid.Col>
-          <Grid.Col span={{ base: 12, md: 4 }}>
-            <TextInput label="Team Number" value={formValues.team_number.toString()} disabled />
-          </Grid.Col>
-          <Grid.Col span={{ base: 12, md: 4 }}>
-            <TextInput
-              label="Event Key"
-              value={formValues.event_key}
-              onChange={handleTextChange('event_key')}
-              disabled={!isEditing}
-              placeholder="Enter event key"
-            />
-          </Grid.Col>
-          <Grid.Col span={{ base: 12, md: 6 }}>
-            <TextInput
-              label="User ID"
-              value={formValues.user_id ?? ''}
-              onChange={handleTextChange('user_id')}
-              disabled={!isEditing}
-              placeholder="Enter user ID"
-            />
-          </Grid.Col>
-          <Grid.Col span={{ base: 12, md: 6 }}>
-            <NumberInput
-              label="Organization ID"
-              value={formValues.organization_id ?? undefined}
-              onChange={handleNumberChange('organization_id')}
-              disabled={!isEditing}
-              min={0}
-              placeholder="Enter organization ID"
-            />
-          </Grid.Col>
-          <Grid.Col span={{ base: 12, md: 6 }}>
-            <TextInput
-              label="Timestamp"
-              value={formValues.timestamp}
-              onChange={handleTextChange('timestamp')}
-              disabled={!isEditing}
-              placeholder="YYYY-MM-DDTHH:MM:SS"
-            />
-          </Grid.Col>
           <Grid.Col span={{ base: 12, md: 6 }}>
             <NumberInput
               label="Robot Weight"
@@ -403,12 +382,14 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
             />
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 6 }}>
-            <TextInput
+            <Select
               label="Drivetrain"
-              value={formValues.drivetrain ?? ''}
-              onChange={handleTextChange('drivetrain')}
+              data={drivetrainOptions}
+              value={formValues.drivetrain ? formValues.drivetrain : null}
+              onChange={handleDrivetrainChange}
               disabled={!isEditing}
-              placeholder="e.g. SWERVE"
+              placeholder="Select drivetrain"
+              allowDeselect
             />
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 6 }}>
