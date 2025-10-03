@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActionIcon,
   Box,
@@ -82,6 +82,25 @@ export function MatchPreviewPage() {
 
   const normalizedLevel = match.match_level?.toLowerCase() ?? matchLevel.toLowerCase();
   const matchLevelLabel = matchLevelLabels[normalizedLevel] ?? match.match_level ?? matchLevel;
+  const redTeamNumbers = [
+    match.red1_id,
+    match.red2_id,
+    match.red3_id,
+  ] as [number, number, number];
+  const blueTeamNumbers = [
+    match.blue1_id,
+    match.blue2_id,
+    match.blue3_id,
+  ] as [number, number, number];
+  const [redAllianceHasImages, setRedAllianceHasImages] = useState(true);
+  const [blueAllianceHasImages, setBlueAllianceHasImages] = useState(true);
+  const handleRedAllianceImagesChange = useCallback((hasImages: boolean) => {
+    setRedAllianceHasImages(hasImages);
+  }, []);
+  const handleBlueAllianceImagesChange = useCallback((hasImages: boolean) => {
+    setBlueAllianceHasImages(hasImages);
+  }, []);
+  const shouldShowImageRow = redAllianceHasImages || blueAllianceHasImages;
 
   return (
     <Box p="md">
@@ -92,11 +111,15 @@ export function MatchPreviewPage() {
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
           <AllianceCard
             allianceName="Red"
-            teamNumbers={[match.red1_id, match.red2_id, match.red3_id] as [number, number, number]}
+            teamNumbers={redTeamNumbers}
+            showImageRow={shouldShowImageRow}
+            onImagePresenceChange={handleRedAllianceImagesChange}
           />
           <AllianceCard
             allianceName="Blue"
-            teamNumbers={[match.blue1_id, match.blue2_id, match.blue3_id] as [number, number, number]}
+            teamNumbers={blueTeamNumbers}
+            showImageRow={shouldShowImageRow}
+            onImagePresenceChange={handleBlueAllianceImagesChange}
           />
         </SimpleGrid>
       </Stack>
@@ -107,9 +130,16 @@ export function MatchPreviewPage() {
 interface AllianceCardProps {
   allianceName: string;
   teamNumbers: [number, number, number];
+  showImageRow: boolean;
+  onImagePresenceChange: (hasImages: boolean) => void;
 }
 
-const AllianceCard = ({ allianceName, teamNumbers }: AllianceCardProps) => {
+const AllianceCard = ({
+  allianceName,
+  teamNumbers,
+  showImageRow,
+  onImagePresenceChange,
+}: AllianceCardProps) => {
   const [stationOne, stationTwo, stationThree] = teamNumbers;
   const firstTeamImagesQuery = useTeamImages(stationOne);
   const secondTeamImagesQuery = useTeamImages(stationTwo);
@@ -118,40 +148,65 @@ const AllianceCard = ({ allianceName, teamNumbers }: AllianceCardProps) => {
   const hasTeams = [stationOne, stationTwo, stationThree].some(
     (teamNumber) => Number.isFinite(teamNumber) && teamNumber > 0
   );
+  const hasImagesOrLoading = [stationOne, stationTwo, stationThree].some((teamNumber, index) => {
+    const query = teamImageQueries[index];
+    const isValidTeam = Number.isFinite(teamNumber) && teamNumber > 0;
+
+    if (!isValidTeam) {
+      return false;
+    }
+
+    if (query.isLoading) {
+      return true;
+    }
+
+    return (query.data?.length ?? 0) > 0;
+  });
+
+  useEffect(() => {
+    onImagePresenceChange(hasImagesOrLoading);
+  }, [hasImagesOrLoading, onImagePresenceChange]);
 
   return (
     <Card withBorder radius="md" shadow="sm" padding="lg">
       <Stack gap="lg">
         <Title order={3}>{allianceName} Alliance</Title>
-        {hasTeams && (
-          <Flex gap="md" justify="flex-start" wrap="wrap">
-            {[stationOne, stationTwo, stationThree].map((teamNumber, index) => (
-              <AllianceTeamImageDisplay
-                key={`${teamNumber}-${index}`}
-                teamNumber={teamNumber}
-                imageQuery={teamImageQueries[index]}
-              />
-            ))}
-          </Flex>
-        )}
-        <Table highlightOnHover>
+        <Table highlightOnHover withColumnBorders>
           <Table.Thead>
             <Table.Tr>
-              <Table.Th>Alliance Station</Table.Th>
-              <Table.Th>Team Number</Table.Th>
+              {[stationOne, stationTwo, stationThree].map((_, index) => (
+                <Table.Th key={`station-heading-${index}`} ta="center">
+                  Station {index + 1}
+                </Table.Th>
+              ))}
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
-            {[stationOne, stationTwo, stationThree].map((teamNumber, index) => {
-              const isValidTeam = Number.isFinite(teamNumber) && teamNumber > 0;
+            {showImageRow && hasTeams && (
+              <Table.Tr>
+                {[stationOne, stationTwo, stationThree].map((teamNumber, index) => (
+                  <Table.Td key={`station-image-${index}`} ta="center" style={{ verticalAlign: 'top' }}>
+                    <Center>
+                      <AllianceTeamImageDisplay
+                        teamNumber={teamNumber}
+                        imageQuery={teamImageQueries[index]}
+                      />
+                    </Center>
+                  </Table.Td>
+                ))}
+              </Table.Tr>
+            )}
+            <Table.Tr>
+              {[stationOne, stationTwo, stationThree].map((teamNumber, index) => {
+                const isValidTeam = Number.isFinite(teamNumber) && teamNumber > 0;
 
-              return (
-                <Table.Tr key={`station-${index}`}>
-                  <Table.Td>{index + 1}</Table.Td>
-                  <Table.Td>{isValidTeam ? teamNumber : 'TBD'}</Table.Td>
-                </Table.Tr>
-              );
-            })}
+                return (
+                  <Table.Td key={`station-team-${index}`} ta="center">
+                    <Text fw={500}>{isValidTeam ? teamNumber : 'TBD'}</Text>
+                  </Table.Td>
+                );
+              })}
+            </Table.Tr>
           </Table.Tbody>
         </Table>
       </Stack>
