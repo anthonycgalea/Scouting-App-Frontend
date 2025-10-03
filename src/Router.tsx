@@ -13,6 +13,7 @@ import { NavbarNested } from './components/Navbar/NavbarNested';
 import { HomePage } from './pages/Home.page';
 import { DashboardPage } from './pages/Dashboard.page';
 import { MatchSchedulePage } from './pages/MatchSchedule.page';
+import { MatchPreviewPage } from './pages/MatchPreview.page';
 import { UserSettingsPage } from './pages/Settings.page';
 import { theme } from './theme';
 import { TeamMembersPage } from './pages/TeamMembers.page';
@@ -103,6 +104,12 @@ const matchScheduleRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/matches',
   component: MatchSchedulePage,
+});
+
+const matchPreviewRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/matches/preview/$matchLevel/$matchNumber',
+  component: MatchPreviewPage,
 });
 
 const teamDirectoryRoute = createRoute({
@@ -206,6 +213,7 @@ const routeTree = rootRoute.addChildren([
   homeRoute.addChildren([]),
   dashboardRoute.addChildren([]),
   matchScheduleRoute.addChildren([]),
+  matchPreviewRoute.addChildren([]),
   teamDirectoryRoute.addChildren([]),
   teamDetailRoute.addChildren([]),
   dataValidationRoute.addChildren([matchValidationRoute]),
