@@ -1,4 +1,4 @@
-import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
+import { type ChangeEvent, type CSSProperties, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Box,
@@ -10,10 +10,12 @@ import {
   NumberInput,
   Select,
   Stack,
+  Table,
+  Text,
   Textarea,
   TextInput,
   Title,
-  type MantineTheme,
+  useMantineTheme,
 } from '@mantine/core';
 import {
   type PitScout,
@@ -159,44 +161,6 @@ const getErrorMessage = (error: unknown) => {
   return 'An unexpected error occurred.';
 };
 
-type ThemeWithColorScheme = MantineTheme & { colorScheme?: 'light' | 'dark' };
-
-const getReadOnlyFieldStyles = (theme: MantineTheme) => {
-  const colorScheme = (theme as ThemeWithColorScheme).colorScheme ?? 'light';
-
-  return {
-    label: {
-      color: colorScheme === 'dark' ? theme.colors.gray[4] : theme.colors.gray[7],
-    },
-    input: {
-      color: colorScheme === 'dark' ? theme.white : theme.colors.dark[9],
-      backgroundColor: colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[1],
-      opacity: 1,
-      WebkitTextFillColor: colorScheme === 'dark' ? theme.white : theme.colors.dark[9],
-      cursor: 'default',
-    },
-  };
-};
-
-const getReadOnlyCheckboxStyles = (theme: MantineTheme) => {
-  const colorScheme = (theme as ThemeWithColorScheme).colorScheme ?? 'light';
-
-  return {
-    label: {
-      color: colorScheme === 'dark' ? theme.white : theme.colors.dark[9],
-    },
-    input: {
-      opacity: 1,
-      backgroundColor: colorScheme === 'dark' ? theme.colors.dark[6] : theme.white,
-      borderColor: theme.colors.gray[5],
-      cursor: 'default',
-    },
-    icon: {
-      color: theme.white,
-    },
-  };
-};
-
 export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [formValues, setFormValues] = useState<PitScoutFormValues>(() => getEmptyFormValues(teamNumber));
@@ -214,6 +178,8 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
   const createPitScout = useCreatePitScoutRecord(teamNumber);
   const updatePitScout = useUpdatePitScoutRecord(teamNumber);
   const deletePitScout = useDeletePitScoutRecord(teamNumber);
+
+  const theme = useMantineTheme();
 
   useEffect(() => {
     if (!isEditing) {
@@ -299,16 +265,6 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
 
   const isSubmitting = createPitScout.isPending || updatePitScout.isPending;
   const isDeleting = deletePitScout.isPending;
-
-  const fieldStyles = useMemo(
-    () => (theme: MantineTheme) => (isEditing ? {} : getReadOnlyFieldStyles(theme)),
-    [isEditing],
-  );
-
-  const checkboxStyles = useMemo(
-    () => (theme: MantineTheme) => (isEditing ? {} : getReadOnlyCheckboxStyles(theme)),
-    [isEditing],
-  );
 
   const handlePrimaryAction = async () => {
     if (!isEditing) {
@@ -396,6 +352,19 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
     setIsConfirmingDelete(false);
   };
 
+  const formatText = (value: string | null | undefined) =>
+    value && value.trim().length > 0 ? value : '—';
+
+  const formatNumber = (value: number | null | undefined) =>
+    value === null || value === undefined ? '—' : value;
+
+  const getBooleanCellStyles = (value: boolean): CSSProperties => ({
+    backgroundColor: value ? theme.colors.green[6] : theme.colors.red[6],
+    color: theme.white,
+    textAlign: 'center',
+    fontWeight: 600,
+  });
+
   if (!Number.isFinite(teamNumber)) {
     return (
       <Alert color="red" title="Invalid team number">
@@ -420,14 +389,8 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
     );
   }
 
-  return (
-    <Stack>
-      <Title order={3}>Pit Scouting</Title>
-      {errorMessage ? (
-        <Alert color="red" title="Pit scouting error">
-          {errorMessage}
-        </Alert>
-      ) : null}
+  const renderEditingContent = () => (
+    <>
       <Box>
         <Grid gutter="md">
           <Grid.Col span={{ base: 12, md: 6 }}>
@@ -438,7 +401,6 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               disabled={!isEditing}
               min={0}
               placeholder="Enter robot weight"
-              styles={fieldStyles}
             />
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 6 }}>
@@ -450,7 +412,6 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               disabled={!isEditing}
               placeholder="Select drivetrain"
               allowDeselect
-              styles={fieldStyles}
             />
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 6 }}>
@@ -460,7 +421,6 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               onChange={handleTextChange('driveteam')}
               disabled={!isEditing}
               placeholder="Enter drive team names"
-              styles={fieldStyles}
             />
           </Grid.Col>
           <Grid.Col span={12}>
@@ -471,7 +431,6 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               disabled={!isEditing}
               minRows={2}
               placeholder="General notes"
-              styles={fieldStyles}
             />
           </Grid.Col>
         </Grid>
@@ -484,21 +443,18 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
             checked={formValues.startPositionLeft}
             onChange={handleBooleanChange('startPositionLeft')}
             disabled={!isEditing}
-            styles={checkboxStyles}
           />
           <Checkbox
             label="Center"
             checked={formValues.startPositionCenter}
             onChange={handleBooleanChange('startPositionCenter')}
             disabled={!isEditing}
-            styles={checkboxStyles}
           />
           <Checkbox
             label="Right"
             checked={formValues.startPositionRight}
             onChange={handleBooleanChange('startPositionRight')}
             disabled={!isEditing}
-            styles={checkboxStyles}
           />
         </Group>
       </Box>
@@ -510,14 +466,12 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
             checked={formValues.pickupGround}
             onChange={handleBooleanChange('pickupGround')}
             disabled={!isEditing}
-            styles={checkboxStyles}
           />
           <Checkbox
             label="Feeder"
             checked={formValues.pickupFeeder}
             onChange={handleBooleanChange('pickupFeeder')}
             disabled={!isEditing}
-            styles={checkboxStyles}
           />
         </Group>
       </Box>
@@ -530,7 +484,6 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               checked={formValues.autoL4Coral}
               onChange={handleBooleanChange('autoL4Coral')}
               disabled={!isEditing}
-              styles={checkboxStyles}
             />
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 3 }}>
@@ -539,7 +492,6 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               checked={formValues.autoL3Coral}
               onChange={handleBooleanChange('autoL3Coral')}
               disabled={!isEditing}
-              styles={checkboxStyles}
             />
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 3 }}>
@@ -548,7 +500,6 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               checked={formValues.autoL2Coral}
               onChange={handleBooleanChange('autoL2Coral')}
               disabled={!isEditing}
-              styles={checkboxStyles}
             />
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 3 }}>
@@ -557,7 +508,6 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               checked={formValues.autoL1Coral}
               onChange={handleBooleanChange('autoL1Coral')}
               disabled={!isEditing}
-              styles={checkboxStyles}
             />
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 4 }}>
@@ -568,7 +518,6 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               disabled={!isEditing}
               min={0}
               placeholder="0"
-              styles={fieldStyles}
             />
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 4 }}>
@@ -579,7 +528,6 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               disabled={!isEditing}
               min={0}
               placeholder="0"
-              styles={fieldStyles}
             />
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 4 }}>
@@ -590,7 +538,6 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               disabled={!isEditing}
               min={0}
               placeholder="0"
-              styles={fieldStyles}
             />
           </Grid.Col>
           <Grid.Col span={12}>
@@ -601,7 +548,6 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               disabled={!isEditing}
               minRows={2}
               placeholder="Describe autonomous performance"
-              styles={fieldStyles}
             />
           </Grid.Col>
         </Grid>
@@ -615,7 +561,6 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               checked={formValues.teleL4Coral}
               onChange={handleBooleanChange('teleL4Coral')}
               disabled={!isEditing}
-              styles={checkboxStyles}
             />
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 3 }}>
@@ -624,7 +569,6 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               checked={formValues.teleL3Coral}
               onChange={handleBooleanChange('teleL3Coral')}
               disabled={!isEditing}
-              styles={checkboxStyles}
             />
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 3 }}>
@@ -633,7 +577,6 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               checked={formValues.teleL2Coral}
               onChange={handleBooleanChange('teleL2Coral')}
               disabled={!isEditing}
-              styles={checkboxStyles}
             />
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 3 }}>
@@ -642,7 +585,6 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               checked={formValues.teleL1Coral}
               onChange={handleBooleanChange('teleL1Coral')}
               disabled={!isEditing}
-              styles={checkboxStyles}
             />
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 6 }}>
@@ -651,7 +593,6 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               checked={formValues.teleAlgaeNet}
               onChange={handleBooleanChange('teleAlgaeNet')}
               disabled={!isEditing}
-              styles={checkboxStyles}
             />
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 6 }}>
@@ -660,7 +601,6 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               checked={formValues.teleAlgaeProcessor}
               onChange={handleBooleanChange('teleAlgaeProcessor')}
               disabled={!isEditing}
-              styles={checkboxStyles}
             />
           </Grid.Col>
           <Grid.Col span={12}>
@@ -671,7 +611,6 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               disabled={!isEditing}
               minRows={2}
               placeholder="Describe teleop performance"
-              styles={fieldStyles}
             />
           </Grid.Col>
         </Grid>
@@ -686,7 +625,6 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               data={ENDGAME_OPTIONS.map((option) => ({ value: option, label: option }))}
               onChange={handleEndgameChange}
               disabled={!isEditing}
-              styles={fieldStyles}
             />
           </Grid.Col>
           <Grid.Col span={12}>
@@ -697,11 +635,177 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               disabled={!isEditing}
               minRows={2}
               placeholder="Summarize the robot"
-              styles={fieldStyles}
             />
           </Grid.Col>
         </Grid>
       </Box>
+    </>
+  );
+
+  const renderReadOnlyContent = () => {
+    const startingPositionFields = [
+      { label: 'Left', value: formValues.startPositionLeft },
+      { label: 'Center', value: formValues.startPositionCenter },
+      { label: 'Right', value: formValues.startPositionRight },
+    ];
+
+    const pickupFields = [
+      { label: 'Ground', value: formValues.pickupGround },
+      { label: 'Feeder', value: formValues.pickupFeeder },
+    ];
+
+    const autoCoralFields = [
+      { label: 'L4 Coral', value: formValues.autoL4Coral },
+      { label: 'L3 Coral', value: formValues.autoL3Coral },
+      { label: 'L2 Coral', value: formValues.autoL2Coral },
+      { label: 'L1 Coral', value: formValues.autoL1Coral },
+    ];
+
+    const telePerformanceFields = [
+      { label: 'L4 Coral', value: formValues.teleL4Coral },
+      { label: 'L3 Coral', value: formValues.teleL3Coral },
+      { label: 'L2 Coral', value: formValues.teleL2Coral },
+      { label: 'L1 Coral', value: formValues.teleL1Coral },
+      { label: 'Algae - Net', value: formValues.teleAlgaeNet },
+      { label: 'Algae - Processor', value: formValues.teleAlgaeProcessor },
+    ];
+
+    const renderBooleanTable = (fields: { label: string; value: boolean }[]) => (
+      <Table withColumnBorders highlightOnHover={false}>
+        <Table.Thead>
+          <Table.Tr>
+            {fields.map((field) => (
+              <Table.Th key={field.label}>{field.label}</Table.Th>
+            ))}
+          </Table.Tr>
+        </Table.Thead>
+        <Table.Tbody>
+          <Table.Tr>
+            {fields.map((field) => (
+              <Table.Td key={field.label} style={getBooleanCellStyles(field.value)}>
+                {field.value ? 'Yes' : 'No'}
+              </Table.Td>
+            ))}
+          </Table.Tr>
+        </Table.Tbody>
+      </Table>
+    );
+
+    return (
+      <>
+        <Box>
+          <Title order={4}>General Information</Title>
+          <Table withColumnBorders highlightOnHover={false}>
+            <Table.Tbody>
+              <Table.Tr>
+                <Table.Th scope="row">Robot Weight</Table.Th>
+                <Table.Td>{formatNumber(formValues.robot_weight)}</Table.Td>
+              </Table.Tr>
+              <Table.Tr>
+                <Table.Th scope="row">Drivetrain</Table.Th>
+                <Table.Td>{formatText(formValues.drivetrain)}</Table.Td>
+              </Table.Tr>
+              <Table.Tr>
+                <Table.Th scope="row">Drive Team</Table.Th>
+                <Table.Td>{formatText(formValues.driveteam)}</Table.Td>
+              </Table.Tr>
+              <Table.Tr>
+                <Table.Th scope="row">Notes</Table.Th>
+                <Table.Td>
+                  <Text style={{ whiteSpace: 'pre-wrap' }}>{formatText(formValues.notes)}</Text>
+                </Table.Td>
+              </Table.Tr>
+            </Table.Tbody>
+          </Table>
+        </Box>
+        <Box>
+          <Title order={4}>Starting Positions</Title>
+          {renderBooleanTable(startingPositionFields)}
+        </Box>
+        <Box>
+          <Title order={4}>Pickup Options</Title>
+          {renderBooleanTable(pickupFields)}
+        </Box>
+        <Box>
+          <Title order={4}>Autonomous Performance</Title>
+          <Stack gap="sm">
+            {renderBooleanTable(autoCoralFields)}
+            <Table withColumnBorders highlightOnHover={false}>
+              <Table.Tbody>
+                <Table.Tr>
+                  <Table.Th scope="row">Coral Count</Table.Th>
+                  <Table.Td>{formatNumber(formValues.autoCoralCount)}</Table.Td>
+                </Table.Tr>
+                <Table.Tr>
+                  <Table.Th scope="row">Algae - Net</Table.Th>
+                  <Table.Td>{formatNumber(formValues.autoAlgaeNet)}</Table.Td>
+                </Table.Tr>
+                <Table.Tr>
+                  <Table.Th scope="row">Algae - Processor</Table.Th>
+                  <Table.Td>{formatNumber(formValues.autoAlgaeProcessor)}</Table.Td>
+                </Table.Tr>
+              </Table.Tbody>
+            </Table>
+            <Table withColumnBorders highlightOnHover={false}>
+              <Table.Tbody>
+                <Table.Tr>
+                  <Table.Th scope="row">Autonomous Notes</Table.Th>
+                  <Table.Td>
+                    <Text style={{ whiteSpace: 'pre-wrap' }}>{formatText(formValues.autoNotes)}</Text>
+                  </Table.Td>
+                </Table.Tr>
+              </Table.Tbody>
+            </Table>
+          </Stack>
+        </Box>
+        <Box>
+          <Title order={4}>Teleop Performance</Title>
+          <Stack gap="sm">
+            {renderBooleanTable(telePerformanceFields)}
+            <Table withColumnBorders highlightOnHover={false}>
+              <Table.Tbody>
+                <Table.Tr>
+                  <Table.Th scope="row">Teleop Notes</Table.Th>
+                  <Table.Td>
+                    <Text style={{ whiteSpace: 'pre-wrap' }}>{formatText(formValues.teleNotes)}</Text>
+                  </Table.Td>
+                </Table.Tr>
+              </Table.Tbody>
+            </Table>
+          </Stack>
+        </Box>
+        <Box>
+          <Title order={4}>Endgame & Overall Notes</Title>
+          <Table withColumnBorders highlightOnHover={false}>
+            <Table.Tbody>
+              <Table.Tr>
+                <Table.Th scope="row">Endgame</Table.Th>
+                <Table.Td>{formatText(formValues.endgame)}</Table.Td>
+              </Table.Tr>
+              <Table.Tr>
+                <Table.Th scope="row">Overall Notes</Table.Th>
+                <Table.Td>
+                  <Text style={{ whiteSpace: 'pre-wrap' }}>{formatText(formValues.overallNotes)}</Text>
+                </Table.Td>
+              </Table.Tr>
+            </Table.Tbody>
+          </Table>
+        </Box>
+      </>
+    );
+  };
+
+  const content = isEditing ? renderEditingContent() : renderReadOnlyContent();
+
+  return (
+    <Stack>
+      <Title order={3}>Pit Scouting</Title>
+      {errorMessage ? (
+        <Alert color="red" title="Pit scouting error">
+          {errorMessage}
+        </Alert>
+      ) : null}
+      {content}
       <Group justify="flex-end">
         {isConfirmingDelete ? (
           <Button onClick={handleCancelDelete} disabled={isDeleting || isSubmitting} variant="subtle">
