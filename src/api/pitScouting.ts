@@ -46,6 +46,11 @@ export interface PitScoutIdentifier {
   team_number: number;
 }
 
+export type PitScoutUpsertPayload = Omit<
+  PitScout,
+  'season' | 'event_key' | 'user_id' | 'organization_id' | 'timestamp'
+>;
+
 const createPitScoutQuery = (teamNumber: number) => {
   const searchParams = new URLSearchParams({ teamNumber: teamNumber.toString(10) });
   return `scout/pit?${searchParams.toString()}`;
@@ -63,13 +68,13 @@ export const usePitScoutRecords = (teamNumber: number) =>
     enabled: Number.isFinite(teamNumber),
   });
 
-export const createPitScoutRecord = (record: PitScout) =>
+export const createPitScoutRecord = (record: PitScoutUpsertPayload) =>
   apiFetch<PitScout>('scout/pit', {
     method: 'POST',
     json: record,
   });
 
-export const updatePitScoutRecord = (record: PitScout) =>
+export const updatePitScoutRecord = (record: PitScoutUpsertPayload) =>
   apiFetch<PitScout>('scout/pit', {
     method: 'PATCH',
     json: record,

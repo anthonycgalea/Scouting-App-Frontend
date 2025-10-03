@@ -18,6 +18,7 @@ import {
   type PitScout,
   type PitScoutIdentifier,
   type PitScout2025,
+  type PitScoutUpsertPayload,
   useCreatePitScoutRecord,
   useDeletePitScoutRecord,
   usePitScoutRecords,
@@ -62,12 +63,7 @@ type TextField =
   | 'overallNotes';
 
 const ENDGAME_OPTIONS: PitScout['endgame'][] = ['NONE', 'PARK', 'SHALLOW', 'DEEP'];
-const NULLABLE_NUMBER_FIELDS: NumberField[] = [
-  'robot_weight',
-  'autoCoralCount',
-  'autoAlgaeNet',
-  'autoAlgaeProcessor',
-];
+const NULLABLE_NUMBER_FIELDS: NumberField[] = ['robot_weight', 'autoCoralCount'];
 
 const DRIVETRAIN_OPTIONS = [
   { value: 'SWERVE', label: 'SWERVE' },
@@ -98,8 +94,8 @@ const getEmptyFormValues = (teamNumber: number): PitScoutFormValues => ({
   autoL2Coral: false,
   autoL1Coral: false,
   autoCoralCount: null,
-  autoAlgaeNet: null,
-  autoAlgaeProcessor: null,
+  autoAlgaeNet: 0,
+  autoAlgaeProcessor: 0,
   autoNotes: '',
   teleL4Coral: false,
   teleL3Coral: false,
@@ -132,8 +128,8 @@ const normalizeRecord = (record: PitScout | undefined, teamNumber: number): PitS
     organization_id: record.organization_id ?? null,
     robot_weight: record.robot_weight ?? null,
     autoCoralCount: record.autoCoralCount ?? null,
-    autoAlgaeNet: record.autoAlgaeNet ?? null,
-    autoAlgaeProcessor: record.autoAlgaeProcessor ?? null,
+    autoAlgaeNet: record.autoAlgaeNet ?? 0,
+    autoAlgaeProcessor: record.autoAlgaeProcessor ?? 0,
   } satisfies PitScoutFormValues;
 };
 
@@ -272,20 +268,34 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
       return;
     }
 
-    const payload: PitScout = {
-      ...formValues,
+    const payload: PitScoutUpsertPayload = {
+      team_number: formValues.team_number,
       notes: formValues.notes ?? '',
+      robot_weight: formValues.robot_weight ?? null,
       drivetrain: formValues.drivetrain ?? '',
       driveteam: formValues.driveteam ?? '',
-      autoNotes: formValues.autoNotes ?? '',
-      teleNotes: formValues.teleNotes ?? '',
-      overallNotes: formValues.overallNotes ?? '',
-      user_id: formValues.user_id ?? null,
-      organization_id: formValues.organization_id ?? null,
-      robot_weight: formValues.robot_weight ?? null,
+      startPositionLeft: formValues.startPositionLeft,
+      startPositionCenter: formValues.startPositionCenter,
+      startPositionRight: formValues.startPositionRight,
+      pickupGround: formValues.pickupGround,
+      pickupFeeder: formValues.pickupFeeder,
+      autoL4Coral: formValues.autoL4Coral,
+      autoL3Coral: formValues.autoL3Coral,
+      autoL2Coral: formValues.autoL2Coral,
+      autoL1Coral: formValues.autoL1Coral,
       autoCoralCount: formValues.autoCoralCount ?? null,
-      autoAlgaeNet: formValues.autoAlgaeNet ?? null,
-      autoAlgaeProcessor: formValues.autoAlgaeProcessor ?? null,
+      autoAlgaeNet: formValues.autoAlgaeNet ?? 0,
+      autoAlgaeProcessor: formValues.autoAlgaeProcessor ?? 0,
+      autoNotes: formValues.autoNotes ?? '',
+      teleL4Coral: formValues.teleL4Coral,
+      teleL3Coral: formValues.teleL3Coral,
+      teleL2Coral: formValues.teleL2Coral,
+      teleL1Coral: formValues.teleL1Coral,
+      teleAlgaeNet: formValues.teleAlgaeNet,
+      teleAlgaeProcessor: formValues.teleAlgaeProcessor,
+      teleNotes: formValues.teleNotes ?? '',
+      endgame: formValues.endgame,
+      overallNotes: formValues.overallNotes ?? '',
     };
 
     try {
