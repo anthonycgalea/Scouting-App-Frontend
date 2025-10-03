@@ -20,7 +20,6 @@ import {
 } from './tokenStorage';
 import {
   SUPABASE_CUSTOM_STORAGE_KEY,
-  SUPABASE_PROJECT_ID,
   SUPABASE_STORAGE_KEY_SUFFIX,
   SUPABASE_URL,
 } from './supabaseConfig';
