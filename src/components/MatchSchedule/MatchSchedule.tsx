@@ -7,6 +7,7 @@ import classes from './MatchSchedule.module.css';
 
 interface RowData {
   matchNumber: number;
+  matchLevel: string;
   red1?: number | null;
   red2?: number | null;
   red3?: number | null;
@@ -28,6 +29,7 @@ const teamNumberKeys: (keyof RowData)[] = ['red1', 'red2', 'red3', 'blue1', 'blu
 const createRowData = (matches: MatchScheduleEntry[]): RowData[] =>
   matches.map((match) => ({
     matchNumber: match.match_number,
+    matchLevel: match.match_level,
     red1: match.red1_id,
     red2: match.red2_id,
     red3: match.red3_id,
@@ -127,7 +129,10 @@ export function MatchSchedule({ matches }: MatchScheduleProps) {
   const rows = sortedData.map((row) => (
     <Table.Tr key={row.matchNumber}>
       <Table.Td>
-        <MatchNumberButtonMenu matchNumber={row.matchNumber} />
+        <MatchNumberButtonMenu
+          matchNumber={row.matchNumber}
+          matchLevel={row.matchLevel}
+        />
       </Table.Td>
       <Table.Td className={classes.redCell}>{row.red1 ?? '-'}</Table.Td>
       <Table.Td className={classes.redCell}>{row.red2 ?? '-'}</Table.Td>

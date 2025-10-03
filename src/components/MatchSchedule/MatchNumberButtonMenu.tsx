@@ -1,11 +1,13 @@
 import { IconChevronDown, IconClipboardList, IconPlayerPlay } from '@tabler/icons-react';
 import { Button, Menu, useMantineTheme } from '@mantine/core';
+import { Link } from '@tanstack/react-router';
 
 interface MatchNumberButtonMenuProps {
   matchNumber: number;
+  matchLevel: string;
 }
 
-export function MatchNumberButtonMenu({ matchNumber }: MatchNumberButtonMenuProps) {
+export function MatchNumberButtonMenu({ matchNumber, matchLevel }: MatchNumberButtonMenuProps) {
   const theme = useMantineTheme();
 
   return (
@@ -30,9 +32,11 @@ export function MatchNumberButtonMenu({ matchNumber }: MatchNumberButtonMenuProp
       <Menu.Dropdown>
         <Menu.Label>Match {matchNumber}</Menu.Label>
         <Menu.Item
+          component={Link}
+          to={`/matches/preview/${matchLevel}/${matchNumber}`}
           leftSection={<IconClipboardList size={16} color={theme.colors.blue[6]} stroke={1.5} />}
         >
-          View match details
+          Preview match
         </Menu.Item>
         <Menu.Item
           leftSection={<IconPlayerPlay size={16} color={theme.colors.green[6]} stroke={1.5} />}
