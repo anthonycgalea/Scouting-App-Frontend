@@ -671,7 +671,7 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
     ];
 
     const renderBooleanTable = (fields: { label: string; value: boolean }[]) => (
-      <Table withColumnBorders highlightOnHover={false}>
+      <Table withColumnBorders highlightOnHover={false} verticalSpacing="xs" horizontalSpacing="sm">
         <Table.Thead>
           <Table.Tr>
             {fields.map((field) => (
@@ -695,22 +695,20 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
       <>
         <Box>
           <Title order={4}>General Information</Title>
-          <Table withColumnBorders highlightOnHover={false}>
+          <Table withColumnBorders highlightOnHover={false} verticalSpacing="xs" horizontalSpacing="sm">
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>Robot Weight</Table.Th>
+                <Table.Th>Drivetrain</Table.Th>
+                <Table.Th>Drive Team</Table.Th>
+                <Table.Th>Notes</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
             <Table.Tbody>
               <Table.Tr>
-                <Table.Th scope="row">Robot Weight</Table.Th>
                 <Table.Td>{formatNumber(formValues.robot_weight)}</Table.Td>
-              </Table.Tr>
-              <Table.Tr>
-                <Table.Th scope="row">Drivetrain</Table.Th>
                 <Table.Td>{formatText(formValues.drivetrain)}</Table.Td>
-              </Table.Tr>
-              <Table.Tr>
-                <Table.Th scope="row">Drive Team</Table.Th>
                 <Table.Td>{formatText(formValues.driveteam)}</Table.Td>
-              </Table.Tr>
-              <Table.Tr>
-                <Table.Th scope="row">Notes</Table.Th>
                 <Table.Td>
                   <Text style={{ whiteSpace: 'pre-wrap' }}>{formatText(formValues.notes)}</Text>
                 </Table.Td>
@@ -730,7 +728,7 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
           <Title order={4}>Autonomous Performance</Title>
           <Stack gap="sm">
             {renderBooleanTable(autoCoralFields)}
-            <Table withColumnBorders highlightOnHover={false}>
+            <Table withColumnBorders highlightOnHover={false} verticalSpacing="xs" horizontalSpacing="sm">
               <Table.Tbody>
                 <Table.Tr>
                   <Table.Th scope="row">Coral Count</Table.Th>
@@ -746,7 +744,7 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
                 </Table.Tr>
               </Table.Tbody>
             </Table>
-            <Table withColumnBorders highlightOnHover={false}>
+            <Table withColumnBorders highlightOnHover={false} verticalSpacing="xs" horizontalSpacing="sm">
               <Table.Tbody>
                 <Table.Tr>
                   <Table.Th scope="row">Autonomous Notes</Table.Th>
@@ -762,7 +760,7 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
           <Title order={4}>Teleop Performance</Title>
           <Stack gap="sm">
             {renderBooleanTable(telePerformanceFields)}
-            <Table withColumnBorders highlightOnHover={false}>
+            <Table withColumnBorders highlightOnHover={false} verticalSpacing="xs" horizontalSpacing="sm">
               <Table.Tbody>
                 <Table.Tr>
                   <Table.Th scope="row">Teleop Notes</Table.Th>
@@ -776,14 +774,16 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
         </Box>
         <Box>
           <Title order={4}>Endgame & Overall Notes</Title>
-          <Table withColumnBorders highlightOnHover={false}>
+          <Table withColumnBorders highlightOnHover={false} verticalSpacing="xs" horizontalSpacing="sm">
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>Endgame</Table.Th>
+                <Table.Th>Overall Notes</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
             <Table.Tbody>
               <Table.Tr>
-                <Table.Th scope="row">Endgame</Table.Th>
                 <Table.Td>{formatText(formValues.endgame)}</Table.Td>
-              </Table.Tr>
-              <Table.Tr>
-                <Table.Th scope="row">Overall Notes</Table.Th>
                 <Table.Td>
                   <Text style={{ whiteSpace: 'pre-wrap' }}>{formatText(formValues.overallNotes)}</Text>
                 </Table.Td>
