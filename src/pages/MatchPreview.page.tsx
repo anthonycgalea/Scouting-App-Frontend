@@ -134,7 +134,7 @@ export function MatchPreviewPage() {
   return (
     <Box p="md">
       <Stack gap="lg">
-        <Title order={2}>
+        <Title order={2} ta="center">
           {matchLevelLabel} Match {numericMatchNumber} Preview
         </Title>
         <Card withBorder radius="md" shadow="sm" padding="lg">

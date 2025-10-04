@@ -1,3 +1,8 @@
+.table {
+  width: 100%;
+  table-layout: fixed;
+}
+
 .table :global(th),
 .table :global(td) {
   text-align: center;
