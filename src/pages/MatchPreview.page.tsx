@@ -23,9 +23,25 @@ import {
   IconPhoto,
 } from '@tabler/icons-react';
 import { useParams } from '@tanstack/react-router';
-import { useMatchSchedule } from '@/api';
+import {
+  useMatchPreview,
+  useMatchSchedule,
+  type MatchPreviewAllianceTeamStats,
+  type MatchPreviewMetric,
+} from '@/api';
 import { TeamImage, useTeamImages } from '@/api/teams';
 import classes from './MatchPreview.module.css';
+
+type AutoTeleopPieceKey = Exclude<keyof MatchPreviewAllianceTeamStats['auto'], 'total_points'>;
+
+const AUTO_TELEOP_FIELDS: Array<{ label: string; key: AutoTeleopPieceKey }> = [
+  { label: 'L4', key: 'level4' },
+  { label: 'L3', key: 'level3' },
+  { label: 'L2', key: 'level2' },
+  { label: 'L1', key: 'level1' },
+  { label: 'Net', key: 'net' },
+  { label: 'Processor', key: 'processor' },
+];
 
 export function MatchPreviewPage() {
   const { matchLevel, matchNumber } = useParams({
@@ -48,7 +64,30 @@ export function MatchPreviewPage() {
     );
   }, [matchLevel, numericMatchNumber, scheduleData]);
 
-  if (isLoading) {
+  const previewParams = useMemo(() => {
+    const derivedMatchLevel = (match?.match_level ?? matchLevel ?? '').toString();
+
+    const scheduleMatchNumber =
+      typeof match?.match_number === 'number' ? match.match_number : undefined;
+
+    const derivedMatchNumber =
+      scheduleMatchNumber !== undefined && Number.isFinite(scheduleMatchNumber)
+        ? scheduleMatchNumber
+        : numericMatchNumber;
+
+    return {
+      matchLevel: derivedMatchLevel,
+      matchNumber: derivedMatchNumber,
+    };
+  }, [match?.match_level, match?.match_number, matchLevel, numericMatchNumber]);
+
+  const {
+    data: matchPreview,
+    isLoading: isPreviewLoading,
+    isError: isPreviewError,
+  } = useMatchPreview(previewParams);
+
+  if (isLoading || isPreviewLoading) {
     return (
       <Center mih={200}>
         <Loader />
@@ -56,7 +95,7 @@ export function MatchPreviewPage() {
     );
   }
 
-  if (isError) {
+  if (isError || isPreviewError) {
     return (
       <Center mih={200}>
         <Text c="red.6" fw={500}>
@@ -81,6 +120,26 @@ export function MatchPreviewPage() {
       </Center>
     );
   }
+
+  if (!matchPreview) {
+    return (
+      <Center mih={200}>
+        <Text fw={500}>Match preview data is unavailable.</Text>
+      </Center>
+    );
+  }
+
+  const { red: redAlliance, blue: blueAlliance } = matchPreview;
+
+  const redTeamStatsMap = useMemo(
+    () => new Map(redAlliance.teams.map((team) => [team.team_number, team])),
+    [redAlliance.teams]
+  );
+
+  const blueTeamStatsMap = useMemo(
+    () => new Map(blueAlliance.teams.map((team) => [team.team_number, team])),
+    [blueAlliance.teams]
+  );
 
   const matchLevelLabels: Record<string, string> = {
     qm: 'Qualification',
@@ -134,9 +193,50 @@ export function MatchPreviewPage() {
     (redAllianceStatus.hasTeams && redAllianceStatus.hasImagesOrLoading) ||
     (blueAllianceStatus.hasTeams && blueAllianceStatus.hasImagesOrLoading);
 
-  const autonomousFields = ['L4', 'L3', 'L2', 'L1', 'Net', 'Processor'];
-  const teleopFields = ['L4', 'L3', 'L2', 'L1', 'Net', 'Processor'];
-  const endgameFields = ['Endgame Points'];
+  const redAutonomousTotal = computeAllianceMetricSum(
+    redTeamNumbers,
+    redTeamStatsMap,
+    (team) => team.auto.total_points
+  );
+  const blueAutonomousTotal = computeAllianceMetricSum(
+    blueTeamNumbers,
+    blueTeamStatsMap,
+    (team) => team.auto.total_points
+  );
+
+  const redTeleopTotal = computeAllianceMetricSum(
+    redTeamNumbers,
+    redTeamStatsMap,
+    (team) => team.teleop.total_points
+  );
+  const blueTeleopTotal = computeAllianceMetricSum(
+    blueTeamNumbers,
+    blueTeamStatsMap,
+    (team) => team.teleop.total_points
+  );
+
+  const redEndgameTotal = computeAllianceMetricSum(
+    redTeamNumbers,
+    redTeamStatsMap,
+    (team) => team.endgame
+  );
+  const blueEndgameTotal = computeAllianceMetricSum(
+    blueTeamNumbers,
+    blueTeamStatsMap,
+    (team) => team.endgame
+  );
+
+  const redTotalScore = computeAllianceMetricSum(
+    redTeamNumbers,
+    redTeamStatsMap,
+    (team) => team.total_points
+  );
+  const blueTotalScore = computeAllianceMetricSum(
+    blueTeamNumbers,
+    blueTeamStatsMap,
+    (team) => team.total_points
+  );
+
   const [collapsedSections, setCollapsedSections] = useState({
     autonomous: true,
     teleop: true,
@@ -258,7 +358,7 @@ export function MatchPreviewPage() {
                   );
                 })}
                 <Table.Td className={classes.redCell} ta="center">
-                  <Text fw={500}>Predicted</Text>
+                  <Text fw={500}>Alliance Avg</Text>
                 </Table.Td>
                 <Table.Td className={classes.fieldCell}>
                   <Text fw={500} ta="center">
@@ -266,7 +366,7 @@ export function MatchPreviewPage() {
                   </Text>
                 </Table.Td>
                 <Table.Td className={classes.blueCell} ta="center">
-                  <Text fw={500}>Predicted</Text>
+                  <Text fw={500}>Alliance Avg</Text>
                 </Table.Td>
                 {blueTeamNumbers.map((teamNumber, index) => {
                   const isValidTeam = hasValidTeam(teamNumber);
@@ -298,39 +398,93 @@ export function MatchPreviewPage() {
               </Table.Tr>
               {!collapsedSections.autonomous && (
                 <>
-                  {autonomousFields.map((field) => (
-                    <Table.Tr key={`autonomous-${field}`}>
-                      {redTeamNumbers.map((_, index) => (
-                        <Table.Td key={`autonomous-red-${index}-${field}`} />
-                      ))}
-                      <Table.Td className={classes.redCell} />
+                  {AUTO_TELEOP_FIELDS.map(({ label, key }) => (
+                    <Table.Tr key={`autonomous-${key}`}>
+                      {redTeamNumbers.map((teamNumber, index) => {
+                        const teamStats = redTeamStatsMap.get(teamNumber);
+
+                        return (
+                          <Table.Td
+                            key={`autonomous-red-${index}-${key}`}
+                            className={classes.redCell}
+                          >
+                            <MetricValueDisplay
+                              value={metricFromMatchPreviewMetric(teamStats?.auto[key])}
+                            />
+                          </Table.Td>
+                        );
+                      })}
+                      <Table.Td className={classes.redCell}>
+                        <MetricValueDisplay
+                          value={metricFromAverage(
+                            redAlliance.alliance_level_averages.auto[key]
+                          )}
+                        />
+                      </Table.Td>
                       <Table.Td className={classes.fieldCell}>
                         <Text fw={500} ta="center">
-                          {field}
+                          {label}
                         </Text>
                       </Table.Td>
-                      <Table.Td className={classes.blueCell} />
-                      {blueTeamNumbers.map((_, index) => (
-                        <Table.Td key={`autonomous-blue-${index}-${field}`} />
-                      ))}
+                      <Table.Td className={classes.blueCell}>
+                        <MetricValueDisplay
+                          value={metricFromAverage(
+                            blueAlliance.alliance_level_averages.auto[key]
+                          )}
+                        />
+                      </Table.Td>
+                      {blueTeamNumbers.map((teamNumber, index) => {
+                        const teamStats = blueTeamStatsMap.get(teamNumber);
+
+                        return (
+                          <Table.Td
+                            key={`autonomous-blue-${index}-${key}`}
+                            className={classes.blueCell}
+                          >
+                            <MetricValueDisplay
+                              value={metricFromMatchPreviewMetric(teamStats?.auto[key])}
+                            />
+                          </Table.Td>
+                        );
+                      })}
                     </Table.Tr>
                   ))}
                 </>
               )}
               <Table.Tr className={classes.totalRow}>
-                {redTeamNumbers.map((_, index) => (
-                  <Table.Td key={`autonomous-total-red-${index}`} />
-                ))}
-                <Table.Td className={classes.redCell} />
+                {redTeamNumbers.map((teamNumber, index) => {
+                  const teamStats = redTeamStatsMap.get(teamNumber);
+
+                  return (
+                    <Table.Td key={`autonomous-total-red-${index}`} className={classes.redCell}>
+                      <MetricValueDisplay
+                        value={metricFromMatchPreviewMetric(teamStats?.auto.total_points)}
+                      />
+                    </Table.Td>
+                  );
+                })}
+                <Table.Td className={classes.redCell}>
+                  <MetricValueDisplay value={redAutonomousTotal} />
+                </Table.Td>
                 <Table.Td className={clsx(classes.fieldCell, classes.totalFieldCell)}>
                   <Text fw={700} ta="center">
                     Autonomous Total
                   </Text>
                 </Table.Td>
-                <Table.Td className={classes.blueCell} />
-                {blueTeamNumbers.map((_, index) => (
-                  <Table.Td key={`autonomous-total-blue-${index}`} />
-                ))}
+                <Table.Td className={classes.blueCell}>
+                  <MetricValueDisplay value={blueAutonomousTotal} />
+                </Table.Td>
+                {blueTeamNumbers.map((teamNumber, index) => {
+                  const teamStats = blueTeamStatsMap.get(teamNumber);
+
+                  return (
+                    <Table.Td key={`autonomous-total-blue-${index}`} className={classes.blueCell}>
+                      <MetricValueDisplay
+                        value={metricFromMatchPreviewMetric(teamStats?.auto.total_points)}
+                      />
+                    </Table.Td>
+                  );
+                })}
               </Table.Tr>
               <Table.Tr>
                 <Table.Th colSpan={9} className={classes.sectionHeader}>
@@ -352,76 +506,168 @@ export function MatchPreviewPage() {
               </Table.Tr>
               {!collapsedSections.teleop && (
                 <>
-                  {teleopFields.map((field) => (
-                    <Table.Tr key={`teleop-${field}`}>
-                      {redTeamNumbers.map((_, index) => (
-                        <Table.Td key={`teleop-red-${index}-${field}`} />
-                      ))}
-                      <Table.Td className={classes.redCell} />
+                  {AUTO_TELEOP_FIELDS.map(({ label, key }) => (
+                    <Table.Tr key={`teleop-${key}`}>
+                      {redTeamNumbers.map((teamNumber, index) => {
+                        const teamStats = redTeamStatsMap.get(teamNumber);
+
+                        return (
+                          <Table.Td
+                            key={`teleop-red-${index}-${key}`}
+                            className={classes.redCell}
+                          >
+                            <MetricValueDisplay
+                              value={metricFromMatchPreviewMetric(teamStats?.teleop[key])}
+                            />
+                          </Table.Td>
+                        );
+                      })}
+                      <Table.Td className={classes.redCell}>
+                        <MetricValueDisplay
+                          value={metricFromAverage(
+                            redAlliance.alliance_level_averages.teleop[key]
+                          )}
+                        />
+                      </Table.Td>
                       <Table.Td className={classes.fieldCell}>
                         <Text fw={500} ta="center">
-                          {field}
+                          {label}
                         </Text>
                       </Table.Td>
-                      <Table.Td className={classes.blueCell} />
-                      {blueTeamNumbers.map((_, index) => (
-                        <Table.Td key={`teleop-blue-${index}-${field}`} />
-                      ))}
+                      <Table.Td className={classes.blueCell}>
+                        <MetricValueDisplay
+                          value={metricFromAverage(
+                            blueAlliance.alliance_level_averages.teleop[key]
+                          )}
+                        />
+                      </Table.Td>
+                      {blueTeamNumbers.map((teamNumber, index) => {
+                        const teamStats = blueTeamStatsMap.get(teamNumber);
+
+                        return (
+                          <Table.Td
+                            key={`teleop-blue-${index}-${key}`}
+                            className={classes.blueCell}
+                          >
+                            <MetricValueDisplay
+                              value={metricFromMatchPreviewMetric(teamStats?.teleop[key])}
+                            />
+                          </Table.Td>
+                        );
+                      })}
                     </Table.Tr>
                   ))}
                 </>
               )}
               <Table.Tr className={classes.totalRow}>
-                {redTeamNumbers.map((_, index) => (
-                  <Table.Td key={`teleop-total-red-${index}`} />
-                ))}
-                <Table.Td className={classes.redCell} />
+                {redTeamNumbers.map((teamNumber, index) => {
+                  const teamStats = redTeamStatsMap.get(teamNumber);
+
+                  return (
+                    <Table.Td key={`teleop-total-red-${index}`} className={classes.redCell}>
+                      <MetricValueDisplay
+                        value={metricFromMatchPreviewMetric(teamStats?.teleop.total_points)}
+                      />
+                    </Table.Td>
+                  );
+                })}
+                <Table.Td className={classes.redCell}>
+                  <MetricValueDisplay value={redTeleopTotal} />
+                </Table.Td>
                 <Table.Td className={clsx(classes.fieldCell, classes.totalFieldCell)}>
                   <Text fw={700} ta="center">
                     Teleop Total
                   </Text>
                 </Table.Td>
-                <Table.Td className={classes.blueCell} />
-                {blueTeamNumbers.map((_, index) => (
-                  <Table.Td key={`teleop-total-blue-${index}`} />
-                ))}
+                <Table.Td className={classes.blueCell}>
+                  <MetricValueDisplay value={blueTeleopTotal} />
+                </Table.Td>
+                {blueTeamNumbers.map((teamNumber, index) => {
+                  const teamStats = blueTeamStatsMap.get(teamNumber);
+
+                  return (
+                    <Table.Td key={`teleop-total-blue-${index}`} className={classes.blueCell}>
+                      <MetricValueDisplay
+                        value={metricFromMatchPreviewMetric(teamStats?.teleop.total_points)}
+                      />
+                    </Table.Td>
+                  );
+                })}
               </Table.Tr>
               <Table.Tr>
                 <Table.Th colSpan={9} className={classes.sectionHeader}>
                   Endgame
                 </Table.Th>
               </Table.Tr>
-              {endgameFields.map((field) => (
-                <Table.Tr key={`endgame-${field}`}>
-                  {redTeamNumbers.map((_, index) => (
-                    <Table.Td key={`endgame-red-${index}-${field}`} />
-                  ))}
-                  <Table.Td className={classes.redCell} />
-                  <Table.Td className={classes.fieldCell}>
-                    <Text fw={500} ta="center">
-                      {field}
-                    </Text>
-                  </Table.Td>
-                  <Table.Td className={classes.blueCell} />
-                  {blueTeamNumbers.map((_, index) => (
-                    <Table.Td key={`endgame-blue-${index}-${field}`} />
-                  ))}
-                </Table.Tr>
-              ))}
+              <Table.Tr>
+                {redTeamNumbers.map((teamNumber, index) => {
+                  const teamStats = redTeamStatsMap.get(teamNumber);
+
+                  return (
+                    <Table.Td key={`endgame-red-${index}`} className={classes.redCell}>
+                      <MetricValueDisplay
+                        value={metricFromMatchPreviewMetric(teamStats?.endgame)}
+                      />
+                    </Table.Td>
+                  );
+                })}
+                <Table.Td className={classes.redCell}>
+                  <MetricValueDisplay value={redEndgameTotal} />
+                </Table.Td>
+                <Table.Td className={classes.fieldCell}>
+                  <Text fw={500} ta="center">
+                    Endgame Points
+                  </Text>
+                </Table.Td>
+                <Table.Td className={classes.blueCell}>
+                  <MetricValueDisplay value={blueEndgameTotal} />
+                </Table.Td>
+                {blueTeamNumbers.map((teamNumber, index) => {
+                  const teamStats = blueTeamStatsMap.get(teamNumber);
+
+                  return (
+                    <Table.Td key={`endgame-blue-${index}`} className={classes.blueCell}>
+                      <MetricValueDisplay
+                        value={metricFromMatchPreviewMetric(teamStats?.endgame)}
+                      />
+                    </Table.Td>
+                  );
+                })}
+              </Table.Tr>
               <Table.Tr className={classes.totalRow}>
-                {redTeamNumbers.map((_, index) => (
-                  <Table.Td key={`total-score-red-${index}`} />
-                ))}
-                <Table.Td className={classes.redCell} />
+                {redTeamNumbers.map((teamNumber, index) => {
+                  const teamStats = redTeamStatsMap.get(teamNumber);
+
+                  return (
+                    <Table.Td key={`total-score-red-${index}`} className={classes.redCell}>
+                      <MetricValueDisplay
+                        value={metricFromMatchPreviewMetric(teamStats?.total_points)}
+                      />
+                    </Table.Td>
+                  );
+                })}
+                <Table.Td className={classes.redCell}>
+                  <MetricValueDisplay value={redTotalScore} />
+                </Table.Td>
                 <Table.Td className={clsx(classes.fieldCell, classes.totalFieldCell)}>
                   <Text fw={700} ta="center">
                     Total Score
                   </Text>
                 </Table.Td>
-                <Table.Td className={classes.blueCell} />
-                {blueTeamNumbers.map((_, index) => (
-                  <Table.Td key={`total-score-blue-${index}`} />
-                ))}
+                <Table.Td className={classes.blueCell}>
+                  <MetricValueDisplay value={blueTotalScore} />
+                </Table.Td>
+                {blueTeamNumbers.map((teamNumber, index) => {
+                  const teamStats = blueTeamStatsMap.get(teamNumber);
+
+                  return (
+                    <Table.Td key={`total-score-blue-${index}`} className={classes.blueCell}>
+                      <MetricValueDisplay
+                        value={metricFromMatchPreviewMetric(teamStats?.total_points)}
+                      />
+                    </Table.Td>
+                  );
+                })}
               </Table.Tr>
             </Table.Tbody>
           </Table>
@@ -430,6 +676,110 @@ export function MatchPreviewPage() {
     </Box>
   );
 }
+
+type MetricValue = {
+  average: number;
+  standard_deviation?: number;
+};
+
+const MetricValueDisplay = ({ value }: { value?: MetricValue | null }) => {
+  const averageText = formatMetricNumber(value?.average);
+
+  if (averageText === null) {
+    return (
+      <Text fw={500} ta="center">
+        —
+      </Text>
+    );
+  }
+
+  const deviationText = formatMetricNumber(value?.standard_deviation);
+
+  return (
+    <Stack gap={0} align="center" justify="center">
+      <Text fw={600}>{averageText}</Text>
+      {deviationText ? (
+        <Text size="sm" c="dimmed">
+          ± {deviationText}
+        </Text>
+      ) : null}
+    </Stack>
+  );
+};
+
+const formatMetricNumber = (value: number | null | undefined) => {
+  if (!isValidNumber(value)) {
+    return null;
+  }
+
+  return value.toFixed(1);
+};
+
+const isValidNumber = (value: number | null | undefined): value is number =>
+  typeof value === 'number' && Number.isFinite(value);
+
+const metricFromMatchPreviewMetric = (metric?: MatchPreviewMetric) => {
+  if (!metric || !isValidNumber(metric.average)) {
+    return null;
+  }
+
+  return {
+    average: metric.average,
+    standard_deviation: isValidNumber(metric.standard_deviation)
+      ? metric.standard_deviation
+      : undefined,
+  } satisfies MetricValue;
+};
+
+const metricFromAverage = (value: number | null | undefined) => {
+  if (!isValidNumber(value)) {
+    return null;
+  }
+
+  return { average: value } satisfies MetricValue;
+};
+
+const computeAllianceMetricSum = (
+  teamNumbers: [number, number, number],
+  teamMap: Map<number, MatchPreviewAllianceTeamStats>,
+  accessor: (team: MatchPreviewAllianceTeamStats) => MatchPreviewMetric | undefined
+) => {
+  let sum = 0;
+  let variance = 0;
+  let hasAverage = false;
+  let hasDeviation = false;
+
+  teamNumbers.forEach((teamNumber) => {
+    const team = teamMap.get(teamNumber);
+
+    if (!team) {
+      return;
+    }
+
+    const metric = accessor(team);
+
+    if (!metric || !isValidNumber(metric.average)) {
+      return;
+    }
+
+    sum += metric.average;
+    hasAverage = true;
+
+    if (isValidNumber(metric.standard_deviation)) {
+      variance += metric.standard_deviation * metric.standard_deviation;
+      hasDeviation = true;
+    }
+  });
+
+  if (!hasAverage) {
+    return null;
+  }
+
+  return {
+    average: sum,
+    standard_deviation: hasDeviation ? Math.sqrt(variance) : undefined,
+  } satisfies MetricValue;
+};
 
 interface AllianceTeamImageDisplayProps {
   teamNumber: number;
