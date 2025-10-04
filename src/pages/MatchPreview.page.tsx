@@ -142,7 +142,7 @@ export function MatchPreviewPage() {
             <Table.Thead>
               <Table.Tr>
                 <Table.Th
-                  colSpan={3}
+                  colSpan={4}
                   className={clsx(classes.redCell, classes.allianceHeader)}
                   ta="center"
                 >
@@ -152,7 +152,7 @@ export function MatchPreviewPage() {
                   Field
                 </Table.Th>
                 <Table.Th
-                  colSpan={3}
+                  colSpan={4}
                   className={clsx(classes.blueCell, classes.allianceHeader)}
                   ta="center"
                 >
@@ -169,7 +169,13 @@ export function MatchPreviewPage() {
                     Red {index + 1}
                   </Table.Th>
                 ))}
+                <Table.Th className={clsx(classes.redCell, classes.stationHeader)} ta="center">
+                  &nbsp;
+                </Table.Th>
                 <Table.Th className={classes.fieldHeader} ta="center">
+                  &nbsp;
+                </Table.Th>
+                <Table.Th className={clsx(classes.blueCell, classes.stationHeader)} ta="center">
                   &nbsp;
                 </Table.Th>
                 {blueTeamNumbers.map((_, index) => (
@@ -200,11 +206,13 @@ export function MatchPreviewPage() {
                       </Center>
                     </Table.Td>
                   ))}
+                  <Table.Td className={classes.redCell} />
                   <Table.Td className={classes.fieldCell}>
                     <Text fw={500} ta="center">
                       Robot Photo
                     </Text>
                   </Table.Td>
+                  <Table.Td className={classes.blueCell} />
                   {blueTeamNumbers.map((teamNumber, index) => (
                     <Table.Td
                       key={`blue-image-${index}`}
@@ -231,10 +239,16 @@ export function MatchPreviewPage() {
                     </Table.Td>
                   );
                 })}
+                <Table.Td className={classes.redCell} ta="center">
+                  <Text fw={500}>Predicted</Text>
+                </Table.Td>
                 <Table.Td className={classes.fieldCell}>
                   <Text fw={500} ta="center">
                     Team Number
                   </Text>
+                </Table.Td>
+                <Table.Td className={classes.blueCell} ta="center">
+                  <Text fw={500}>Predicted</Text>
                 </Table.Td>
                 {blueTeamNumbers.map((teamNumber, index) => {
                   const isValidTeam = hasValidTeam(teamNumber);
@@ -247,7 +261,7 @@ export function MatchPreviewPage() {
                 })}
               </Table.Tr>
               <Table.Tr>
-                <Table.Th colSpan={7} className={classes.sectionHeader}>
+                <Table.Th colSpan={9} className={classes.sectionHeader}>
                   Autonomous
                 </Table.Th>
               </Table.Tr>
@@ -256,18 +270,20 @@ export function MatchPreviewPage() {
                   {redTeamNumbers.map((_, index) => (
                     <Table.Td key={`autonomous-red-${index}-${field}`} />
                   ))}
+                  <Table.Td className={classes.redCell} />
                   <Table.Td className={classes.fieldCell}>
                     <Text fw={500} ta="center">
                       {field}
                     </Text>
                   </Table.Td>
+                  <Table.Td className={classes.blueCell} />
                   {blueTeamNumbers.map((_, index) => (
                     <Table.Td key={`autonomous-blue-${index}-${field}`} />
                   ))}
                 </Table.Tr>
               ))}
               <Table.Tr>
-                <Table.Th colSpan={7} className={classes.sectionHeader}>
+                <Table.Th colSpan={9} className={classes.sectionHeader}>
                   Teleop
                 </Table.Th>
               </Table.Tr>
@@ -276,18 +292,20 @@ export function MatchPreviewPage() {
                   {redTeamNumbers.map((_, index) => (
                     <Table.Td key={`teleop-red-${index}-${field}`} />
                   ))}
+                  <Table.Td className={classes.redCell} />
                   <Table.Td className={classes.fieldCell}>
                     <Text fw={500} ta="center">
                       {field}
                     </Text>
                   </Table.Td>
+                  <Table.Td className={classes.blueCell} />
                   {blueTeamNumbers.map((_, index) => (
                     <Table.Td key={`teleop-blue-${index}-${field}`} />
                   ))}
                 </Table.Tr>
               ))}
               <Table.Tr>
-                <Table.Th colSpan={7} className={classes.sectionHeader}>
+                <Table.Th colSpan={9} className={classes.sectionHeader}>
                   Endgame
                 </Table.Th>
               </Table.Tr>
@@ -296,11 +314,13 @@ export function MatchPreviewPage() {
                   {redTeamNumbers.map((_, index) => (
                     <Table.Td key={`endgame-red-${index}-${field}`} />
                   ))}
+                  <Table.Td className={classes.redCell} />
                   <Table.Td className={classes.fieldCell}>
                     <Text fw={500} ta="center">
                       {field}
                     </Text>
                   </Table.Td>
+                  <Table.Td className={classes.blueCell} />
                   {blueTeamNumbers.map((_, index) => (
                     <Table.Td key={`endgame-blue-${index}-${field}`} />
                   ))}
