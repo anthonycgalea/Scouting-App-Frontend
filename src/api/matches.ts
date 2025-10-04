@@ -2,6 +2,65 @@ import { useQuery } from '@tanstack/react-query';
 import { apiFetch, apiFetchResponse } from './httpClient';
 import type { TeamMatchData } from './teams';
 
+export interface MatchPreviewMetric {
+  average: number;
+  standard_deviation: number;
+}
+
+export interface MatchPreviewAllianceTeamStats {
+  team_number: number;
+  auto: {
+    level4: MatchPreviewMetric;
+    level3: MatchPreviewMetric;
+    level2: MatchPreviewMetric;
+    level1: MatchPreviewMetric;
+    net: MatchPreviewMetric;
+    processor: MatchPreviewMetric;
+    total_points: MatchPreviewMetric;
+  };
+  teleop: {
+    level4: MatchPreviewMetric;
+    level3: MatchPreviewMetric;
+    level2: MatchPreviewMetric;
+    level1: MatchPreviewMetric;
+    net: MatchPreviewMetric;
+    processor: MatchPreviewMetric;
+    total_points: MatchPreviewMetric;
+  };
+  endgame: MatchPreviewMetric;
+  total_points: MatchPreviewMetric;
+}
+
+export interface MatchPreviewAllianceLevelAveragesSection {
+  level4: number;
+  level3: number;
+  level2: number;
+  level1: number;
+  net: number;
+  processor: number;
+}
+
+export interface MatchPreviewAllianceLevelAverages {
+  auto: MatchPreviewAllianceLevelAveragesSection;
+  teleop: MatchPreviewAllianceLevelAveragesSection;
+  adjusted: MatchPreviewAllianceLevelAveragesSection;
+}
+
+export interface MatchPreviewAllianceData {
+  teams: MatchPreviewAllianceTeamStats[];
+  alliance_level_averages: MatchPreviewAllianceLevelAverages;
+}
+
+export interface MatchPreviewResponse {
+  red: MatchPreviewAllianceData;
+  blue: MatchPreviewAllianceData;
+}
+
+export interface MatchPreviewRequest {
+  matchLevel: string;
+  matchNumber: number;
+}
+
 export interface MatchScheduleEntry {
   event_key: string;
   match_number: number;
@@ -17,6 +76,12 @@ export interface MatchScheduleEntry {
 export const matchScheduleQueryKey = () => ['match-schedule'] as const;
 
 export const fetchMatchSchedule = () => apiFetch<MatchScheduleEntry[]>('event/matches');
+
+export const matchPreviewQueryKey = ({ matchLevel, matchNumber }: MatchPreviewRequest) =>
+  ['match-preview', matchLevel, matchNumber] as const;
+
+export const fetchMatchPreview = ({ matchLevel, matchNumber }: MatchPreviewRequest) =>
+  apiFetch<MatchPreviewResponse>(`event/match/${matchLevel}/${matchNumber}/preview`);
 
 export type TeamMatchValidationStatus = 'PENDING' | 'NEEDS REVIEW' | 'VALID';
 
@@ -70,6 +135,16 @@ export const useMatchSchedule = () =>
   useQuery({
     queryKey: matchScheduleQueryKey(),
     queryFn: fetchMatchSchedule,
+  });
+
+export const useMatchPreview = (params: MatchPreviewRequest) =>
+  useQuery({
+    queryKey: matchPreviewQueryKey(params),
+    queryFn: () => fetchMatchPreview(params),
+    enabled:
+      Number.isFinite(params.matchNumber) &&
+      Boolean(params.matchLevel) &&
+      params.matchLevel.trim().length > 0,
   });
 
 export const useTeamMatchValidation = () =>
