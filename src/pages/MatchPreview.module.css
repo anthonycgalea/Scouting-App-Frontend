@@ -43,3 +43,28 @@
   background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
   color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-gray-3));
 }
+
+.collapsibleButton {
+  width: 100%;
+  padding: var(--mantine-spacing-xs) 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--mantine-spacing-xs);
+  cursor: pointer;
+  color: inherit;
+  border-radius: var(--mantine-radius-sm);
+}
+
+.collapsibleButton:hover {
+  background-color: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-5));
+}
+
+.totalRow {
+  background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7));
+}
+
+.totalFieldCell {
+  font-weight: 700;
+  color: light-dark(var(--mantine-color-gray-8), var(--mantine-color-gray-2));
+}
