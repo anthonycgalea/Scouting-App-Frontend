@@ -14,10 +14,9 @@ export interface MatchScheduleEntry {
   blue3_id: number;
 }
 
-export const matchScheduleQueryKey = (eventCode: string) => ['match-schedule', eventCode] as const;
+export const matchScheduleQueryKey = () => ['match-schedule'] as const;
 
-export const fetchMatchSchedule = (_eventCode: string) =>
-  apiFetch<MatchScheduleEntry[]>('event/matches');
+export const fetchMatchSchedule = () => apiFetch<MatchScheduleEntry[]>('event/matches');
 
 export type TeamMatchValidationStatus = 'PENDING' | 'NEEDS REVIEW' | 'VALID';
 
@@ -67,10 +66,10 @@ export const exportMatches = (fileType: MatchExportType) =>
     json: { file_type: fileType },
   });
 
-export const useMatchSchedule = (eventCode = '2025micmp4') =>
+export const useMatchSchedule = () =>
   useQuery({
-    queryKey: matchScheduleQueryKey(eventCode),
-    queryFn: () => fetchMatchSchedule(eventCode),
+    queryKey: matchScheduleQueryKey(),
+    queryFn: fetchMatchSchedule,
   });
 
 export const useTeamMatchValidation = () =>

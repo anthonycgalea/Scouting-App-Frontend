@@ -112,7 +112,7 @@ export function PickListsPage() {
   const {
     data: eventTeams = [],
     isLoading: isLoadingEventTeams,
-  } = useEventTeams(activeEvent?.eventKey ?? '2025micmp4', {
+  } = useEventTeams({
     enabled: Boolean(activeEvent),
   });
 
