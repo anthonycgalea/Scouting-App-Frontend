@@ -201,7 +201,9 @@ export function MatchPreviewPage() {
                     </Table.Td>
                   ))}
                   <Table.Td className={classes.fieldCell}>
-                    <Text fw={500}>Robot Photo</Text>
+                    <Text fw={500} ta="center">
+                      Robot Photo
+                    </Text>
                   </Table.Td>
                   {blueTeamNumbers.map((teamNumber, index) => (
                     <Table.Td
@@ -230,7 +232,9 @@ export function MatchPreviewPage() {
                   );
                 })}
                 <Table.Td className={classes.fieldCell}>
-                  <Text fw={500}>Team Number</Text>
+                  <Text fw={500} ta="center">
+                    Team Number
+                  </Text>
                 </Table.Td>
                 {blueTeamNumbers.map((teamNumber, index) => {
                   const isValidTeam = hasValidTeam(teamNumber);
@@ -250,13 +254,15 @@ export function MatchPreviewPage() {
               {autonomousFields.map((field) => (
                 <Table.Tr key={`autonomous-${field}`}>
                   {redTeamNumbers.map((_, index) => (
-                    <Table.Td key={`autonomous-red-${index}-${field}`} className={classes.redCell} />
+                    <Table.Td key={`autonomous-red-${index}-${field}`} />
                   ))}
                   <Table.Td className={classes.fieldCell}>
-                    <Text fw={500}>{field}</Text>
+                    <Text fw={500} ta="center">
+                      {field}
+                    </Text>
                   </Table.Td>
                   {blueTeamNumbers.map((_, index) => (
-                    <Table.Td key={`autonomous-blue-${index}-${field}`} className={classes.blueCell} />
+                    <Table.Td key={`autonomous-blue-${index}-${field}`} />
                   ))}
                 </Table.Tr>
               ))}
@@ -268,13 +274,15 @@ export function MatchPreviewPage() {
               {teleopFields.map((field) => (
                 <Table.Tr key={`teleop-${field}`}>
                   {redTeamNumbers.map((_, index) => (
-                    <Table.Td key={`teleop-red-${index}-${field}`} className={classes.redCell} />
+                    <Table.Td key={`teleop-red-${index}-${field}`} />
                   ))}
                   <Table.Td className={classes.fieldCell}>
-                    <Text fw={500}>{field}</Text>
+                    <Text fw={500} ta="center">
+                      {field}
+                    </Text>
                   </Table.Td>
                   {blueTeamNumbers.map((_, index) => (
-                    <Table.Td key={`teleop-blue-${index}-${field}`} className={classes.blueCell} />
+                    <Table.Td key={`teleop-blue-${index}-${field}`} />
                   ))}
                 </Table.Tr>
               ))}
@@ -286,13 +294,15 @@ export function MatchPreviewPage() {
               {endgameFields.map((field) => (
                 <Table.Tr key={`endgame-${field}`}>
                   {redTeamNumbers.map((_, index) => (
-                    <Table.Td key={`endgame-red-${index}-${field}`} className={classes.redCell} />
+                    <Table.Td key={`endgame-red-${index}-${field}`} />
                   ))}
                   <Table.Td className={classes.fieldCell}>
-                    <Text fw={500}>{field}</Text>
+                    <Text fw={500} ta="center">
+                      {field}
+                    </Text>
                   </Table.Td>
                   {blueTeamNumbers.map((_, index) => (
-                    <Table.Td key={`endgame-blue-${index}-${field}`} className={classes.blueCell} />
+                    <Table.Td key={`endgame-blue-${index}-${field}`} />
                   ))}
                 </Table.Tr>
               ))}
