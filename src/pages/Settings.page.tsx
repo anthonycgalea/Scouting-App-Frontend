@@ -1,19 +1,29 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Button, Group, Select, Stack } from '@mantine/core';
+import { ChangeEvent, useEffect, useMemo, useState } from 'react';
+import { Button, Group, Select, Stack, TextInput } from '@mantine/core';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { useOrganizations, useUpdateUserOrganization, useUserInfo, userRoleQueryKey } from '../api';
+import {
+  useOrganizations,
+  useUpdateUserDisplayName,
+  useUpdateUserOrganization,
+  useUserInfo,
+  userRoleQueryKey,
+} from '../api';
 import { ColorSchemeToggle } from '../components/ColorSchemeToggle/ColorSchemeToggle';
 
 export function UserSettingsPage() {
   const { data: organizations, isLoading, isError } = useOrganizations();
   const { data: userInfo } = useUserInfo();
   const { mutateAsync: updateUserOrganization } = useUpdateUserOrganization();
+  const { mutateAsync: updateUserDisplayName, isPending: isUpdatingDisplayName } =
+    useUpdateUserDisplayName();
   const queryClient = useQueryClient();
   const navigate = useNavigate({ from: '/userSettings' });
   const isUserLoggedIn = userInfo?.id !== undefined && userInfo?.id !== null;
   const [selectedUserOrganizationId, setSelectedUserOrganizationId] = useState<string | null>(null);
   const [hasUserSelectedOrganization, setHasUserSelectedOrganization] = useState(false);
+  const [displayName, setDisplayName] = useState('');
+  const [hasUserEditedDisplayName, setHasUserEditedDisplayName] = useState(false);
 
   const organizationOptions = useMemo(
     () =>
@@ -51,6 +61,30 @@ export function UserSettingsPage() {
     setSelectedUserOrganizationId(defaultUserOrganizationId);
   }, [defaultUserOrganizationId, hasUserSelectedOrganization, isUserLoggedIn]);
 
+  const defaultDisplayName = useMemo(() => {
+    if (!userInfo) {
+      return '';
+    }
+
+    return (
+      userInfo.display_name ??
+      userInfo.displayName ??
+      userInfo.full_name ??
+      userInfo.name ??
+      userInfo.username ??
+      userInfo.user_name ??
+      ''
+    );
+  }, [userInfo]);
+
+  useEffect(() => {
+    if (hasUserEditedDisplayName) {
+      return;
+    }
+
+    setDisplayName(defaultDisplayName);
+  }, [defaultDisplayName, hasUserEditedDisplayName]);
+
   const handleOrganizationChange = async (value: string | null) => {
     setHasUserSelectedOrganization(true);
     setSelectedUserOrganizationId(value);
@@ -72,8 +106,48 @@ export function UserSettingsPage() {
     }
   };
 
+  const handleDisplayNameChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setHasUserEditedDisplayName(true);
+    setDisplayName(event.currentTarget.value);
+  };
+
+  const handleDisplayNameSave = async () => {
+    const trimmedDisplayName = displayName.trim();
+
+    if (trimmedDisplayName.length === 0) {
+      return;
+    }
+
+    try {
+      await updateUserDisplayName(trimmedDisplayName);
+      setHasUserEditedDisplayName(false);
+      setDisplayName(trimmedDisplayName);
+    } catch (error) {
+      console.error('Failed to update display name', error);
+    }
+  };
+
   return (
     <Stack gap="xl" p="md" align="center">
+      <Group gap="sm" align="flex-end" wrap="wrap">
+        <TextInput
+          label="Display name"
+          placeholder="Enter a display name"
+          value={displayName}
+          onChange={handleDisplayNameChange}
+          style={{ flex: 1, minWidth: 260 }}
+          disabled={!isUserLoggedIn}
+        />
+        <Button
+          onClick={handleDisplayNameSave}
+          disabled={
+            !isUserLoggedIn || !hasUserEditedDisplayName || displayName.trim().length === 0
+          }
+          loading={isUpdatingDisplayName}
+        >
+          Save changes
+        </Button>
+      </Group>
       <Group gap="sm" align="flex-end" wrap="wrap">
         {isUserLoggedIn && (
           <>

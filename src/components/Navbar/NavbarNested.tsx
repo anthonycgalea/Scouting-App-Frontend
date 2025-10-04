@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import {
-  IconSettings,
   IconBulb,
   IconFileAnalytics,
   IconGauge,
@@ -51,7 +50,6 @@ const NAV_LINKS_AFTER_PICKING = [
       { label: 'Data Import', link: '/dataImport' },
     ],
   },
-  { label: 'User Settings', icon: IconSettings, to: '/userSettings' },
 ];
 
 const ORGANIZATION_LINKS_DATA = {
