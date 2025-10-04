@@ -92,18 +92,11 @@ export function MatchSchedulePage() {
     );
   }
 
-  if (!activeSection || availableSections.length === 0) {
-    return (
-      <Box p="md">
-        <Center mih={200}>
-          <Text fw={500}>No matches are available for this event.</Text>
-        </Center>
-      </Box>
-    );
-  }
-
+  const hasAvailableSections = availableSections.length > 0;
   const toggleOptions = availableSections.map(({ label, value }) => ({ label, value }));
-  const activeMatches = matchesBySection[activeSection];
+  const activeMatches = activeSection
+    ? matchesBySection[activeSection]
+    : [];
 
   return (
     <Box p="md">
@@ -131,20 +124,28 @@ export function MatchSchedulePage() {
             </ActionIcon>
           </Group>
         </Suspense>
-        <MatchScheduleToggle
-          value={activeSection}
-          options={toggleOptions}
-          onChange={(section) => setActiveSection(section)}
-        />
-        <Suspense
-          fallback={
-            <Center mih={200}>
-              <Loader />
-            </Center>
-          }
-        >
-          <MatchScheduleComponent matches={activeMatches} />
-        </Suspense>
+        {hasAvailableSections && activeSection ? (
+          <>
+            <MatchScheduleToggle
+              value={activeSection}
+              options={toggleOptions}
+              onChange={(section) => setActiveSection(section)}
+            />
+            <Suspense
+              fallback={
+                <Center mih={200}>
+                  <Loader />
+                </Center>
+              }
+            >
+              <MatchScheduleComponent matches={activeMatches} />
+            </Suspense>
+          </>
+        ) : (
+          <Center mih={200}>
+            <Text fw={500}>No matches are available for this event.</Text>
+          </Center>
+        )}
       </Stack>
     </Box>
   );
