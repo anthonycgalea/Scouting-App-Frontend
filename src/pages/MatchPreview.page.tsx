@@ -87,6 +87,19 @@ export function MatchPreviewPage() {
     isError: isPreviewError,
   } = useMatchPreview(previewParams);
 
+  const redTeamNumbers: [number, number, number] = [
+    match?.red1_id ?? Number.NaN,
+    match?.red2_id ?? Number.NaN,
+    match?.red3_id ?? Number.NaN,
+  ];
+  const blueTeamNumbers: [number, number, number] = [
+    match?.blue1_id ?? Number.NaN,
+    match?.blue2_id ?? Number.NaN,
+    match?.blue3_id ?? Number.NaN,
+  ];
+  const redAllianceImageQueries = redTeamNumbers.map((teamNumber) => useTeamImages(teamNumber));
+  const blueAllianceImageQueries = blueTeamNumbers.map((teamNumber) => useTeamImages(teamNumber));
+
   if (isLoading || isPreviewLoading) {
     return (
       <Center mih={200}>
@@ -149,18 +162,6 @@ export function MatchPreviewPage() {
 
   const normalizedLevel = match.match_level?.toLowerCase() ?? matchLevel.toLowerCase();
   const matchLevelLabel = matchLevelLabels[normalizedLevel] ?? match.match_level ?? matchLevel;
-  const redTeamNumbers = [
-    match.red1_id,
-    match.red2_id,
-    match.red3_id,
-  ] as [number, number, number];
-  const blueTeamNumbers = [
-    match.blue1_id,
-    match.blue2_id,
-    match.blue3_id,
-  ] as [number, number, number];
-  const redAllianceImageQueries = redTeamNumbers.map((teamNumber) => useTeamImages(teamNumber));
-  const blueAllianceImageQueries = blueTeamNumbers.map((teamNumber) => useTeamImages(teamNumber));
 
   const hasValidTeam = (teamNumber: number) => Number.isFinite(teamNumber) && teamNumber > 0;
 
