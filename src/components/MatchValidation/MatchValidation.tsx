@@ -478,12 +478,14 @@ const formatAllianceLabel = (value: string) => {
 
 const MATCH_LEVEL_LABELS: Record<string, string> = {
   QUALIFICATION: 'Qualification',
-  QUARTERFINAL: 'Quarterfinal',
-  QF: 'Quarterfinal',
-  SEMIFINAL: 'Semifinal',
-  SF: 'Semifinal',
-  FINAL: 'Final',
-  F: 'Final',
+  QM: 'Qualification',
+  QUARTERFINAL: 'Playoff',
+  QF: 'Playoff',
+  SEMIFINAL: 'Playoff',
+  SF: 'Playoff',
+  PLAYOFF: 'Playoff',
+  FINAL: 'Finals',
+  F: 'Finals',
   PRACTICE: 'Practice',
   PR: 'Practice',
 };
@@ -1479,7 +1481,9 @@ export function MatchValidation() {
   return (
     <Box p="md">
       <Stack gap="lg">
-        <Title order={2}>{pageTitle}</Title>
+        <Title order={2} ta="center">
+          {pageTitle}
+        </Title>
 
         {allianceTeams.length === 0 ? (
           <Text c="dimmed">No teams were found for this alliance.</Text>

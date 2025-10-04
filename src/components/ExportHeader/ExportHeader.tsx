@@ -24,7 +24,7 @@ export function ExportHeader({
   const hasStats = statsData.length > 0;
 
   return (
-    <Group className={classes.container} align="flex-start" gap="md" wrap="wrap">
+    <Group className={classes.container} align="center" justify="center" gap="md" wrap="wrap">
       <Group gap="sm" align="center" justify="center" wrap="wrap">
         <Suspense
           fallback={
