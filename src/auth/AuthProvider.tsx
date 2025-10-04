@@ -20,6 +20,7 @@ import {
 } from './tokenStorage';
 import {
   SUPABASE_CUSTOM_STORAGE_KEY,
+  SUPABASE_SESSION_STORAGE_KEY,
   SUPABASE_STORAGE_KEY_SUFFIX,
   SUPABASE_URL,
 } from './supabaseConfig';
@@ -94,6 +95,8 @@ const clearSupabaseSessions = () => {
   keysToRemove.forEach((key) => {
     window.localStorage.removeItem(key);
   });
+
+  window.localStorage.removeItem(SUPABASE_SESSION_STORAGE_KEY);
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
