@@ -22,10 +22,11 @@ export const fetchUserInfo = () => apiFetch<UserInfoResponse>('user/info');
 
 export const userInfoQueryKey = ['user', 'info'] as const;
 
-export const useUserInfo = () =>
+export const useUserInfo = ({ enabled }: { enabled?: boolean } = {}) =>
   useQuery<UserInfoResponse>({
     queryKey: userInfoQueryKey,
     queryFn: fetchUserInfo,
+    enabled,
   });
 
 export const updateUserOrganization = (userOrganizationId: number | null) =>
@@ -47,6 +48,24 @@ export const useUpdateUserOrganization = () => {
       void queryClient.invalidateQueries({ queryKey: organizationsQueryKey });
       void queryClient.invalidateQueries({ queryKey: userRoleQueryKey });
       void queryClient.invalidateQueries({ queryKey: userOrganizationQueryKey });
+    },
+  });
+};
+
+export const updateUserDisplayName = (displayName: string) =>
+  apiFetch<void>('user/info', {
+    method: 'PATCH',
+    json: { display_name: displayName },
+  });
+
+export const useUpdateUserDisplayName = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateUserDisplayName,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: userInfoQueryKey });
+      await queryClient.refetchQueries({ queryKey: userInfoQueryKey });
     },
   });
 };
