@@ -55,17 +55,19 @@ export interface TeamMatchData2025 extends BaseTeamMatchData {
 
 export type TeamMatchData = TeamMatchData2025;
 
-export const eventTeamsQueryKey = (eventCode: string) =>
-  ['event-teams', eventCode] as const;
+export const eventTeamsQueryKey = () => ['event-teams'] as const;
 
-export const fetchEventTeams = (_eventCode: string) => apiFetch<EventTeam[]>('event/teams');
+export const fetchEventTeams = () => apiFetch<EventTeam[]>('event/teams');
 
-export const useEventTeams = (eventCode = '2025micmp4', { enabled }: { enabled?: boolean } = {}) =>
-  useQuery({
-    queryKey: eventTeamsQueryKey(eventCode),
-    queryFn: () => fetchEventTeams(eventCode),
-    enabled: enabled ?? true,
+export const useEventTeams = ({ enabled }: { enabled?: boolean } = {}) => {
+  const shouldEnable = enabled ?? true;
+
+  return useQuery({
+    queryKey: eventTeamsQueryKey(),
+    queryFn: fetchEventTeams,
+    enabled: shouldEnable,
   });
+};
 
 export const teamInfoQueryKey = (teamNumber: number) =>
   ['team-info', teamNumber] as const;

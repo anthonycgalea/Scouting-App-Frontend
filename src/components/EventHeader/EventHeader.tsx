@@ -3,15 +3,11 @@ import { useEventInfo } from '@/api';
 import classes from './EventHeader.module.css';
 
 interface EventHeaderProps {
-  eventCode?: string;
   pageInfo?: string;
 }
 
-export const EventHeader = ({
-  eventCode,
-  pageInfo = 'Match Schedule',
-}: EventHeaderProps) => {
-  const { data: eventInfo, isLoading, isError } = useEventInfo(eventCode);
+export const EventHeader = ({ pageInfo = 'Match Schedule' }: EventHeaderProps) => {
+  const { data: eventInfo, isLoading, isError } = useEventInfo();
 
   if (isLoading) {
     return <Skeleton height={34} width="50%" radius="sm" />;

@@ -70,12 +70,9 @@ export function AllianceSelectionPage() {
     () => organizationEvents?.find((event) => event.isActive) ?? null,
     [organizationEvents],
   );
-  const { data: eventTeams = [], isLoading: isLoadingEventTeams } = useEventTeams(
-    activeEvent?.eventKey ?? '2025micmp4',
-    {
-      enabled: Boolean(activeEvent),
-    },
-  );
+  const { data: eventTeams = [], isLoading: isLoadingEventTeams } = useEventTeams({
+    enabled: Boolean(activeEvent),
+  });
 
   const pickListsForActiveEvent = useMemo(() => {
     if (!pickLists) {

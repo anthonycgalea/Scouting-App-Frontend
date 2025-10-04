@@ -66,14 +66,14 @@ export const useEventRankings = ({ enabled }: { enabled?: boolean } = {}) => {
   });
 };
 
-export const eventInfoQueryKey = (eventCode: string) => ['event-info', eventCode] as const;
+export const eventInfoQueryKey = () => ['event-info'] as const;
 
-export const fetchEventInfo = (_eventCode: string) => apiFetch<EventSummary>('event/info');
+export const fetchEventInfo = () => apiFetch<EventSummary>('event/info');
 
-export const useEventInfo = (eventCode = '2025micmp4') =>
+export const useEventInfo = () =>
   useQuery<EventSummary>({
-    queryKey: eventInfoQueryKey(eventCode),
-    queryFn: () => fetchEventInfo(eventCode),
+    queryKey: eventInfoQueryKey(),
+    queryFn: fetchEventInfo,
   });
 
 export const organizationEventsQueryKey = () => ['organization-events'] as const;
