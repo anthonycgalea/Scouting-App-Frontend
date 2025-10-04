@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ActionIcon,
   Box,
@@ -7,17 +7,18 @@ import {
   Flex,
   Image,
   Loader,
-  SimpleGrid,
   Skeleton,
   Stack,
   Table,
   Text,
   Title,
 } from '@mantine/core';
+import clsx from 'clsx';
 import { IconChevronLeft, IconChevronRight, IconPhoto } from '@tabler/icons-react';
 import { useParams } from '@tanstack/react-router';
 import { useMatchSchedule } from '@/api';
 import { TeamImage, useTeamImages } from '@/api/teams';
+import classes from './MatchPreview.module.css';
 
 export function MatchPreviewPage() {
   const { matchLevel, matchNumber } = useParams({
@@ -92,15 +93,43 @@ export function MatchPreviewPage() {
     match.blue2_id,
     match.blue3_id,
   ] as [number, number, number];
-  const [redAllianceHasImages, setRedAllianceHasImages] = useState(true);
-  const [blueAllianceHasImages, setBlueAllianceHasImages] = useState(true);
-  const handleRedAllianceImagesChange = useCallback((hasImages: boolean) => {
-    setRedAllianceHasImages(hasImages);
-  }, []);
-  const handleBlueAllianceImagesChange = useCallback((hasImages: boolean) => {
-    setBlueAllianceHasImages(hasImages);
-  }, []);
-  const shouldShowImageRow = redAllianceHasImages || blueAllianceHasImages;
+  const redAllianceImageQueries = redTeamNumbers.map((teamNumber) => useTeamImages(teamNumber));
+  const blueAllianceImageQueries = blueTeamNumbers.map((teamNumber) => useTeamImages(teamNumber));
+
+  const hasValidTeam = (teamNumber: number) => Number.isFinite(teamNumber) && teamNumber > 0;
+
+  const getAllianceStatus = (
+    teamNumbers: [number, number, number],
+    queries: ReturnType<typeof useTeamImages>[]
+  ) => {
+    const hasTeams = teamNumbers.some((teamNumber) => hasValidTeam(teamNumber));
+    const hasImagesOrLoading = teamNumbers.some((teamNumber, index) => {
+      if (!hasValidTeam(teamNumber)) {
+        return false;
+      }
+
+      const query = queries[index];
+
+      if (query.isLoading) {
+        return true;
+      }
+
+      return (query.data?.length ?? 0) > 0;
+    });
+
+    return { hasTeams, hasImagesOrLoading };
+  };
+
+  const redAllianceStatus = getAllianceStatus(redTeamNumbers, redAllianceImageQueries);
+  const blueAllianceStatus = getAllianceStatus(blueTeamNumbers, blueAllianceImageQueries);
+
+  const shouldShowImageRow =
+    (redAllianceStatus.hasTeams && redAllianceStatus.hasImagesOrLoading) ||
+    (blueAllianceStatus.hasTeams && blueAllianceStatus.hasImagesOrLoading);
+
+  const autonomousFields = ['L4', 'L3', 'L2', 'L1', 'Net', 'Processor'];
+  const teleopFields = ['L4', 'L3', 'L2', 'L1', 'Net', 'Processor'];
+  const endgameFields = ['Endgame Points'];
 
   return (
     <Box p="md">
@@ -108,111 +137,172 @@ export function MatchPreviewPage() {
         <Title order={2}>
           {matchLevelLabel} Match {numericMatchNumber} Preview
         </Title>
-        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
-          <AllianceCard
-            allianceName="Red"
-            teamNumbers={redTeamNumbers}
-            showImageRow={shouldShowImageRow}
-            onImagePresenceChange={handleRedAllianceImagesChange}
-          />
-          <AllianceCard
-            allianceName="Blue"
-            teamNumbers={blueTeamNumbers}
-            showImageRow={shouldShowImageRow}
-            onImagePresenceChange={handleBlueAllianceImagesChange}
-          />
-        </SimpleGrid>
+        <Card withBorder radius="md" shadow="sm" padding="lg">
+          <Table highlightOnHover withColumnBorders className={classes.table}>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th
+                  colSpan={3}
+                  className={clsx(classes.redCell, classes.allianceHeader)}
+                  ta="center"
+                >
+                  Red Alliance
+                </Table.Th>
+                <Table.Th className={classes.fieldHeader} ta="center">
+                  Field
+                </Table.Th>
+                <Table.Th
+                  colSpan={3}
+                  className={clsx(classes.blueCell, classes.allianceHeader)}
+                  ta="center"
+                >
+                  Blue Alliance
+                </Table.Th>
+              </Table.Tr>
+              <Table.Tr>
+                {redTeamNumbers.map((_, index) => (
+                  <Table.Th
+                    key={`red-station-${index}`}
+                    className={clsx(classes.redCell, classes.stationHeader)}
+                    ta="center"
+                  >
+                    Red {index + 1}
+                  </Table.Th>
+                ))}
+                <Table.Th className={classes.fieldHeader} ta="center">
+                  &nbsp;
+                </Table.Th>
+                {blueTeamNumbers.map((_, index) => (
+                  <Table.Th
+                    key={`blue-station-${index}`}
+                    className={clsx(classes.blueCell, classes.stationHeader)}
+                    ta="center"
+                  >
+                    Blue {index + 1}
+                  </Table.Th>
+                ))}
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {shouldShowImageRow && (
+                <Table.Tr>
+                  {redTeamNumbers.map((teamNumber, index) => (
+                    <Table.Td
+                      key={`red-image-${index}`}
+                      className={classes.redCell}
+                      style={{ verticalAlign: 'top' }}
+                    >
+                      <Center>
+                        <AllianceTeamImageDisplay
+                          teamNumber={teamNumber}
+                          imageQuery={redAllianceImageQueries[index]}
+                        />
+                      </Center>
+                    </Table.Td>
+                  ))}
+                  <Table.Td className={classes.fieldCell}>
+                    <Text fw={500}>Robot Photo</Text>
+                  </Table.Td>
+                  {blueTeamNumbers.map((teamNumber, index) => (
+                    <Table.Td
+                      key={`blue-image-${index}`}
+                      className={classes.blueCell}
+                      style={{ verticalAlign: 'top' }}
+                    >
+                      <Center>
+                        <AllianceTeamImageDisplay
+                          teamNumber={teamNumber}
+                          imageQuery={blueAllianceImageQueries[index]}
+                        />
+                      </Center>
+                    </Table.Td>
+                  ))}
+                </Table.Tr>
+              )}
+              <Table.Tr>
+                {redTeamNumbers.map((teamNumber, index) => {
+                  const isValidTeam = hasValidTeam(teamNumber);
+
+                  return (
+                    <Table.Td key={`red-team-${index}`} className={classes.redCell} ta="center">
+                      <Text fw={500}>{isValidTeam ? teamNumber : 'TBD'}</Text>
+                    </Table.Td>
+                  );
+                })}
+                <Table.Td className={classes.fieldCell}>
+                  <Text fw={500}>Team Number</Text>
+                </Table.Td>
+                {blueTeamNumbers.map((teamNumber, index) => {
+                  const isValidTeam = hasValidTeam(teamNumber);
+
+                  return (
+                    <Table.Td key={`blue-team-${index}`} className={classes.blueCell} ta="center">
+                      <Text fw={500}>{isValidTeam ? teamNumber : 'TBD'}</Text>
+                    </Table.Td>
+                  );
+                })}
+              </Table.Tr>
+              <Table.Tr>
+                <Table.Th colSpan={7} className={classes.sectionHeader}>
+                  Autonomous
+                </Table.Th>
+              </Table.Tr>
+              {autonomousFields.map((field) => (
+                <Table.Tr key={`autonomous-${field}`}>
+                  {redTeamNumbers.map((_, index) => (
+                    <Table.Td key={`autonomous-red-${index}-${field}`} className={classes.redCell} />
+                  ))}
+                  <Table.Td className={classes.fieldCell}>
+                    <Text fw={500}>{field}</Text>
+                  </Table.Td>
+                  {blueTeamNumbers.map((_, index) => (
+                    <Table.Td key={`autonomous-blue-${index}-${field}`} className={classes.blueCell} />
+                  ))}
+                </Table.Tr>
+              ))}
+              <Table.Tr>
+                <Table.Th colSpan={7} className={classes.sectionHeader}>
+                  Teleop
+                </Table.Th>
+              </Table.Tr>
+              {teleopFields.map((field) => (
+                <Table.Tr key={`teleop-${field}`}>
+                  {redTeamNumbers.map((_, index) => (
+                    <Table.Td key={`teleop-red-${index}-${field}`} className={classes.redCell} />
+                  ))}
+                  <Table.Td className={classes.fieldCell}>
+                    <Text fw={500}>{field}</Text>
+                  </Table.Td>
+                  {blueTeamNumbers.map((_, index) => (
+                    <Table.Td key={`teleop-blue-${index}-${field}`} className={classes.blueCell} />
+                  ))}
+                </Table.Tr>
+              ))}
+              <Table.Tr>
+                <Table.Th colSpan={7} className={classes.sectionHeader}>
+                  Endgame
+                </Table.Th>
+              </Table.Tr>
+              {endgameFields.map((field) => (
+                <Table.Tr key={`endgame-${field}`}>
+                  {redTeamNumbers.map((_, index) => (
+                    <Table.Td key={`endgame-red-${index}-${field}`} className={classes.redCell} />
+                  ))}
+                  <Table.Td className={classes.fieldCell}>
+                    <Text fw={500}>{field}</Text>
+                  </Table.Td>
+                  {blueTeamNumbers.map((_, index) => (
+                    <Table.Td key={`endgame-blue-${index}-${field}`} className={classes.blueCell} />
+                  ))}
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </Card>
       </Stack>
     </Box>
   );
 }
-
-interface AllianceCardProps {
-  allianceName: string;
-  teamNumbers: [number, number, number];
-  showImageRow: boolean;
-  onImagePresenceChange: (hasImages: boolean) => void;
-}
-
-const AllianceCard = ({
-  allianceName,
-  teamNumbers,
-  showImageRow,
-  onImagePresenceChange,
-}: AllianceCardProps) => {
-  const [stationOne, stationTwo, stationThree] = teamNumbers;
-  const firstTeamImagesQuery = useTeamImages(stationOne);
-  const secondTeamImagesQuery = useTeamImages(stationTwo);
-  const thirdTeamImagesQuery = useTeamImages(stationThree);
-  const teamImageQueries = [firstTeamImagesQuery, secondTeamImagesQuery, thirdTeamImagesQuery];
-  const hasTeams = [stationOne, stationTwo, stationThree].some(
-    (teamNumber) => Number.isFinite(teamNumber) && teamNumber > 0
-  );
-  const hasImagesOrLoading = [stationOne, stationTwo, stationThree].some((teamNumber, index) => {
-    const query = teamImageQueries[index];
-    const isValidTeam = Number.isFinite(teamNumber) && teamNumber > 0;
-
-    if (!isValidTeam) {
-      return false;
-    }
-
-    if (query.isLoading) {
-      return true;
-    }
-
-    return (query.data?.length ?? 0) > 0;
-  });
-
-  useEffect(() => {
-    onImagePresenceChange(hasImagesOrLoading);
-  }, [hasImagesOrLoading, onImagePresenceChange]);
-
-  return (
-    <Card withBorder radius="md" shadow="sm" padding="lg">
-      <Stack gap="lg">
-        <Title order={3}>{allianceName} Alliance</Title>
-        <Table highlightOnHover withColumnBorders>
-          <Table.Thead>
-            <Table.Tr>
-              {[stationOne, stationTwo, stationThree].map((_, index) => (
-                <Table.Th key={`station-heading-${index}`} ta="center">
-                  Station {index + 1}
-                </Table.Th>
-              ))}
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {showImageRow && hasTeams && (
-              <Table.Tr>
-                {[stationOne, stationTwo, stationThree].map((teamNumber, index) => (
-                  <Table.Td key={`station-image-${index}`} ta="center" style={{ verticalAlign: 'top' }}>
-                    <Center>
-                      <AllianceTeamImageDisplay
-                        teamNumber={teamNumber}
-                        imageQuery={teamImageQueries[index]}
-                      />
-                    </Center>
-                  </Table.Td>
-                ))}
-              </Table.Tr>
-            )}
-            <Table.Tr>
-              {[stationOne, stationTwo, stationThree].map((teamNumber, index) => {
-                const isValidTeam = Number.isFinite(teamNumber) && teamNumber > 0;
-
-                return (
-                  <Table.Td key={`station-team-${index}`} ta="center">
-                    <Text fw={500}>{isValidTeam ? teamNumber : 'TBD'}</Text>
-                  </Table.Td>
-                );
-              })}
-            </Table.Tr>
-          </Table.Tbody>
-        </Table>
-      </Stack>
-    </Card>
-  );
-};
 
 interface AllianceTeamImageDisplayProps {
   teamNumber: number;

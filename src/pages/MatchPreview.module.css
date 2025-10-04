@@ -1,0 +1,42 @@
+.table :global(th),
+.table :global(td) {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.redCell {
+  background-color: light-dark(var(--mantine-color-red-1), var(--mantine-color-red-9));
+  color: light-dark(var(--mantine-color-red-9), var(--mantine-color-red-1));
+}
+
+.blueCell {
+  background-color: light-dark(var(--mantine-color-blue-1), var(--mantine-color-blue-9));
+  color: light-dark(var(--mantine-color-blue-9), var(--mantine-color-blue-1));
+}
+
+.allianceHeader {
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.stationHeader {
+  font-weight: 600;
+}
+
+.fieldHeader {
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.fieldCell {
+  text-align: left !important;
+  font-weight: 600;
+  color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-gray-3));
+}
+
+.sectionHeader {
+  text-align: left !important;
+  font-weight: 700;
+  background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+  color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-gray-3));
+}
