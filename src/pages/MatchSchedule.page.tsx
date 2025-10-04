@@ -70,33 +70,52 @@ export function MatchSchedulePage() {
     });
   }, [availableSections]);
 
-  if (isLoading) {
-    return (
-      <Box p="md">
-        <Center mih={200}>
-          <Loader />
-        </Center>
-      </Box>
-    );
-  }
-
-  if (isError) {
-    return (
-      <Box p="md">
-        <Center mih={200}>
-          <Text c="red.6" fw={500}>
-            Unable to load the match schedule.
-          </Text>
-        </Center>
-      </Box>
-    );
-  }
-
   const hasAvailableSections = availableSections.length > 0;
   const toggleOptions = availableSections.map(({ label, value }) => ({ label, value }));
   const activeMatches = activeSection
     ? matchesBySection[activeSection]
     : [];
+
+  let content = (
+    <Center mih={200}>
+      <Text fw={500}>No matches are available for this event.</Text>
+    </Center>
+  );
+
+  if (isLoading) {
+    content = (
+      <Center mih={200}>
+        <Loader />
+      </Center>
+    );
+  } else if (isError) {
+    content = (
+      <Center mih={200}>
+        <Text c="red.6" fw={500}>
+          Unable to load the match schedule.
+        </Text>
+      </Center>
+    );
+  } else if (hasAvailableSections && activeSection) {
+    content = (
+      <>
+        <MatchScheduleToggle
+          value={activeSection}
+          options={toggleOptions}
+          onChange={(section) => setActiveSection(section)}
+        />
+        <Suspense
+          fallback={
+            <Center mih={200}>
+              <Loader />
+            </Center>
+          }
+        >
+          <MatchScheduleComponent matches={activeMatches} />
+        </Suspense>
+      </>
+    );
+  }
 
   return (
     <Box p="md">
@@ -124,28 +143,7 @@ export function MatchSchedulePage() {
             </ActionIcon>
           </Group>
         </Suspense>
-        {hasAvailableSections && activeSection ? (
-          <>
-            <MatchScheduleToggle
-              value={activeSection}
-              options={toggleOptions}
-              onChange={(section) => setActiveSection(section)}
-            />
-            <Suspense
-              fallback={
-                <Center mih={200}>
-                  <Loader />
-                </Center>
-              }
-            >
-              <MatchScheduleComponent matches={activeMatches} />
-            </Suspense>
-          </>
-        ) : (
-          <Center mih={200}>
-            <Text fw={500}>No matches are available for this event.</Text>
-          </Center>
-        )}
+        {content}
       </Stack>
     </Box>
   );
