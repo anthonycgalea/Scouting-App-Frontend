@@ -138,8 +138,8 @@ export function MatchPreviewPage() {
   const teleopFields = ['L4', 'L3', 'L2', 'L1', 'Net', 'Processor'];
   const endgameFields = ['Endgame Points'];
   const [collapsedSections, setCollapsedSections] = useState({
-    autonomous: false,
-    teleop: false,
+    autonomous: true,
+    teleop: true,
   });
 
   const handleToggleSection = (section: 'autonomous' | 'teleop') => {
@@ -315,23 +315,23 @@ export function MatchPreviewPage() {
                       ))}
                     </Table.Tr>
                   ))}
-                  <Table.Tr className={classes.totalRow}>
-                    {redTeamNumbers.map((_, index) => (
-                      <Table.Td key={`autonomous-total-red-${index}`} />
-                    ))}
-                    <Table.Td className={classes.redCell} />
-                    <Table.Td className={clsx(classes.fieldCell, classes.totalFieldCell)}>
-                      <Text fw={700} ta="center">
-                        Autonomous Total
-                      </Text>
-                    </Table.Td>
-                    <Table.Td className={classes.blueCell} />
-                    {blueTeamNumbers.map((_, index) => (
-                      <Table.Td key={`autonomous-total-blue-${index}`} />
-                    ))}
-                  </Table.Tr>
                 </>
               )}
+              <Table.Tr className={classes.totalRow}>
+                {redTeamNumbers.map((_, index) => (
+                  <Table.Td key={`autonomous-total-red-${index}`} />
+                ))}
+                <Table.Td className={classes.redCell} />
+                <Table.Td className={clsx(classes.fieldCell, classes.totalFieldCell)}>
+                  <Text fw={700} ta="center">
+                    Autonomous Total
+                  </Text>
+                </Table.Td>
+                <Table.Td className={classes.blueCell} />
+                {blueTeamNumbers.map((_, index) => (
+                  <Table.Td key={`autonomous-total-blue-${index}`} />
+                ))}
+              </Table.Tr>
               <Table.Tr>
                 <Table.Th colSpan={9} className={classes.sectionHeader}>
                   <UnstyledButton
@@ -369,23 +369,23 @@ export function MatchPreviewPage() {
                       ))}
                     </Table.Tr>
                   ))}
-                  <Table.Tr className={classes.totalRow}>
-                    {redTeamNumbers.map((_, index) => (
-                      <Table.Td key={`teleop-total-red-${index}`} />
-                    ))}
-                    <Table.Td className={classes.redCell} />
-                    <Table.Td className={clsx(classes.fieldCell, classes.totalFieldCell)}>
-                      <Text fw={700} ta="center">
-                        Teleop Total
-                      </Text>
-                    </Table.Td>
-                    <Table.Td className={classes.blueCell} />
-                    {blueTeamNumbers.map((_, index) => (
-                      <Table.Td key={`teleop-total-blue-${index}`} />
-                    ))}
-                  </Table.Tr>
                 </>
               )}
+              <Table.Tr className={classes.totalRow}>
+                {redTeamNumbers.map((_, index) => (
+                  <Table.Td key={`teleop-total-red-${index}`} />
+                ))}
+                <Table.Td className={classes.redCell} />
+                <Table.Td className={clsx(classes.fieldCell, classes.totalFieldCell)}>
+                  <Text fw={700} ta="center">
+                    Teleop Total
+                  </Text>
+                </Table.Td>
+                <Table.Td className={classes.blueCell} />
+                {blueTeamNumbers.map((_, index) => (
+                  <Table.Td key={`teleop-total-blue-${index}`} />
+                ))}
+              </Table.Tr>
               <Table.Tr>
                 <Table.Th colSpan={9} className={classes.sectionHeader}>
                   Endgame
