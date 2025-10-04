@@ -1,5 +1,24 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+  type QueryKey,
+} from '@tanstack/react-query';
 import { apiFetch, type JsonBody } from './httpClient';
+import { matchScheduleQueryKey, teamMatchValidationQueryKey } from './matches';
+import {
+  pickListGeneratorsQueryKey,
+  pickListsQueryKey,
+} from './pickLists';
+import {
+  teamAnalyticsQueryKey,
+  teamDetailedAnalyticsQueryKey,
+  teamHeadToHeadQueryKey,
+  teamMatchHistoryQueryKey,
+  teamZScoresQueryKey,
+} from './analytics';
+import { eventTeamsQueryKey } from './teams';
 
 export interface EventSummary {
   event_key: string;
@@ -91,6 +110,51 @@ export const useOrganizationEvents = ({ enabled }: { enabled?: boolean } = {}) =
   });
 };
 
+const eventQueryKeys: QueryKey[] = [
+  organizationEventsQueryKey(),
+  eventRankingsQueryKey(),
+  eventInfoQueryKey(),
+  eventTeamsQueryKey(),
+  matchScheduleQueryKey(),
+  teamMatchValidationQueryKey(),
+  pickListsQueryKey(),
+  pickListGeneratorsQueryKey(),
+  teamAnalyticsQueryKey(),
+  teamDetailedAnalyticsQueryKey(),
+  teamHeadToHeadQueryKey(),
+  teamMatchHistoryQueryKey(),
+  teamZScoresQueryKey(),
+];
+
+const eventQueryPrefixes = new Set<string>([
+  'event-tbaMatchData',
+  'scout-match',
+  'pit-scout',
+  'team-match-data',
+]);
+
+const invalidateEventDataQueries = async (queryClient: QueryClient) => {
+  await Promise.all(
+    eventQueryKeys.map((queryKey) =>
+      queryClient.invalidateQueries({
+        queryKey,
+      })
+    )
+  );
+
+  await queryClient.invalidateQueries({
+    predicate: (query) => {
+      if (!Array.isArray(query.queryKey) || query.queryKey.length === 0) {
+        return false;
+      }
+
+      const [firstKey] = query.queryKey;
+
+      return typeof firstKey === 'string' && eventQueryPrefixes.has(firstKey);
+    },
+  });
+};
+
 export const createOrganizationEvent = (body: CreateOrganizationEventRequest) => {
   const payload: JsonBody = {
     OrganizationId: body.OrganizationId,
@@ -132,10 +196,8 @@ export const useUpdateOrganizationEvents = () => {
   return useMutation({
     mutationFn: ({ events }: UpdateOrganizationEventsVariables) =>
       updateOrganizationEvents(events),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: organizationEventsQueryKey(),
-      });
+    onSuccess: async () => {
+      await invalidateEventDataQueries(queryClient);
     },
   });
 };
