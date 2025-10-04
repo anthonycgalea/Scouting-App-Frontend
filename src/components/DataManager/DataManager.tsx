@@ -301,7 +301,7 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
   const rows = sortedData.map((row) => (
     <Table.Tr key={row.matchNumber}>
       <Table.Td>
-        <DataManagerButtonMenu matchNumber={row.matchNumber} matchLevel={row.matchLevel} />
+        <DataManagerButtonMenu matchNumber={row.matchNumber} />
       </Table.Td>
       {renderTeamCell(row.matchNumber, row.matchLevel, row.red1, classes.redCell)}
       {renderTeamCell(row.matchNumber, row.matchLevel, row.red2, classes.redCell)}
