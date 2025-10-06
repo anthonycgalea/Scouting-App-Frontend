@@ -291,53 +291,66 @@ export function SuperScoutMatchPage() {
                       </Chip.Group>
                     )}
                   </Stack>
-                  <Stack gap={8}>
-                    <Text fw={500} c={bodyTextColor}>
-                      Driver Rating
-                    </Text>
-                    <Rating
-                      value={teamState.driverRating ?? 0}
-                      onChange={(value) =>
-                        updateTeamInput(teamKey, (state) => ({
-                          ...state,
-                          driverRating: value,
-                        }))
-                      }
-                      count={5}
-                    />
-                  </Stack>
-                  <Stack gap={8}>
-                    <Text fw={500} c={bodyTextColor}>
-                      Robot Overall Rating
-                    </Text>
-                    <Rating
-                      value={teamState.robotOverall ?? 0}
-                      onChange={(value) =>
-                        updateTeamInput(teamKey, (state) => ({
-                          ...state,
-                          robotOverall: value,
-                        }))
-                      }
-                      count={5}
-                    />
-                  </Stack>
-                  {teamState.cannedComments.includes('played_defense') && (
-                    <Stack gap={8}>
-                      <Text fw={500} c={bodyTextColor}>
-                        Defense Rating
-                      </Text>
-                      <Rating
-                        value={teamState.defenseRating ?? 0}
-                        onChange={(value) =>
-                          updateTeamInput(teamKey, (state) => ({
-                            ...state,
-                            defenseRating: value,
-                          }))
-                        }
-                        count={5}
-                      />
-                    </Stack>
-                  )}
+                  {(() => {
+                    const showDefense = teamState.cannedComments.includes('played_defense');
+                    const columnCount = showDefense ? 3 : 2;
+
+                    return (
+                      <Box
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))`,
+                          rowGap: theme.spacing.xs,
+                          columnGap: theme.spacing.lg,
+                          alignItems: 'center',
+                        }}
+                      >
+                        <Text fw={500} c={bodyTextColor}>
+                          Driver Rating:
+                        </Text>
+                        <Text fw={500} c={bodyTextColor}>
+                          Robot Overall Rating:
+                        </Text>
+                        {showDefense && (
+                          <Text fw={500} c={bodyTextColor}>
+                            Defense Rating:
+                          </Text>
+                        )}
+                        <Rating
+                          value={teamState.driverRating ?? 0}
+                          onChange={(value) =>
+                            updateTeamInput(teamKey, (state) => ({
+                              ...state,
+                              driverRating: value,
+                            }))
+                          }
+                          count={5}
+                        />
+                        <Rating
+                          value={teamState.robotOverall ?? 0}
+                          onChange={(value) =>
+                            updateTeamInput(teamKey, (state) => ({
+                              ...state,
+                              robotOverall: value,
+                            }))
+                          }
+                          count={5}
+                        />
+                        {showDefense && (
+                          <Rating
+                            value={teamState.defenseRating ?? 0}
+                            onChange={(value) =>
+                              updateTeamInput(teamKey, (state) => ({
+                                ...state,
+                                defenseRating: value,
+                              }))
+                            }
+                            count={5}
+                          />
+                        )}
+                      </Box>
+                    );
+                  })()}
                   <Textarea
                     label="Notes"
                     placeholder="Enter any additional observations"
