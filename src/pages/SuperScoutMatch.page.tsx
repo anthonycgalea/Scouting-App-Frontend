@@ -178,7 +178,11 @@ export function SuperScoutMatchPage() {
 
   const pageBackground = isDark ? theme.colors.dark[7] : theme.white;
   const surfaceBackground = isDark ? theme.colors.dark[6] : theme.white;
-  const headerVariant = theme.fn.variant({ color: allianceConfig.color, variant: 'filled' });
+  const headerVariant = theme.variantColorResolver({
+    theme,
+    color: allianceConfig.color,
+    variant: 'filled',
+  });
   const headerBackground = headerVariant?.background ?? theme.colors[allianceConfig.color][
     isDark ? 9 : 6
   ];
