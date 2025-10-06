@@ -1,6 +1,17 @@
 import { useMemo, useState } from 'react';
 import { IconChevronDown, IconChevronUp, IconSearch } from '@tabler/icons-react';
-import { Button, Center, Group, ScrollArea, Stack, Table, Text, TextInput, UnstyledButton } from '@mantine/core';
+import {
+  Button,
+  Center,
+  Group,
+  ScrollArea,
+  Stack,
+  Table,
+  Text,
+  TextInput,
+  UnstyledButton,
+  useMantineColorScheme,
+} from '@mantine/core';
 import { Link } from '@tanstack/react-router';
 import type { MatchScheduleEntry } from '@/api';
 import classes from './SuperScout.module.css';
@@ -78,6 +89,9 @@ export function SuperScout({ matches }: SuperScoutProps) {
   const [matchSearch, setMatchSearch] = useState('');
   const [reverseSortDirection, setReverseSortDirection] = useState(false);
 
+  const { colorScheme } = useMantineColorScheme();
+  const allianceButtonVariant = colorScheme === 'dark' ? 'light' : 'filled';
+
   const schedule = useMemo(() => createRowData(matches), [matches]);
 
   const sortedData = useMemo(
@@ -105,12 +119,12 @@ export function SuperScout({ matches }: SuperScoutProps) {
         component={Link}
         fullWidth
         to={`/superScout/match/${matchLevelPath}/${row.matchNumber}/red`}
-        variant="filled"
+        variant={allianceButtonVariant}
       >
         {formatAlliance([row.red1, row.red2, row.red3])}
       </Button>
     ) : (
-      <Button color="red" disabled fullWidth variant="filled">
+      <Button color="red" disabled fullWidth variant={allianceButtonVariant}>
         {formatAlliance([row.red1, row.red2, row.red3])}
       </Button>
     );
@@ -121,12 +135,12 @@ export function SuperScout({ matches }: SuperScoutProps) {
         component={Link}
         fullWidth
         to={`/superScout/match/${matchLevelPath}/${row.matchNumber}/blue`}
-        variant="filled"
+        variant={allianceButtonVariant}
       >
         {formatAlliance([row.blue1, row.blue2, row.blue3])}
       </Button>
     ) : (
-      <Button color="blue" disabled fullWidth variant="filled">
+      <Button color="blue" disabled fullWidth variant={allianceButtonVariant}>
         {formatAlliance([row.blue1, row.blue2, row.blue3])}
       </Button>
     );

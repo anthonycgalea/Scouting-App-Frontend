@@ -1,20 +1,27 @@
 import { useMemo } from 'react';
-import { Box, Card, Center, Loader, SimpleGrid, Stack, Text, Title } from '@mantine/core';
+import {
+  Box,
+  Card,
+  Center,
+  Loader,
+  SimpleGrid,
+  Stack,
+  Text,
+  Title,
+  useMantineColorScheme,
+  useMantineTheme,
+} from '@mantine/core';
 import { useParams } from '@tanstack/react-router';
 import { useMatchSchedule } from '@/api';
 
 const ALLIANCE_CONFIG = {
   red: {
     label: 'Red Alliance',
-    background: 'red.0',
-    cardBackground: 'red.1',
-    headerColor: 'red.8',
+    color: 'red',
   },
   blue: {
     label: 'Blue Alliance',
-    background: 'blue.0',
-    cardBackground: 'blue.1',
-    headerColor: 'blue.8',
+    color: 'blue',
   },
 } as const;
 
@@ -27,6 +34,9 @@ export function SuperScoutMatchPage() {
   const numericMatchNumber = Number.parseInt(matchNumber ?? '', 10);
   const normalizedAlliance = (alliance ?? '').toLowerCase() as AllianceKey | undefined;
   const allianceConfig = normalizedAlliance ? ALLIANCE_CONFIG[normalizedAlliance] : undefined;
+  const { colorScheme } = useMantineColorScheme();
+  const theme = useMantineTheme();
+  const isDark = colorScheme === 'dark';
 
   const { data: scheduleData = [], isLoading, isError } = useMatchSchedule();
 
@@ -103,17 +113,31 @@ export function SuperScoutMatchPage() {
   const matchLevelLabel =
     matchLevelLabels[match.match_level?.toLowerCase() ?? matchLevel.toLowerCase()] ?? matchLevel;
 
+  const pageBackground = isDark ? theme.colors.dark[7] : theme.white;
+  const surfaceBackground = isDark ? theme.colors.dark[6] : theme.white;
+  const headerVariant = theme.fn.variant({ color: allianceConfig.color, variant: 'filled' });
+  const headerBackground = headerVariant?.background ?? theme.colors[allianceConfig.color][
+    isDark ? 9 : 6
+  ];
+  const headerTextColor = headerVariant?.color ?? theme.white;
+  const bodyTextColor = isDark ? theme.colors.gray[2] : theme.colors.gray[7];
+  const titleColor = isDark ? theme.colors.gray[0] : theme.colors.gray[9];
+
   return (
-    <Box p="md" bg={allianceConfig.background} mih="100%">
+    <Box p="md" bg={pageBackground} mih="100%">
       <Stack gap="lg">
-        <Stack gap={4}>
-          <Title order={2} c={allianceConfig.headerColor} ta="center">
-            {allianceConfig.label}
-          </Title>
-          <Text ta="center" fw={500}>
-            {matchLevelLabel} Match {numericMatchNumber}
-          </Text>
-        </Stack>
+        <Card withBorder radius="md" shadow="sm" bg={surfaceBackground}>
+          <Card.Section bg={headerBackground} inheritPadding py="md">
+            <Title order={2} c={headerTextColor} ta="center">
+              {allianceConfig.label}
+            </Title>
+          </Card.Section>
+          <Stack gap={4} p="md" align="center">
+            <Text fw={500} c={bodyTextColor} ta="center">
+              {matchLevelLabel} Match {numericMatchNumber}
+            </Text>
+          </Stack>
+        </Card>
         <SimpleGrid cols={{ base: 1, md: 3 }} spacing="md">
           {allianceTeams.map((teamNumber, index) => (
             <Card
@@ -121,13 +145,13 @@ export function SuperScoutMatchPage() {
               withBorder
               radius="md"
               shadow="sm"
-              bg={allianceConfig.cardBackground}
+              bg={surfaceBackground}
             >
-              <Stack gap="sm" align="center">
-                <Title order={3} c={allianceConfig.headerColor}>
+              <Stack gap="sm" align="center" p="md">
+                <Title order={3} c={titleColor}>
                   Team {teamNumber ?? 'TBD'}
                 </Title>
-                <Text size="sm" c="dimmed" ta="center">
+                <Text size="sm" c={bodyTextColor} ta="center">
                   Scouting inputs will appear here.
                 </Text>
               </Stack>
