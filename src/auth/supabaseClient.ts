@@ -6,7 +6,6 @@ import {
 } from './supabaseConfig';
 
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY ?? '';
-const SUPABASE_MODULE_ID = '@supabase/supabase-js';
 
 let cachedClient: SupabaseClient | null | undefined;
 let authListenerInitialized = false;
@@ -98,7 +97,7 @@ export const loadSupabaseClient = async (): Promise<SupabaseClient | null> => {
   }
 
   try {
-    const supabaseModule = await import(/* @vite-ignore */ SUPABASE_MODULE_ID);
+    const supabaseModule = await import('@supabase/supabase-js');
     if (typeof supabaseModule.createClient !== 'function') {
       if (import.meta.env.DEV) {
         // eslint-disable-next-line no-console
@@ -107,14 +106,13 @@ export const loadSupabaseClient = async (): Promise<SupabaseClient | null> => {
       cachedClient = null;
       return cachedClient;
     }
-
-      const nextClient = supabaseModule.createClient(
-        SUPABASE_URL,
-        SUPABASE_ANON_KEY,
-        getClientOptions(),
-      );
-      cachedClient = nextClient;
-      await ensureAuthPersistence(nextClient);
+    const nextClient = supabaseModule.createClient(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY,
+      getClientOptions(),
+    );
+    cachedClient = nextClient;
+    await ensureAuthPersistence(nextClient);
   } catch (error) {
     if (import.meta.env.DEV) {
       // eslint-disable-next-line no-console
