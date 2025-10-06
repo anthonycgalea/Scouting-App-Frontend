@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Box, Card, Center, Loader, Stack, Text, Title } from '@mantine/core';
 import { useParams } from '@tanstack/react-router';
-import { useMatchSchedule } from '@/api';
+import { useMatchPreview, useMatchSchedule } from '@/api';
 import { MatchPreview2025 } from '@/components/MatchPreview/MatchPreview2025';
 
 export function MatchPreviewPage() {
@@ -67,7 +67,45 @@ export function MatchPreviewPage() {
 
   const normalizedLevel = match.match_level?.toLowerCase() ?? matchLevel.toLowerCase();
   const matchLevelLabel = matchLevelLabels[normalizedLevel] ?? match.match_level ?? matchLevel;
-  const season = match.season;
+  const previewParams = match
+    ? {
+        matchLevel: normalizedLevel,
+        matchNumber: match.match_number ?? numericMatchNumber,
+      }
+    : undefined;
+  const {
+    data: matchPreview,
+    isLoading: isMatchPreviewLoading,
+    isError: isMatchPreviewError,
+  } = useMatchPreview(previewParams);
+
+  if (isMatchPreviewLoading) {
+    return (
+      <Center mih={200}>
+        <Loader />
+      </Center>
+    );
+  }
+
+  if (isMatchPreviewError) {
+    return (
+      <Center mih={200}>
+        <Text c="red.6" fw={500}>
+          Unable to load the match preview.
+        </Text>
+      </Center>
+    );
+  }
+
+  if (!matchPreview) {
+    return (
+      <Center mih={200}>
+        <Text fw={500}>Match preview is not available for this match.</Text>
+      </Center>
+    );
+  }
+
+  const season = matchPreview.season;
   const shouldUse2025Preview = season === 1;
 
   return (
@@ -77,7 +115,7 @@ export function MatchPreviewPage() {
           {matchLevelLabel} Match {numericMatchNumber} Preview
         </Title>
         {shouldUse2025Preview ? (
-          <MatchPreview2025 match={match} />
+          <MatchPreview2025 match={match} preview={matchPreview} />
         ) : (
           <Card withBorder radius="md" shadow="sm" padding="lg">
             <Text fw={500} ta="center">
