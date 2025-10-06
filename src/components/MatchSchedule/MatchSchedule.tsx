@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { IconCheck, IconChevronDown, IconChevronUp, IconCircleX, IconSearch } from '@tabler/icons-react';
 import { Center, Group, ScrollArea, Stack, Table, Text, TextInput, UnstyledButton } from '@mantine/core';
+import { useTeamMatchValidation } from '@/api';
 import type { MatchScheduleEntry } from '@/api';
 import { MatchNumberButtonMenu } from './MatchNumberButtonMenu';
 import classes from './MatchSchedule.module.css';
@@ -26,17 +27,29 @@ interface ThProps {
 
 const teamNumberKeys: (keyof RowData)[] = ['red1', 'red2', 'red3', 'blue1', 'blue2', 'blue3'];
 
-const createRowData = (matches: MatchScheduleEntry[]): RowData[] =>
-  matches.map((match) => ({
-    matchNumber: match.match_number,
-    matchLevel: match.match_level,
-    red1: match.red1_id,
-    red2: match.red2_id,
-    red3: match.red3_id,
-    blue1: match.blue1_id,
-    blue2: match.blue2_id,
-    blue3: match.blue3_id,
-  }));
+const createMatchKey = (matchLevel: string, matchNumber: number) =>
+  `${matchLevel.toLowerCase()}-${matchNumber}`;
+
+const createRowData = (
+  matches: MatchScheduleEntry[],
+  playedMatches?: Set<string>,
+  isValidationReady?: boolean
+): RowData[] =>
+  matches.map((match) => {
+    const matchKey = createMatchKey(match.match_level, match.match_number);
+
+    return {
+      matchNumber: match.match_number,
+      matchLevel: match.match_level,
+      red1: match.red1_id,
+      red2: match.red2_id,
+      red3: match.red3_id,
+      blue1: match.blue1_id,
+      blue2: match.blue2_id,
+      blue3: match.blue3_id,
+      played: isValidationReady ? playedMatches?.has(matchKey) ?? false : undefined,
+    };
+  });
 
 
 function Th({ children, reversed, onSort }: ThProps) {
@@ -105,7 +118,31 @@ export function MatchSchedule({ matches }: MatchScheduleProps) {
   const [teamSearch, setTeamSearch] = useState('');
   const [reverseSortDirection, setReverseSortDirection] = useState(false);
 
-  const schedule = useMemo(() => createRowData(matches), [matches]);
+  const {
+    data: validationEntries,
+    isLoading: isValidationLoading,
+    isError: isValidationError,
+  } = useTeamMatchValidation();
+
+  const playedMatches = useMemo(() => {
+    if (!validationEntries || isValidationError) {
+      return undefined;
+    }
+
+    const played = new Set<string>();
+    validationEntries.forEach((entry) => {
+      played.add(createMatchKey(entry.match_level, entry.match_number));
+    });
+
+    return played;
+  }, [validationEntries, isValidationError]);
+
+  const isValidationReady = !isValidationLoading && !isValidationError && validationEntries !== undefined;
+
+  const schedule = useMemo(
+    () => createRowData(matches, playedMatches, isValidationReady),
+    [matches, playedMatches, isValidationReady]
+  );
 
   const sortedData = useMemo(
     () => sortData(schedule, { reversed: reverseSortDirection, matchSearch, teamSearch }),
