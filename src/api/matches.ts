@@ -72,7 +72,7 @@ export const matchPreviewQueryKey = (params?: MatchPreviewRequest) =>
 
 export const fetchMatchPreview = ({ matchLevel, matchNumber }: MatchPreviewRequest) =>
   apiFetch<MatchPreviewResponse>(
-    `event/matches/${encodeURIComponent(matchLevel.toLowerCase())}/${matchNumber}/preview`
+    `event/match/${encodeURIComponent(matchLevel.toLowerCase())}/${matchNumber}/preview`
   );
 
 export const matchScheduleQueryKey = () => ['match-schedule'] as const;
