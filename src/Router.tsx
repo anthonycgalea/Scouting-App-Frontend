@@ -32,6 +32,7 @@ import { CompareTeamsPage } from './pages/CompareTeams.page';
 import { PickListsPage } from './pages/PickLists.page';
 import { AllianceSelectionPage } from './pages/AllianceSelection.page';
 import { ListGeneratorPage } from './pages/ListGenerator.page';
+import { SuperScoutMatchPage } from './pages/SuperScoutMatch.page';
 
 const rootRoute = createRootRoute({
   component: function RootLayout() {
@@ -148,6 +149,12 @@ const superScoutRoute = createRoute({
   component: SuperScoutPage,
 });
 
+const superScoutMatchRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/superScout/match/$matchLevel/$matchNumber/$alliance',
+  component: SuperScoutMatchPage,
+});
+
 const summaryAnalyticsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/analytics',
@@ -219,6 +226,7 @@ const routeTree = rootRoute.addChildren([
   dataValidationRoute.addChildren([matchValidationRoute]),
   dataImportRoute.addChildren([]),
   superScoutRoute.addChildren([]),
+  superScoutMatchRoute.addChildren([]),
   summaryAnalyticsRoute.addChildren([]),
   compareTeamsRoute.addChildren([]),
   settingsRoute.addChildren([]),
