@@ -285,7 +285,6 @@ export const MatchPreview2025 = ({ match, preview }: MatchPreview2025Props) => {
               {redTeamNumbers.map((teamNumber, index) => (
                 <Table.Td
                   key={`red-image-${index}`}
-                  className={classes.redCell}
                   style={{ verticalAlign: 'top' }}
                 >
                   <Center>
@@ -306,7 +305,6 @@ export const MatchPreview2025 = ({ match, preview }: MatchPreview2025Props) => {
               {blueTeamNumbers.map((teamNumber, index) => (
                 <Table.Td
                   key={`blue-image-${index}`}
-                  className={classes.blueCell}
                   style={{ verticalAlign: 'top' }}
                 >
                   <Center>
@@ -324,7 +322,7 @@ export const MatchPreview2025 = ({ match, preview }: MatchPreview2025Props) => {
               const isValidTeam = hasValidTeam(teamNumber);
 
               return (
-                <Table.Td key={`red-team-${index}`} className={classes.redCell} ta="center">
+                <Table.Td key={`red-team-${index}`} ta="center">
                   <Text fw={500}>{isValidTeam ? teamNumber : 'TBD'}</Text>
                 </Table.Td>
               );
@@ -344,7 +342,7 @@ export const MatchPreview2025 = ({ match, preview }: MatchPreview2025Props) => {
               const isValidTeam = hasValidTeam(teamNumber);
 
               return (
-                <Table.Td key={`blue-team-${index}`} className={classes.blueCell} ta="center">
+                <Table.Td key={`blue-team-${index}`} ta="center">
                   <Text fw={500}>{isValidTeam ? teamNumber : 'TBD'}</Text>
                 </Table.Td>
               );
@@ -373,10 +371,7 @@ export const MatchPreview2025 = ({ match, preview }: MatchPreview2025Props) => {
               {autonomousFields.map((field) => (
                 <Table.Tr key={`autonomous-${field.key}`}>
                   {redTeams.map((team, index) => (
-                    <Table.Td
-                      key={`autonomous-red-${index}-${field.key}`}
-                      className={classes.redCell}
-                    >
+                    <Table.Td key={`autonomous-red-${index}-${field.key}`}>
                       {renderMetricCell(field.getTeamStat(team))}
                     </Table.Td>
                   ))}
@@ -392,10 +387,7 @@ export const MatchPreview2025 = ({ match, preview }: MatchPreview2025Props) => {
                     {renderPredictedCell(sumTeamAverages(blueTeams, field.getTeamStat))}
                   </Table.Td>
                   {blueTeams.map((team, index) => (
-                    <Table.Td
-                      key={`autonomous-blue-${index}-${field.key}`}
-                      className={classes.blueCell}
-                    >
+                    <Table.Td key={`autonomous-blue-${index}-${field.key}`}>
                       {renderMetricCell(field.getTeamStat(team))}
                     </Table.Td>
                   ))}
@@ -405,10 +397,7 @@ export const MatchPreview2025 = ({ match, preview }: MatchPreview2025Props) => {
           )}
           <Table.Tr className={classes.totalRow}>
             {redTeams.map((team, index) => (
-              <Table.Td
-                key={`autonomous-total-red-${index}`}
-                className={classes.redCell}
-              >
+              <Table.Td key={`autonomous-total-red-${index}`}>
                 {renderMetricCell(team?.auto.total_points)}
               </Table.Td>
             ))}
@@ -428,10 +417,7 @@ export const MatchPreview2025 = ({ match, preview }: MatchPreview2025Props) => {
               )}
             </Table.Td>
             {blueTeams.map((team, index) => (
-              <Table.Td
-                key={`autonomous-total-blue-${index}`}
-                className={classes.blueCell}
-              >
+              <Table.Td key={`autonomous-total-blue-${index}`}>
                 {renderMetricCell(team?.auto.total_points)}
               </Table.Td>
             ))}
@@ -459,10 +445,7 @@ export const MatchPreview2025 = ({ match, preview }: MatchPreview2025Props) => {
               {teleopFields.map((field) => (
                 <Table.Tr key={`teleop-${field.key}`}>
                   {redTeams.map((team, index) => (
-                    <Table.Td
-                      key={`teleop-red-${index}-${field.key}`}
-                      className={classes.redCell}
-                    >
+                    <Table.Td key={`teleop-red-${index}-${field.key}`}>
                       {renderMetricCell(field.getTeamStat(team))}
                     </Table.Td>
                   ))}
@@ -478,10 +461,7 @@ export const MatchPreview2025 = ({ match, preview }: MatchPreview2025Props) => {
                     {renderPredictedCell(sumTeamAverages(blueTeams, field.getTeamStat))}
                   </Table.Td>
                   {blueTeams.map((team, index) => (
-                    <Table.Td
-                      key={`teleop-blue-${index}-${field.key}`}
-                      className={classes.blueCell}
-                    >
+                    <Table.Td key={`teleop-blue-${index}-${field.key}`}>
                       {renderMetricCell(field.getTeamStat(team))}
                     </Table.Td>
                   ))}
@@ -491,10 +471,7 @@ export const MatchPreview2025 = ({ match, preview }: MatchPreview2025Props) => {
           )}
           <Table.Tr className={classes.totalRow}>
             {redTeams.map((team, index) => (
-              <Table.Td
-                key={`teleop-total-red-${index}`}
-                className={classes.redCell}
-              >
+              <Table.Td key={`teleop-total-red-${index}`}>
                 {renderMetricCell(team?.teleop.total_points)}
               </Table.Td>
             ))}
@@ -514,10 +491,7 @@ export const MatchPreview2025 = ({ match, preview }: MatchPreview2025Props) => {
               )}
             </Table.Td>
             {blueTeams.map((team, index) => (
-              <Table.Td
-                key={`teleop-total-blue-${index}`}
-                className={classes.blueCell}
-              >
+              <Table.Td key={`teleop-total-blue-${index}`}>
                 {renderMetricCell(team?.teleop.total_points)}
               </Table.Td>
             ))}
@@ -530,10 +504,7 @@ export const MatchPreview2025 = ({ match, preview }: MatchPreview2025Props) => {
           {endgameFields.map((field) => (
             <Table.Tr key={`endgame-${field.key}`}>
               {redTeams.map((team, index) => (
-                <Table.Td
-                  key={`endgame-red-${index}-${field.key}`}
-                  className={classes.redCell}
-                >
+                <Table.Td key={`endgame-red-${index}-${field.key}`}>
                   {renderMetricCell(field.getTeamStat(team))}
                 </Table.Td>
               ))}
@@ -549,10 +520,7 @@ export const MatchPreview2025 = ({ match, preview }: MatchPreview2025Props) => {
                 {renderPredictedCell(sumTeamAverages(blueTeams, field.getTeamStat))}
               </Table.Td>
               {blueTeams.map((team, index) => (
-                <Table.Td
-                  key={`endgame-blue-${index}-${field.key}`}
-                  className={classes.blueCell}
-                >
+                <Table.Td key={`endgame-blue-${index}-${field.key}`}>
                   {renderMetricCell(field.getTeamStat(team))}
                 </Table.Td>
               ))}
@@ -560,10 +528,7 @@ export const MatchPreview2025 = ({ match, preview }: MatchPreview2025Props) => {
           ))}
           <Table.Tr className={classes.totalRow}>
             {redTeams.map((team, index) => (
-              <Table.Td
-                key={`total-score-red-${index}`}
-                className={classes.redCell}
-              >
+              <Table.Td key={`total-score-red-${index}`}>
                 {renderMetricCell(team?.total_points)}
               </Table.Td>
             ))}
@@ -583,10 +548,7 @@ export const MatchPreview2025 = ({ match, preview }: MatchPreview2025Props) => {
               )}
             </Table.Td>
             {blueTeams.map((team, index) => (
-              <Table.Td
-                key={`total-score-blue-${index}`}
-                className={classes.blueCell}
-              >
+              <Table.Td key={`total-score-blue-${index}`}>
                 {renderMetricCell(team?.total_points)}
               </Table.Td>
             ))}
