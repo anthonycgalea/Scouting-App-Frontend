@@ -230,12 +230,12 @@ export function SuperScoutMatchPage() {
                 shadow="sm"
                 bg={surfaceBackground}
               >
-                <Stack gap="md" p="md" align="stretch">
-                  <Title order={3} c={titleColor}>
+                <Stack gap="md" p="md" align="center" style={{ textAlign: 'center' }}>
+                  <Title order={3} c={titleColor} ta="center">
                     Team {teamNumber ?? 'TBD'}
                   </Title>
-                  <Stack gap={8}>
-                    <Text fw={500} c={bodyTextColor}>
+                  <Stack gap={8} align="center" w="100%">
+                    <Text fw={500} c={bodyTextColor} ta="center">
                       Starting Position
                     </Text>
                     <Chip.Group
@@ -248,7 +248,7 @@ export function SuperScoutMatchPage() {
                         }))
                       }
                     >
-                      <Group gap="xs" wrap="wrap">
+                      <Group gap="xs" wrap="wrap" justify="center">
                         {STARTING_POSITION_OPTIONS.map((option) => (
                           <Chip key={option.value} value={option.value}>
                             {option.label}
@@ -257,8 +257,8 @@ export function SuperScoutMatchPage() {
                       </Group>
                     </Chip.Group>
                   </Stack>
-                  <Stack gap={8}>
-                    <Text fw={500} c={bodyTextColor}>
+                  <Stack gap={8} align="center" w="100%">
+                    <Text fw={500} c={bodyTextColor} ta="center">
                       Canned Comments
                     </Text>
                     {isLoadingFields ? (
@@ -267,10 +267,10 @@ export function SuperScoutMatchPage() {
                       <Text size="sm" c="red.6">
                         Unable to load canned comments.
                       </Text>
-                    ) : (
-                      <Chip.Group
-                        multiple
-                        value={teamState.cannedComments}
+                      ) : (
+                        <Chip.Group
+                          multiple
+                          value={teamState.cannedComments}
                         onChange={(value) =>
                           updateTeamInput(teamKey, (state) => ({
                             ...state,
@@ -281,7 +281,7 @@ export function SuperScoutMatchPage() {
                           }))
                         }
                       >
-                        <Group gap="xs" wrap="wrap">
+                        <Group gap="xs" wrap="wrap" justify="center">
                           {superScoutFields.map((field) => (
                             <Chip key={field.key} value={field.key}>
                               {field.label}
@@ -303,17 +303,19 @@ export function SuperScoutMatchPage() {
                           rowGap: theme.spacing.xs,
                           columnGap: theme.spacing.lg,
                           alignItems: 'center',
+                          justifyItems: 'center',
+                          textAlign: 'center',
                         }}
                       >
-                        <Text fw={500} c={bodyTextColor}>
+                        <Text fw={500} c={bodyTextColor} ta="center">
                           Driver
                         </Text>
                         {showDefense && (
-                          <Text fw={500} c={bodyTextColor}>
+                          <Text fw={500} c={bodyTextColor} ta="center">
                             Defense
                           </Text>
                         )}
-                        <Text fw={500} c={bodyTextColor}>
+                        <Text fw={500} c={bodyTextColor} ta="center">
                           Overall
                         </Text>
                         <Rating
@@ -325,6 +327,7 @@ export function SuperScoutMatchPage() {
                             }))
                           }
                           count={5}
+                          style={{ justifySelf: 'center' }}
                         />
                         {showDefense && (
                           <Rating
@@ -336,6 +339,7 @@ export function SuperScoutMatchPage() {
                               }))
                             }
                             count={5}
+                            style={{ justifySelf: 'center' }}
                           />
                         )}
                         <Rating
@@ -347,6 +351,7 @@ export function SuperScoutMatchPage() {
                             }))
                           }
                           count={5}
+                          style={{ justifySelf: 'center' }}
                         />
                       </Box>
                     );
@@ -356,6 +361,8 @@ export function SuperScoutMatchPage() {
                     placeholder="Enter any additional observations"
                     minRows={3}
                     value={teamState.notes}
+                    labelProps={{ style: { width: '100%', textAlign: 'center' } }}
+                    styles={{ input: { textAlign: 'center' } }}
                     onChange={(event) => {
                       const { value } = event.currentTarget;
 
