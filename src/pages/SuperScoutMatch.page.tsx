@@ -7,6 +7,7 @@ import {
   Chip,
   Group,
   Loader,
+  Rating,
   SimpleGrid,
   Stack,
   Text,
@@ -37,6 +38,9 @@ interface TeamInputState {
   startingPosition: StartingPosition | null;
   cannedComments: string[];
   notes: string;
+  driverRating: number | null;
+  robotOverall: number | null;
+  defenseRating: number | null;
 }
 
 const STARTING_POSITION_OPTIONS: { label: string; value: StartingPosition }[] = [
@@ -107,6 +111,9 @@ export function SuperScoutMatchPage() {
             startingPosition: null,
             cannedComments: [],
             notes: '',
+            driverRating: null,
+            robotOverall: null,
+            defenseRating: null,
           };
       });
 
@@ -124,6 +131,9 @@ export function SuperScoutMatchPage() {
           startingPosition: null,
           cannedComments: [],
           notes: '',
+          driverRating: null,
+          robotOverall: null,
+          defenseRating: null,
         };
 
       return {
@@ -207,6 +217,9 @@ export function SuperScoutMatchPage() {
               startingPosition: null,
               cannedComments: [],
               notes: '',
+              driverRating: null,
+              robotOverall: null,
+              defenseRating: null,
             };
 
             return (
@@ -262,6 +275,9 @@ export function SuperScoutMatchPage() {
                           updateTeamInput(teamKey, (state) => ({
                             ...state,
                             cannedComments: value as string[],
+                            defenseRating: (value as string[]).includes('played_defense')
+                              ? state.defenseRating
+                              : null,
                           }))
                         }
                       >
@@ -275,6 +291,53 @@ export function SuperScoutMatchPage() {
                       </Chip.Group>
                     )}
                   </Stack>
+                  <Stack gap={8}>
+                    <Text fw={500} c={bodyTextColor}>
+                      Driver Rating
+                    </Text>
+                    <Rating
+                      value={teamState.driverRating ?? 0}
+                      onChange={(value) =>
+                        updateTeamInput(teamKey, (state) => ({
+                          ...state,
+                          driverRating: value,
+                        }))
+                      }
+                      count={5}
+                    />
+                  </Stack>
+                  <Stack gap={8}>
+                    <Text fw={500} c={bodyTextColor}>
+                      Robot Overall Rating
+                    </Text>
+                    <Rating
+                      value={teamState.robotOverall ?? 0}
+                      onChange={(value) =>
+                        updateTeamInput(teamKey, (state) => ({
+                          ...state,
+                          robotOverall: value,
+                        }))
+                      }
+                      count={5}
+                    />
+                  </Stack>
+                  {teamState.cannedComments.includes('played_defense') && (
+                    <Stack gap={8}>
+                      <Text fw={500} c={bodyTextColor}>
+                        Defense Rating
+                      </Text>
+                      <Rating
+                        value={teamState.defenseRating ?? 0}
+                        onChange={(value) =>
+                          updateTeamInput(teamKey, (state) => ({
+                            ...state,
+                            defenseRating: value,
+                          }))
+                        }
+                        count={5}
+                      />
+                    </Stack>
+                  )}
                   <Textarea
                     label="Notes"
                     placeholder="Enter any additional observations"
