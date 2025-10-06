@@ -153,8 +153,12 @@ export function SuperScoutMatchPage() {
         team_number: Number(teamNumber ?? 0),
         match_number: match.match_number,
         match_level: match.match_level ?? matchLevel,
+        startPosition:
+          teamState.startingPosition && teamState.startingPosition !== 'NO_SHOW'
+            ? teamState.startingPosition
+            : null,
         notes: teamState.notes,
-        defense_rating: teamState.defenseRating ?? 0,
+        defense_rating: teamState.defenseRating ?? null,
         driver_rating: teamState.driverRating ?? 0,
         robot_overall: teamState.robotOverall ?? 0,
       };
