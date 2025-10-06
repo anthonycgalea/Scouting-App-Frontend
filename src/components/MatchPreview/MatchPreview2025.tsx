@@ -20,130 +20,25 @@ import {
   IconChevronUp,
   IconPhoto,
 } from '@tabler/icons-react';
-import type {
-  MatchPreviewResponse,
-  MatchScheduleEntry,
-  MetricStatistics,
-  TeamMatchPreview,
-} from '@/api';
+import { MatchScheduleEntry } from '@/api';
 import { TeamImage, useTeamImages } from '@/api/teams';
 import classes from '@/pages/MatchPreview.module.css';
 
 interface MatchPreview2025Props {
   match: MatchScheduleEntry;
-  preview: MatchPreviewResponse;
 }
 
-type AllianceTeam = TeamMatchPreview | undefined;
-
-const resolveTeamNumbers = (
-  teams: AllianceTeam[],
-  fallbacks: [number, number, number]
-): [number, number, number] => {
-  const result = fallbacks.map((fallback, index) => {
-    const teamNumber = teams[index]?.team_number;
-
-    if (Number.isFinite(teamNumber) && teamNumber !== undefined && teamNumber > 0) {
-      return teamNumber;
-    }
-
-    return fallback;
-  });
-
-  return [result[0] ?? 0, result[1] ?? 0, result[2] ?? 0] as [number, number, number];
-};
-
-const formatNumber = (value: number | null | undefined) => {
-  if (value == null || Number.isNaN(value) || !Number.isFinite(value)) {
-    return undefined;
-  }
-
-  const normalized = Math.abs(value) < 0.05 ? 0 : value;
-
-  return normalized.toLocaleString(undefined, {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-  });
-};
-
-const renderMetricCell = (stat?: MetricStatistics) => {
-  const averageText = formatNumber(stat?.average);
-
-  if (!averageText) {
-    return <Text>—</Text>;
-  }
-
-  const deviationText = formatNumber(stat?.standard_deviation);
-
-  return (
-    <Stack gap={0} align="center" mih={48} justify="center">
-      <Text fw={600}>{averageText}</Text>
-      {deviationText && deviationText !== '0.0' ? (
-        <Text fz="xs" c="dimmed">
-          ±{deviationText}
-        </Text>
-      ) : null}
-    </Stack>
-  );
-};
-
-const renderPredictedCell = (value: number | null | undefined) => {
-  const formatted = formatNumber(value);
-
-  return (
-    <Stack gap={0} align="center" mih={48} justify="center">
-      <Text fw={600}>{formatted ?? '—'}</Text>
-    </Stack>
-  );
-};
-
-const sumTeamAverages = (
-  teams: AllianceTeam[],
-  selector: (team: AllianceTeam) => MetricStatistics | undefined
-) => {
-  let total = 0;
-  let hasValue = false;
-
-  teams.forEach((team) => {
-    const stat = selector(team);
-    const average = stat?.average;
-
-    if (average != null && Number.isFinite(average)) {
-      total += average;
-      hasValue = true;
-    }
-  });
-
-  return hasValue ? total : undefined;
-};
-
-interface FieldConfig {
-  key: string;
-  label: string;
-  getTeamStat: (team: AllianceTeam) => MetricStatistics | undefined;
-}
-
-export const MatchPreview2025 = ({ match, preview }: MatchPreview2025Props) => {
-  const redTeams: AllianceTeam[] = [
-    preview.red.teams[0],
-    preview.red.teams[1],
-    preview.red.teams[2],
-  ];
-  const blueTeams: AllianceTeam[] = [
-    preview.blue.teams[0],
-    preview.blue.teams[1],
-    preview.blue.teams[2],
-  ];
-  const redTeamNumbers = resolveTeamNumbers(redTeams, [
+export const MatchPreview2025 = ({ match }: MatchPreview2025Props) => {
+  const redTeamNumbers = [
     match.red1_id,
     match.red2_id,
     match.red3_id,
-  ]);
-  const blueTeamNumbers = resolveTeamNumbers(blueTeams, [
+  ] as [number, number, number];
+  const blueTeamNumbers = [
     match.blue1_id,
     match.blue2_id,
     match.blue3_id,
-  ]);
+  ] as [number, number, number];
   const redAllianceImageQueries = redTeamNumbers.map((teamNumber) => useTeamImages(teamNumber));
   const blueAllianceImageQueries = blueTeamNumbers.map((teamNumber) => useTeamImages(teamNumber));
 
@@ -178,25 +73,9 @@ export const MatchPreview2025 = ({ match, preview }: MatchPreview2025Props) => {
     (redAllianceStatus.hasTeams && redAllianceStatus.hasImagesOrLoading) ||
     (blueAllianceStatus.hasTeams && blueAllianceStatus.hasImagesOrLoading);
 
-  const autonomousFields: FieldConfig[] = [
-    { key: 'auto-level4', label: 'L4', getTeamStat: (team) => team?.auto.level4 },
-    { key: 'auto-level3', label: 'L3', getTeamStat: (team) => team?.auto.level3 },
-    { key: 'auto-level2', label: 'L2', getTeamStat: (team) => team?.auto.level2 },
-    { key: 'auto-level1', label: 'L1', getTeamStat: (team) => team?.auto.level1 },
-    { key: 'auto-net', label: 'Net', getTeamStat: (team) => team?.auto.net },
-    { key: 'auto-processor', label: 'Processor', getTeamStat: (team) => team?.auto.processor },
-  ];
-  const teleopFields: FieldConfig[] = [
-    { key: 'teleop-level4', label: 'L4', getTeamStat: (team) => team?.teleop.level4 },
-    { key: 'teleop-level3', label: 'L3', getTeamStat: (team) => team?.teleop.level3 },
-    { key: 'teleop-level2', label: 'L2', getTeamStat: (team) => team?.teleop.level2 },
-    { key: 'teleop-level1', label: 'L1', getTeamStat: (team) => team?.teleop.level1 },
-    { key: 'teleop-net', label: 'Net', getTeamStat: (team) => team?.teleop.net },
-    { key: 'teleop-processor', label: 'Processor', getTeamStat: (team) => team?.teleop.processor },
-  ];
-  const endgameFields: FieldConfig[] = [
-    { key: 'endgame-points', label: 'Endgame Points', getTeamStat: (team) => team?.endgame },
-  ];
+  const autonomousFields = ['L4', 'L3', 'L2', 'L1', 'Net', 'Processor'];
+  const teleopFields = ['L4', 'L3', 'L2', 'L1', 'Net', 'Processor'];
+  const endgameFields = ['Endgame Points'];
   const [collapsedSections, setCollapsedSections] = useState({
     autonomous: true,
     teleop: true,
@@ -354,69 +233,37 @@ export const MatchPreview2025 = ({ match, preview }: MatchPreview2025Props) => {
           {!collapsedSections.autonomous && (
             <>
               {autonomousFields.map((field) => (
-                <Table.Tr key={`autonomous-${field.key}`}>
-                  {redTeams.map((team, index) => (
-                    <Table.Td
-                      key={`autonomous-red-${index}-${field.key}`}
-                      className={classes.redCell}
-                    >
-                      {renderMetricCell(field.getTeamStat(team))}
-                    </Table.Td>
+                <Table.Tr key={`autonomous-${field}`}>
+                  {redTeamNumbers.map((_, index) => (
+                    <Table.Td key={`autonomous-red-${index}-${field}`} />
                   ))}
-                  <Table.Td className={classes.redCell}>
-                    {renderPredictedCell(sumTeamAverages(redTeams, field.getTeamStat))}
-                  </Table.Td>
+                  <Table.Td className={classes.redCell} />
                   <Table.Td className={classes.fieldCell}>
                     <Text fw={500} ta="center">
-                      {field.label}
+                      {field}
                     </Text>
                   </Table.Td>
-                  <Table.Td className={classes.blueCell}>
-                    {renderPredictedCell(sumTeamAverages(blueTeams, field.getTeamStat))}
-                  </Table.Td>
-                  {blueTeams.map((team, index) => (
-                    <Table.Td
-                      key={`autonomous-blue-${index}-${field.key}`}
-                      className={classes.blueCell}
-                    >
-                      {renderMetricCell(field.getTeamStat(team))}
-                    </Table.Td>
+                  <Table.Td className={classes.blueCell} />
+                  {blueTeamNumbers.map((_, index) => (
+                    <Table.Td key={`autonomous-blue-${index}-${field}`} />
                   ))}
                 </Table.Tr>
               ))}
             </>
           )}
           <Table.Tr className={classes.totalRow}>
-            {redTeams.map((team, index) => (
-              <Table.Td
-                key={`autonomous-total-red-${index}`}
-                className={classes.redCell}
-              >
-                {renderMetricCell(team?.auto.total_points)}
-              </Table.Td>
+            {redTeamNumbers.map((_, index) => (
+              <Table.Td key={`autonomous-total-red-${index}`} />
             ))}
-            <Table.Td className={classes.redCell}>
-              {renderPredictedCell(
-                sumTeamAverages(redTeams, (team) => team?.auto.total_points)
-              )}
-            </Table.Td>
+            <Table.Td className={classes.redCell} />
             <Table.Td className={clsx(classes.fieldCell, classes.totalFieldCell)}>
               <Text fw={700} ta="center">
                 Autonomous Total
               </Text>
             </Table.Td>
-            <Table.Td className={classes.blueCell}>
-              {renderPredictedCell(
-                sumTeamAverages(blueTeams, (team) => team?.auto.total_points)
-              )}
-            </Table.Td>
-            {blueTeams.map((team, index) => (
-              <Table.Td
-                key={`autonomous-total-blue-${index}`}
-                className={classes.blueCell}
-              >
-                {renderMetricCell(team?.auto.total_points)}
-              </Table.Td>
+            <Table.Td className={classes.blueCell} />
+            {blueTeamNumbers.map((_, index) => (
+              <Table.Td key={`autonomous-total-blue-${index}`} />
             ))}
           </Table.Tr>
           <Table.Tr>
@@ -440,69 +287,37 @@ export const MatchPreview2025 = ({ match, preview }: MatchPreview2025Props) => {
           {!collapsedSections.teleop && (
             <>
               {teleopFields.map((field) => (
-                <Table.Tr key={`teleop-${field.key}`}>
-                  {redTeams.map((team, index) => (
-                    <Table.Td
-                      key={`teleop-red-${index}-${field.key}`}
-                      className={classes.redCell}
-                    >
-                      {renderMetricCell(field.getTeamStat(team))}
-                    </Table.Td>
+                <Table.Tr key={`teleop-${field}`}>
+                  {redTeamNumbers.map((_, index) => (
+                    <Table.Td key={`teleop-red-${index}-${field}`} />
                   ))}
-                  <Table.Td className={classes.redCell}>
-                    {renderPredictedCell(sumTeamAverages(redTeams, field.getTeamStat))}
-                  </Table.Td>
+                  <Table.Td className={classes.redCell} />
                   <Table.Td className={classes.fieldCell}>
                     <Text fw={500} ta="center">
-                      {field.label}
+                      {field}
                     </Text>
                   </Table.Td>
-                  <Table.Td className={classes.blueCell}>
-                    {renderPredictedCell(sumTeamAverages(blueTeams, field.getTeamStat))}
-                  </Table.Td>
-                  {blueTeams.map((team, index) => (
-                    <Table.Td
-                      key={`teleop-blue-${index}-${field.key}`}
-                      className={classes.blueCell}
-                    >
-                      {renderMetricCell(field.getTeamStat(team))}
-                    </Table.Td>
+                  <Table.Td className={classes.blueCell} />
+                  {blueTeamNumbers.map((_, index) => (
+                    <Table.Td key={`teleop-blue-${index}-${field}`} />
                   ))}
                 </Table.Tr>
               ))}
             </>
           )}
           <Table.Tr className={classes.totalRow}>
-            {redTeams.map((team, index) => (
-              <Table.Td
-                key={`teleop-total-red-${index}`}
-                className={classes.redCell}
-              >
-                {renderMetricCell(team?.teleop.total_points)}
-              </Table.Td>
+            {redTeamNumbers.map((_, index) => (
+              <Table.Td key={`teleop-total-red-${index}`} />
             ))}
-            <Table.Td className={classes.redCell}>
-              {renderPredictedCell(
-                sumTeamAverages(redTeams, (team) => team?.teleop.total_points)
-              )}
-            </Table.Td>
+            <Table.Td className={classes.redCell} />
             <Table.Td className={clsx(classes.fieldCell, classes.totalFieldCell)}>
               <Text fw={700} ta="center">
                 Teleop Total
               </Text>
             </Table.Td>
-            <Table.Td className={classes.blueCell}>
-              {renderPredictedCell(
-                sumTeamAverages(blueTeams, (team) => team?.teleop.total_points)
-              )}
-            </Table.Td>
-            {blueTeams.map((team, index) => (
-              <Table.Td
-                key={`teleop-total-blue-${index}`}
-                className={classes.blueCell}
-              >
-                {renderMetricCell(team?.teleop.total_points)}
-              </Table.Td>
+            <Table.Td className={classes.blueCell} />
+            {blueTeamNumbers.map((_, index) => (
+              <Table.Td key={`teleop-total-blue-${index}`} />
             ))}
           </Table.Tr>
           <Table.Tr>
@@ -511,67 +326,35 @@ export const MatchPreview2025 = ({ match, preview }: MatchPreview2025Props) => {
             </Table.Th>
           </Table.Tr>
           {endgameFields.map((field) => (
-            <Table.Tr key={`endgame-${field.key}`}>
-              {redTeams.map((team, index) => (
-                <Table.Td
-                  key={`endgame-red-${index}-${field.key}`}
-                  className={classes.redCell}
-                >
-                  {renderMetricCell(field.getTeamStat(team))}
-                </Table.Td>
+            <Table.Tr key={`endgame-${field}`}>
+              {redTeamNumbers.map((_, index) => (
+                <Table.Td key={`endgame-red-${index}-${field}`} />
               ))}
-              <Table.Td className={classes.redCell}>
-                {renderPredictedCell(sumTeamAverages(redTeams, field.getTeamStat))}
-              </Table.Td>
+              <Table.Td className={classes.redCell} />
               <Table.Td className={classes.fieldCell}>
                 <Text fw={500} ta="center">
-                  {field.label}
+                  {field}
                 </Text>
               </Table.Td>
-              <Table.Td className={classes.blueCell}>
-                {renderPredictedCell(sumTeamAverages(blueTeams, field.getTeamStat))}
-              </Table.Td>
-              {blueTeams.map((team, index) => (
-                <Table.Td
-                  key={`endgame-blue-${index}-${field.key}`}
-                  className={classes.blueCell}
-                >
-                  {renderMetricCell(field.getTeamStat(team))}
-                </Table.Td>
+              <Table.Td className={classes.blueCell} />
+              {blueTeamNumbers.map((_, index) => (
+                <Table.Td key={`endgame-blue-${index}-${field}`} />
               ))}
             </Table.Tr>
           ))}
           <Table.Tr className={classes.totalRow}>
-            {redTeams.map((team, index) => (
-              <Table.Td
-                key={`total-score-red-${index}`}
-                className={classes.redCell}
-              >
-                {renderMetricCell(team?.total_points)}
-              </Table.Td>
+            {redTeamNumbers.map((_, index) => (
+              <Table.Td key={`total-score-red-${index}`} />
             ))}
-            <Table.Td className={classes.redCell}>
-              {renderPredictedCell(
-                sumTeamAverages(redTeams, (team) => team?.total_points)
-              )}
-            </Table.Td>
+            <Table.Td className={classes.redCell} />
             <Table.Td className={clsx(classes.fieldCell, classes.totalFieldCell)}>
               <Text fw={700} ta="center">
                 Total Score
               </Text>
             </Table.Td>
-            <Table.Td className={classes.blueCell}>
-              {renderPredictedCell(
-                sumTeamAverages(blueTeams, (team) => team?.total_points)
-              )}
-            </Table.Td>
-            {blueTeams.map((team, index) => (
-              <Table.Td
-                key={`total-score-blue-${index}`}
-                className={classes.blueCell}
-              >
-                {renderMetricCell(team?.total_points)}
-              </Table.Td>
+            <Table.Td className={classes.blueCell} />
+            {blueTeamNumbers.map((_, index) => (
+              <Table.Td key={`total-score-blue-${index}`} />
             ))}
           </Table.Tr>
         </Table.Tbody>
