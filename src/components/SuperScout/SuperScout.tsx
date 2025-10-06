@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { IconChevronDown, IconChevronUp, IconSearch } from '@tabler/icons-react';
 import { Button, Center, Group, ScrollArea, Stack, Table, Text, TextInput, UnstyledButton } from '@mantine/core';
+import { Link } from '@tanstack/react-router';
 import type { MatchScheduleEntry } from '@/api';
 import classes from './SuperScout.module.css';
 
@@ -12,6 +13,7 @@ interface RowData {
   blue1?: number | null;
   blue2?: number | null;
   blue3?: number | null;
+  matchLevel?: string | null;
 }
 
 interface ThProps {
@@ -30,6 +32,7 @@ const createRowData = (matches: MatchScheduleEntry[]): RowData[] =>
     blue1: match.blue1_id,
     blue2: match.blue2_id,
     blue3: match.blue3_id,
+    matchLevel: match.match_level,
   }));
 
 function Th({ children, reversed, sorted: _sorted, onSort }: ThProps) {
@@ -94,21 +97,48 @@ export function SuperScout({ matches }: SuperScoutProps) {
   const formatAlliance = (teams: Array<number | null | undefined>) =>
     teams.map((team) => (team ?? '-')).join(' • ');
 
-  const rows = sortedData.map((row) => (
-    <Table.Tr key={row.matchNumber}>
-      <Table.Td>{row.matchNumber}</Table.Td>
-      <Table.Td>
-        <Button color="red" fullWidth variant="filled">
-          {formatAlliance([row.red1, row.red2, row.red3])}
-        </Button>
-      </Table.Td>
-      <Table.Td>
-        <Button color="blue" fullWidth variant="filled">
-          {formatAlliance([row.blue1, row.blue2, row.blue3])}
-        </Button>
-      </Table.Td>
-    </Table.Tr>
-  ));
+  const rows = sortedData.map((row) => {
+    const matchLevelPath = row.matchLevel?.toLowerCase();
+    const redAllianceButton = matchLevelPath ? (
+      <Button<typeof Link>
+        color="red"
+        component={Link}
+        fullWidth
+        to={`/superScout/match/${matchLevelPath}/${row.matchNumber}/red`}
+        variant="filled"
+      >
+        {formatAlliance([row.red1, row.red2, row.red3])}
+      </Button>
+    ) : (
+      <Button color="red" disabled fullWidth variant="filled">
+        {formatAlliance([row.red1, row.red2, row.red3])}
+      </Button>
+    );
+
+    const blueAllianceButton = matchLevelPath ? (
+      <Button<typeof Link>
+        color="blue"
+        component={Link}
+        fullWidth
+        to={`/superScout/match/${matchLevelPath}/${row.matchNumber}/blue`}
+        variant="filled"
+      >
+        {formatAlliance([row.blue1, row.blue2, row.blue3])}
+      </Button>
+    ) : (
+      <Button color="blue" disabled fullWidth variant="filled">
+        {formatAlliance([row.blue1, row.blue2, row.blue3])}
+      </Button>
+    );
+
+    return (
+      <Table.Tr key={row.matchNumber}>
+        <Table.Td>{row.matchNumber}</Table.Td>
+        <Table.Td>{redAllianceButton}</Table.Td>
+        <Table.Td>{blueAllianceButton}</Table.Td>
+      </Table.Tr>
+    );
+  });
 
   return (
     <ScrollArea>
