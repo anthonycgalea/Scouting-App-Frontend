@@ -306,32 +306,22 @@ export function SuperScoutMatchPage() {
                         }}
                       >
                         <Text fw={500} c={bodyTextColor}>
-                          Driver Rating:
-                        </Text>
-                        <Text fw={500} c={bodyTextColor}>
-                          Robot Overall Rating:
+                          Driver
                         </Text>
                         {showDefense && (
                           <Text fw={500} c={bodyTextColor}>
-                            Defense Rating:
+                            Defense
                           </Text>
                         )}
+                        <Text fw={500} c={bodyTextColor}>
+                          Overall
+                        </Text>
                         <Rating
                           value={teamState.driverRating ?? 0}
                           onChange={(value) =>
                             updateTeamInput(teamKey, (state) => ({
                               ...state,
                               driverRating: value,
-                            }))
-                          }
-                          count={5}
-                        />
-                        <Rating
-                          value={teamState.robotOverall ?? 0}
-                          onChange={(value) =>
-                            updateTeamInput(teamKey, (state) => ({
-                              ...state,
-                              robotOverall: value,
                             }))
                           }
                           count={5}
@@ -348,6 +338,16 @@ export function SuperScoutMatchPage() {
                             count={5}
                           />
                         )}
+                        <Rating
+                          value={teamState.robotOverall ?? 0}
+                          onChange={(value) =>
+                            updateTeamInput(teamKey, (state) => ({
+                              ...state,
+                              robotOverall: value,
+                            }))
+                          }
+                          count={5}
+                        />
                       </Box>
                     );
                   })()}
