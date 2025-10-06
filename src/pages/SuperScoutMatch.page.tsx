@@ -1,30 +1,20 @@
 import { useMemo } from 'react';
-import {
-  Box,
-  Card,
-  Center,
-  Loader,
-  SimpleGrid,
-  Stack,
-  Text,
-  Title,
-  useMantineColorScheme,
-} from '@mantine/core';
+import { Box, Card, Center, Loader, SimpleGrid, Stack, Text, Title } from '@mantine/core';
 import { useParams } from '@tanstack/react-router';
 import { useMatchSchedule } from '@/api';
 
 const ALLIANCE_CONFIG = {
   red: {
     label: 'Red Alliance',
-    background: { light: 'red.0', dark: 'red.9' },
-    cardBackground: { light: 'red.1', dark: 'red.8' },
-    headerColor: { light: 'red.8', dark: 'red.2' },
+    background: 'red.0',
+    cardBackground: 'red.1',
+    headerColor: 'red.8',
   },
   blue: {
     label: 'Blue Alliance',
-    background: { light: 'blue.0', dark: 'blue.9' },
-    cardBackground: { light: 'blue.1', dark: 'blue.8' },
-    headerColor: { light: 'blue.8', dark: 'blue.1' },
+    background: 'blue.0',
+    cardBackground: 'blue.1',
+    headerColor: 'blue.8',
   },
 } as const;
 
@@ -37,8 +27,6 @@ export function SuperScoutMatchPage() {
   const numericMatchNumber = Number.parseInt(matchNumber ?? '', 10);
   const normalizedAlliance = (alliance ?? '').toLowerCase() as AllianceKey | undefined;
   const allianceConfig = normalizedAlliance ? ALLIANCE_CONFIG[normalizedAlliance] : undefined;
-  const { colorScheme } = useMantineColorScheme();
-  const isDark = colorScheme === 'dark';
 
   const { data: scheduleData = [], isLoading, isError } = useMatchSchedule();
 
@@ -115,24 +103,14 @@ export function SuperScoutMatchPage() {
   const matchLevelLabel =
     matchLevelLabels[match.match_level?.toLowerCase() ?? matchLevel.toLowerCase()] ?? matchLevel;
 
-  const backgroundColor = isDark
-    ? allianceConfig.background.dark
-    : allianceConfig.background.light;
-  const cardBackgroundColor = isDark
-    ? allianceConfig.cardBackground.dark
-    : allianceConfig.cardBackground.light;
-  const headerColor = isDark
-    ? allianceConfig.headerColor.dark
-    : allianceConfig.headerColor.light;
-
   return (
-    <Box p="md" bg={backgroundColor} mih="100%">
+    <Box p="md" bg={allianceConfig.background} mih="100%">
       <Stack gap="lg">
         <Stack gap={4}>
-          <Title order={2} c={headerColor} ta="center">
+          <Title order={2} c={allianceConfig.headerColor} ta="center">
             {allianceConfig.label}
           </Title>
-          <Text ta="center" fw={500} c={isDark ? 'gray.0' : undefined}>
+          <Text ta="center" fw={500}>
             {matchLevelLabel} Match {numericMatchNumber}
           </Text>
         </Stack>
@@ -143,13 +121,13 @@ export function SuperScoutMatchPage() {
               withBorder
               radius="md"
               shadow="sm"
-              bg={cardBackgroundColor}
+              bg={allianceConfig.cardBackground}
             >
               <Stack gap="sm" align="center">
-                <Title order={3} c={headerColor}>
+                <Title order={3} c={allianceConfig.headerColor}>
                   Team {teamNumber ?? 'TBD'}
                 </Title>
-                <Text size="sm" c={isDark ? 'gray.2' : 'dimmed'} ta="center">
+                <Text size="sm" c="dimmed" ta="center">
                   Scouting inputs will appear here.
                 </Text>
               </Stack>

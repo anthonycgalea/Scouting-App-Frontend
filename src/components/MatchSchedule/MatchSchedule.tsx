@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { IconCheck, IconChevronDown, IconChevronUp, IconCircleX, IconSearch } from '@tabler/icons-react';
 import { Center, Group, ScrollArea, Stack, Table, Text, TextInput, UnstyledButton } from '@mantine/core';
-import { useTeamMatchValidation, type MatchScheduleEntry } from '@/api';
+import { useTeamMatchValidation } from '@/api';
+import type { MatchScheduleEntry } from '@/api';
 import { MatchNumberButtonMenu } from './MatchNumberButtonMenu';
 import classes from './MatchSchedule.module.css';
 
