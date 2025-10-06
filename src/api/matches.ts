@@ -12,6 +12,7 @@ export interface MatchScheduleEntry {
   blue1_id: number;
   blue2_id: number;
   blue3_id: number;
+  season?: number;
 }
 
 export const matchScheduleQueryKey = () => ['match-schedule'] as const;
