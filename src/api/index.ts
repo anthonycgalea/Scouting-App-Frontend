@@ -10,3 +10,4 @@ export * from './user';
 export * from './analytics';
 export * from './pickLists';
 export * from './pitScouting';
+export * from './superScout';
