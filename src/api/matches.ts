@@ -15,6 +15,66 @@ export interface MatchScheduleEntry {
   season?: number;
 }
 
+export interface MetricStatistics {
+  average: number | null;
+  standard_deviation: number | null;
+}
+
+export interface PhaseMetrics {
+  level4: MetricStatistics;
+  level3: MetricStatistics;
+  level2: MetricStatistics;
+  level1: MetricStatistics;
+  net: MetricStatistics;
+  processor: MetricStatistics;
+  total_points: MetricStatistics;
+}
+
+export interface TeamMatchPreview {
+  team_number: number;
+  auto: PhaseMetrics;
+  teleop: PhaseMetrics;
+  endgame: MetricStatistics;
+  total_points: MetricStatistics;
+}
+
+export interface AllianceLevelValues {
+  level4: number | null;
+  level3: number | null;
+  level2: number | null;
+  level1: number | null;
+}
+
+export interface AllianceLevelAverages {
+  auto: AllianceLevelValues;
+  teleop: AllianceLevelValues;
+  adjusted: AllianceLevelValues;
+}
+
+export interface AllianceMatchPreview {
+  teams: TeamMatchPreview[];
+  alliance_level_averages: AllianceLevelAverages;
+}
+
+export interface MatchPreviewRequest {
+  matchLevel: string;
+  matchNumber: number;
+}
+
+export interface MatchPreviewResponse {
+  season: number;
+  red: AllianceMatchPreview;
+  blue: AllianceMatchPreview;
+}
+
+export const matchPreviewQueryKey = (params?: MatchPreviewRequest) =>
+  ['match-preview', params?.matchLevel, params?.matchNumber] as const;
+
+export const fetchMatchPreview = ({ matchLevel, matchNumber }: MatchPreviewRequest) =>
+  apiFetch<MatchPreviewResponse>(
+    `event/matches/${encodeURIComponent(matchLevel.toLowerCase())}/${matchNumber}/preview`
+  );
+
 export const matchScheduleQueryKey = () => ['match-schedule'] as const;
 
 export const fetchMatchSchedule = () => apiFetch<MatchScheduleEntry[]>('event/matches');
@@ -71,6 +131,22 @@ export const useMatchSchedule = () =>
   useQuery({
     queryKey: matchScheduleQueryKey(),
     queryFn: fetchMatchSchedule,
+  });
+
+export const useMatchPreview = (params?: MatchPreviewRequest) =>
+  useQuery({
+    queryKey: matchPreviewQueryKey(params),
+    queryFn: () => {
+      if (!params) {
+        throw new Error('Match preview parameters are required');
+      }
+
+      return fetchMatchPreview(params);
+    },
+    enabled:
+      Boolean(params?.matchLevel) &&
+      Number.isFinite(params?.matchNumber) &&
+      (params?.matchNumber ?? 0) > 0,
   });
 
 export const useTeamMatchValidation = () =>
