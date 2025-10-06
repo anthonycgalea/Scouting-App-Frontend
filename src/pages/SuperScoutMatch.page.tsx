@@ -16,8 +16,9 @@ import {
   useMantineColorScheme,
   useMantineTheme,
 } from '@mantine/core';
-import { useParams } from '@tanstack/react-router';
-import { useMatchSchedule, useSuperScoutFields } from '@/api';
+import { useNavigate, useParams } from '@tanstack/react-router';
+import { notifications } from '@mantine/notifications';
+import { apiFetch, useMatchSchedule, useSuperScoutFields } from '@/api';
 
 const ALLIANCE_CONFIG = {
   red: {
@@ -43,6 +44,15 @@ interface TeamInputState {
   defenseRating: number | null;
 }
 
+const createDefaultTeamState = (): TeamInputState => ({
+  startingPosition: null,
+  cannedComments: [],
+  notes: '',
+  driverRating: null,
+  robotOverall: null,
+  defenseRating: null,
+});
+
 const STARTING_POSITION_OPTIONS: { label: string; value: StartingPosition }[] = [
   { label: 'Left', value: 'LEFT' },
   { label: 'Center', value: 'CENTER' },
@@ -54,6 +64,7 @@ export function SuperScoutMatchPage() {
   const { matchLevel, matchNumber, alliance } = useParams({
     from: '/superScout/match/$matchLevel/$matchNumber/$alliance',
   });
+  const navigate = useNavigate();
   const numericMatchNumber = Number.parseInt(matchNumber ?? '', 10);
   const normalizedAlliance = (alliance ?? '').toLowerCase() as AllianceKey | undefined;
   const allianceConfig = normalizedAlliance ? ALLIANCE_CONFIG[normalizedAlliance] : undefined;
@@ -106,15 +117,7 @@ export function SuperScoutMatchPage() {
 
       allianceTeams.forEach((teamNumber, index) => {
         const teamKey = String(teamNumber ?? `slot-${index}`);
-        next[teamKey] =
-          current[teamKey] ?? {
-            startingPosition: null,
-            cannedComments: [],
-            notes: '',
-            driverRating: null,
-            robotOverall: null,
-            defenseRating: null,
-          };
+        next[teamKey] = current[teamKey] ?? createDefaultTeamState();
       });
 
       return next;
@@ -126,21 +129,89 @@ export function SuperScoutMatchPage() {
     updater: (state: TeamInputState) => TeamInputState
   ) => {
     setTeamInputs((current) => {
-      const existing =
-        current[teamKey] ?? {
-          startingPosition: null,
-          cannedComments: [],
-          notes: '',
-          driverRating: null,
-          robotOverall: null,
-          defenseRating: null,
-        };
+      const existing = current[teamKey] ?? createDefaultTeamState();
 
       return {
         ...current,
         [teamKey]: updater(existing),
       };
     });
+  };
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!match || !normalizedAlliance) {
+      return;
+    }
+
+    const teamRequests = allianceTeams.map((teamNumber, index) => {
+      const teamKey = String(teamNumber ?? `slot-${index}`);
+      const teamState = teamInputs[teamKey] ?? createDefaultTeamState();
+
+      const payload: Record<string, unknown> = {
+        team_number: Number(teamNumber ?? 0),
+        match_number: match.match_number,
+        match_level: match.match_level ?? matchLevel,
+        notes: teamState.notes,
+        defense_rating: teamState.defenseRating ?? 0,
+        driver_rating: teamState.driverRating ?? 0,
+        robot_overall: teamState.robotOverall ?? 0,
+      };
+
+      superScoutFields.forEach((field) => {
+        payload[field.key] = teamState.cannedComments.includes(field.key);
+      });
+
+      return apiFetch('scout/superscout', {
+        method: 'POST',
+        json: payload,
+      });
+    });
+
+    setIsSubmitting(true);
+
+    try {
+      await Promise.all(teamRequests);
+
+      notifications.show({
+        title: 'SuperScout submission complete',
+        message: 'Comments submitted successfully.',
+        color: 'green',
+      });
+
+      const normalizedLevel = match.match_level?.toLowerCase() ?? matchLevel?.toLowerCase();
+      let nextMatch: (typeof scheduleData)[number] | undefined;
+
+      if (normalizedLevel) {
+        nextMatch = scheduleData
+          .filter((entry) => entry.match_level?.toLowerCase() === normalizedLevel)
+          .sort((a, b) => a.match_number - b.match_number)
+          .find((entry) => entry.match_number > match.match_number);
+      }
+
+      if (nextMatch?.match_level) {
+        navigate({
+          to: '/superScout/match/$matchLevel/$matchNumber/$alliance',
+          params: {
+            matchLevel: nextMatch.match_level.toLowerCase(),
+            matchNumber: String(nextMatch.match_number),
+            alliance: normalizedAlliance,
+          },
+        });
+      } else {
+        navigate({ to: '/superScout' });
+      }
+    } catch (error) {
+      console.error('Failed to submit super scout data', error);
+      notifications.show({
+        title: 'Submission failed',
+        message: 'Unable to submit SuperScout comments. Please try again.',
+        color: 'red',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isLoading) {
@@ -230,7 +301,7 @@ export function SuperScoutMatchPage() {
                 shadow="sm"
                 bg={surfaceBackground}
               >
-                <Stack gap="md" p="md" align="center" style={{ textAlign: 'center' }}>
+                <Stack gap="md" p="md" align="stretch" style={{ textAlign: 'center' }}>
                   <Title order={3} c={titleColor} ta="center">
                     Team {teamNumber ?? 'TBD'}
                   </Title>
@@ -363,6 +434,7 @@ export function SuperScoutMatchPage() {
                     value={teamState.notes}
                     labelProps={{ style: { width: '100%', textAlign: 'center' } }}
                     styles={{ input: { textAlign: 'center' } }}
+                    w="100%"
                     onChange={(event) => {
                       const { value } = event.currentTarget;
 
@@ -378,7 +450,12 @@ export function SuperScoutMatchPage() {
           })}
         </SimpleGrid>
         <Center>
-          <Button color={allianceConfig.color} variant="filled">
+          <Button
+            color={allianceConfig.color}
+            variant="filled"
+            onClick={handleSubmit}
+            loading={isSubmitting}
+          >
             Submit Comments
           </Button>
         </Center>
