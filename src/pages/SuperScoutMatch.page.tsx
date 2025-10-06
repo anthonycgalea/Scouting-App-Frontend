@@ -291,9 +291,9 @@ export function SuperScoutMatchPage() {
                       </Chip.Group>
                     )}
                   </Stack>
-                  <Stack gap={8}>
+                  <Group gap="sm" wrap="nowrap" justify="space-between" align="center">
                     <Text fw={500} c={bodyTextColor}>
-                      Driver Rating
+                      Driver Rating:
                     </Text>
                     <Rating
                       value={teamState.driverRating ?? 0}
@@ -305,10 +305,10 @@ export function SuperScoutMatchPage() {
                       }
                       count={5}
                     />
-                  </Stack>
-                  <Stack gap={8}>
+                  </Group>
+                  <Group gap="sm" wrap="nowrap" justify="space-between" align="center">
                     <Text fw={500} c={bodyTextColor}>
-                      Robot Overall Rating
+                      Robot Overall Rating:
                     </Text>
                     <Rating
                       value={teamState.robotOverall ?? 0}
@@ -320,11 +320,11 @@ export function SuperScoutMatchPage() {
                       }
                       count={5}
                     />
-                  </Stack>
+                  </Group>
                   {teamState.cannedComments.includes('played_defense') && (
-                    <Stack gap={8}>
+                    <Group gap="sm" wrap="nowrap" justify="space-between" align="center">
                       <Text fw={500} c={bodyTextColor}>
-                        Defense Rating
+                        Defense Rating:
                       </Text>
                       <Rating
                         value={teamState.defenseRating ?? 0}
@@ -336,7 +336,7 @@ export function SuperScoutMatchPage() {
                         }
                         count={5}
                       />
-                    </Stack>
+                    </Group>
                   )}
                   <Textarea
                     label="Notes"
