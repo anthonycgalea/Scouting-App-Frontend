@@ -356,12 +356,14 @@ export function SuperScoutMatchPage() {
                     placeholder="Enter any additional observations"
                     minRows={3}
                     value={teamState.notes}
-                    onChange={(event) =>
+                    onChange={(event) => {
+                      const { value } = event.currentTarget;
+
                       updateTeamInput(teamKey, (state) => ({
                         ...state,
-                        notes: event.currentTarget.value,
-                      }))
-                    }
+                        notes: value,
+                      }));
+                    }}
                   />
                 </Stack>
               </Card>
