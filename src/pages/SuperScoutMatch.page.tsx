@@ -149,16 +149,20 @@ export function SuperScoutMatchPage() {
       const teamKey = String(teamNumber ?? `slot-${index}`);
       const teamState = teamInputs[teamKey] ?? createDefaultTeamState();
 
+      const startPosition =
+        teamState.startingPosition && teamState.startingPosition !== 'NO_SHOW'
+          ? teamState.startingPosition
+          : undefined;
+
+      const defenseRating = teamState.defenseRating ?? undefined;
+
       const payload: Record<string, unknown> = {
         team_number: Number(teamNumber ?? 0),
         match_number: match.match_number,
         match_level: match.match_level ?? matchLevel,
-        start_position:
-          teamState.startingPosition && teamState.startingPosition !== 'NO_SHOW'
-            ? teamState.startingPosition
-            : null,
+        ...(startPosition !== undefined ? { start_position: startPosition } : {}),
         notes: teamState.notes,
-        defense_rating: teamState.defenseRating ?? null,
+        ...(defenseRating !== undefined ? { defense_rating: defenseRating } : {}),
         driver_rating: teamState.driverRating ?? 0,
         robot_overall: teamState.robotOverall ?? 0,
       };
