@@ -1,18 +1,22 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Box,
+  Button,
   Card,
   Center,
+  Chip,
+  Group,
   Loader,
   SimpleGrid,
   Stack,
   Text,
+  Textarea,
   Title,
   useMantineColorScheme,
   useMantineTheme,
 } from '@mantine/core';
 import { useParams } from '@tanstack/react-router';
-import { useMatchSchedule } from '@/api';
+import { useMatchSchedule, useSuperScoutFields } from '@/api';
 
 const ALLIANCE_CONFIG = {
   red: {
@@ -27,6 +31,21 @@ const ALLIANCE_CONFIG = {
 
 type AllianceKey = keyof typeof ALLIANCE_CONFIG;
 
+type StartingPosition = 'LEFT' | 'CENTER' | 'RIGHT' | 'NO_SHOW';
+
+interface TeamInputState {
+  startingPosition: StartingPosition | null;
+  cannedComments: string[];
+  notes: string;
+}
+
+const STARTING_POSITION_OPTIONS: { label: string; value: StartingPosition }[] = [
+  { label: 'Left', value: 'LEFT' },
+  { label: 'Center', value: 'CENTER' },
+  { label: 'Right', value: 'RIGHT' },
+  { label: 'No Show', value: 'NO_SHOW' },
+];
+
 export function SuperScoutMatchPage() {
   const { matchLevel, matchNumber, alliance } = useParams({
     from: '/superScout/match/$matchLevel/$matchNumber/$alliance',
@@ -39,6 +58,11 @@ export function SuperScoutMatchPage() {
   const isDark = colorScheme === 'dark';
 
   const { data: scheduleData = [], isLoading, isError } = useMatchSchedule();
+  const {
+    data: superScoutFields = [],
+    isLoading: isLoadingFields,
+    isError: isFieldsError,
+  } = useSuperScoutFields();
 
   const match = useMemo(() => {
     if (!matchLevel || Number.isNaN(numericMatchNumber)) {
@@ -69,6 +93,45 @@ export function SuperScoutMatchPage() {
 
     return [];
   }, [match, normalizedAlliance]);
+
+  const [teamInputs, setTeamInputs] = useState<Record<string, TeamInputState>>({});
+
+  useEffect(() => {
+    setTeamInputs((current) => {
+      const next: Record<string, TeamInputState> = {};
+
+      allianceTeams.forEach((teamNumber, index) => {
+        const teamKey = String(teamNumber ?? `slot-${index}`);
+        next[teamKey] =
+          current[teamKey] ?? {
+            startingPosition: null,
+            cannedComments: [],
+            notes: '',
+          };
+      });
+
+      return next;
+    });
+  }, [allianceTeams]);
+
+  const updateTeamInput = (
+    teamKey: string,
+    updater: (state: TeamInputState) => TeamInputState
+  ) => {
+    setTeamInputs((current) => {
+      const existing =
+        current[teamKey] ?? {
+          startingPosition: null,
+          cannedComments: [],
+          notes: '',
+        };
+
+      return {
+        ...current,
+        [teamKey]: updater(existing),
+      };
+    });
+  };
 
   if (isLoading) {
     return (
@@ -129,35 +192,107 @@ export function SuperScoutMatchPage() {
         <Card withBorder radius="md" shadow="sm" bg={surfaceBackground}>
           <Card.Section bg={headerBackground} inheritPadding py="md">
             <Title order={2} c={headerTextColor} ta="center">
-              {allianceConfig.label}
+              {matchLevelLabel} Match {numericMatchNumber}: {allianceConfig.label}
             </Title>
           </Card.Section>
-          <Stack gap={4} p="md" align="center">
-            <Text fw={500} c={bodyTextColor} ta="center">
-              {matchLevelLabel} Match {numericMatchNumber}
-            </Text>
-          </Stack>
         </Card>
         <SimpleGrid cols={{ base: 1, md: 3 }} spacing="md">
-          {allianceTeams.map((teamNumber, index) => (
-            <Card
-              key={teamNumber ?? index}
-              withBorder
-              radius="md"
-              shadow="sm"
-              bg={surfaceBackground}
-            >
-              <Stack gap="sm" align="center" p="md">
-                <Title order={3} c={titleColor}>
-                  Team {teamNumber ?? 'TBD'}
-                </Title>
-                <Text size="sm" c={bodyTextColor} ta="center">
-                  Scouting inputs will appear here.
-                </Text>
-              </Stack>
-            </Card>
-          ))}
+          {allianceTeams.map((teamNumber, index) => {
+            const teamKey = String(teamNumber ?? `slot-${index}`);
+            const teamState = teamInputs[teamKey] ?? {
+              startingPosition: null,
+              cannedComments: [],
+              notes: '',
+            };
+
+            return (
+              <Card
+                key={teamNumber ?? index}
+                withBorder
+                radius="md"
+                shadow="sm"
+                bg={surfaceBackground}
+              >
+                <Stack gap="md" p="md" align="stretch">
+                  <Title order={3} c={titleColor}>
+                    Team {teamNumber ?? 'TBD'}
+                  </Title>
+                  <Stack gap={8}>
+                    <Text fw={500} c={bodyTextColor}>
+                      Starting Position
+                    </Text>
+                    <Chip.Group
+                      multiple={false}
+                      value={teamState.startingPosition ?? null}
+                      onChange={(value) =>
+                        updateTeamInput(teamKey, (state) => ({
+                          ...state,
+                          startingPosition: (value as StartingPosition | null) ?? null,
+                        }))
+                      }
+                    >
+                      <Group gap="xs" wrap="wrap">
+                        {STARTING_POSITION_OPTIONS.map((option) => (
+                          <Chip key={option.value} value={option.value}>
+                            {option.label}
+                          </Chip>
+                        ))}
+                      </Group>
+                    </Chip.Group>
+                  </Stack>
+                  <Stack gap={8}>
+                    <Text fw={500} c={bodyTextColor}>
+                      Canned Comments
+                    </Text>
+                    {isLoadingFields ? (
+                      <Loader size="sm" />
+                    ) : isFieldsError ? (
+                      <Text size="sm" c="red.6">
+                        Unable to load canned comments.
+                      </Text>
+                    ) : (
+                      <Chip.Group
+                        multiple
+                        value={teamState.cannedComments}
+                        onChange={(value) =>
+                          updateTeamInput(teamKey, (state) => ({
+                            ...state,
+                            cannedComments: value as string[],
+                          }))
+                        }
+                      >
+                        <Group gap="xs" wrap="wrap">
+                          {superScoutFields.map((field) => (
+                            <Chip key={field.key} value={field.key}>
+                              {field.label}
+                            </Chip>
+                          ))}
+                        </Group>
+                      </Chip.Group>
+                    )}
+                  </Stack>
+                  <Textarea
+                    label="Notes"
+                    placeholder="Enter any additional observations"
+                    minRows={3}
+                    value={teamState.notes}
+                    onChange={(event) =>
+                      updateTeamInput(teamKey, (state) => ({
+                        ...state,
+                        notes: event.currentTarget.value,
+                      }))
+                    }
+                  />
+                </Stack>
+              </Card>
+            );
+          })}
         </SimpleGrid>
+        <Center>
+          <Button color={allianceConfig.color} variant="filled">
+            Submit Comments
+          </Button>
+        </Center>
       </Stack>
     </Box>
   );
