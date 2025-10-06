@@ -17,9 +17,23 @@
   border-radius: 21px;
 }
 
+.table {
+  border: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
+  border-radius: var(--mantine-radius-md);
+  overflow: hidden;
+}
+
+.table :global(thead tr) {
+  background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+}
+
 .table :global(th),
 .table :global(td) {
   text-align: center;
+}
+
+.table :global(tbody tr:nth-of-type(even)) {
+  background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7));
 }
 
 .table :global(button) {
