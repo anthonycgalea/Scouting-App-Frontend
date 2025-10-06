@@ -153,7 +153,7 @@ export function SuperScoutMatchPage() {
         team_number: Number(teamNumber ?? 0),
         match_number: match.match_number,
         match_level: match.match_level ?? matchLevel,
-        startPosition:
+        start_position:
           teamState.startingPosition && teamState.startingPosition !== 'NO_SHOW'
             ? teamState.startingPosition
             : null,
