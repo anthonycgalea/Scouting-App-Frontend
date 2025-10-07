@@ -18,7 +18,7 @@ import {
   useMantineColorScheme,
 } from '@mantine/core';
 import { Link } from '@tanstack/react-router';
-import { IconMail, IconPlus, IconTrash } from '@tabler/icons-react';
+import { IconCheck, IconMail, IconPlus, IconTrash, IconX } from '@tabler/icons-react';
 import { useDisclosure } from '@mantine/hooks';
 import {
   type OrganizationEventDetail,
@@ -28,6 +28,8 @@ import {
   useOrganizationCollaborations,
   useUpdateOrganizationEvents,
   useDeleteOrganizationEvent,
+  useAcceptOrganizationCollaboration,
+  useDeclineOrganizationCollaboration,
   useUserInfo,
   useUserRole,
   useUserOrganization,
@@ -84,6 +86,8 @@ export function EventSelect() {
     isError: isOrganizationCollaborationsError,
   } = useOrganizationCollaborations({ enabled: isUserLoggedIn && !!organizationId });
   const inviteOrganizationCollaborationMutation = useInviteOrganizationCollaboration();
+  const acceptOrganizationCollaborationMutation = useAcceptOrganizationCollaboration();
+  const declineOrganizationCollaborationMutation = useDeclineOrganizationCollaboration();
   const [events, setEvents] = useState<OrganizationEventDetail[]>([]);
   const [initialEvents, setInitialEvents] = useState<OrganizationEventDetail[]>([]);
   const { colorScheme } = useMantineColorScheme();
@@ -102,6 +106,9 @@ export function EventSelect() {
   const [inviteSearchTerm, setInviteSearchTerm] = useState('');
   const [pendingInviteOrganizationId, setPendingInviteOrganizationId] =
     useState<number | null>(null);
+  const [pendingCollaborationId, setPendingCollaborationId] = useState<string | null>(null);
+  const [pendingCollaborationAction, setPendingCollaborationAction] =
+    useState<'accept' | 'decline' | null>(null);
   const [inviteFeedback, setInviteFeedback] = useState<{
     type: 'success' | 'error';
     message: string;
@@ -236,6 +243,14 @@ export function EventSelect() {
     });
   }, [availableOrganizations, inviteSearchTerm]);
 
+  const pendingCollaborations = useMemo(
+    () =>
+      (organizationCollaborations ?? []).filter(
+        (collaboration) => collaboration.status === 'PENDING'
+      ),
+    [organizationCollaborations]
+  );
+
   const toggleEventPublic = (eventKey: string) => {
     setEvents((current) =>
       current.map((event) =>
@@ -329,6 +344,34 @@ export function EventSelect() {
     );
   };
 
+  const handleAcceptCollaboration = (organizationEventId: string) => {
+    setPendingCollaborationId(organizationEventId);
+    setPendingCollaborationAction('accept');
+    acceptOrganizationCollaborationMutation.mutate(
+      { organizationEventId },
+      {
+        onSettled: () => {
+          setPendingCollaborationId(null);
+          setPendingCollaborationAction(null);
+        },
+      }
+    );
+  };
+
+  const handleDeclineCollaboration = (organizationEventId: string) => {
+    setPendingCollaborationId(organizationEventId);
+    setPendingCollaborationAction('decline');
+    declineOrganizationCollaborationMutation.mutate(
+      { organizationEventId },
+      {
+        onSettled: () => {
+          setPendingCollaborationId(null);
+          setPendingCollaborationAction(null);
+        },
+      }
+    );
+  };
+
   const rows = filteredEvents.map((event) => {
     const selected = event.isActive;
     return (
@@ -399,6 +442,8 @@ export function EventSelect() {
 
   const isInviteListLoading = isAllOrganizationsLoading || isOrganizationCollaborationsLoading;
   const hasInviteListError = isAllOrganizationsError || isOrganizationCollaborationsError;
+  const isPendingCollaborationsLoading = isOrganizationCollaborationsLoading;
+  const hasPendingCollaborationsError = isOrganizationCollaborationsError;
 
   const hasChanges =
     events.length !== initialEvents.length ||
@@ -538,6 +583,118 @@ export function EventSelect() {
           Save Changes
         </Button>
       </Group>
+      <Stack gap="xs">
+        <Title order={4}>Pending Scouting Alliances</Title>
+        <ScrollArea>
+          <Table miw={650} verticalSpacing="sm">
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>Organization Name</Table.Th>
+                <Table.Th>Team Number</Table.Th>
+                <Table.Th>Event Name</Table.Th>
+                <Table.Th>Event Week</Table.Th>
+                <Table.Th>Event Year</Table.Th>
+                <Table.Th w={140}>
+                  <VisuallyHidden>Accept</VisuallyHidden>
+                </Table.Th>
+                <Table.Th w={140}>
+                  <VisuallyHidden>Decline</VisuallyHidden>
+                </Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {isPendingCollaborationsLoading ? (
+                <Table.Tr>
+                  <Table.Td colSpan={7}>
+                    <Text size="sm" c="dimmed">
+                      Loading pending scouting alliances...
+                    </Text>
+                  </Table.Td>
+                </Table.Tr>
+              ) : hasPendingCollaborationsError ? (
+                <Table.Tr>
+                  <Table.Td colSpan={7}>
+                    <Text size="sm" c="red">
+                      Unable to load pending scouting alliances. Please try again later.
+                    </Text>
+                  </Table.Td>
+                </Table.Tr>
+              ) : pendingCollaborations.length > 0 ? (
+                pendingCollaborations.map((collaboration) => {
+                  const isActionPendingForRow =
+                    pendingCollaborationId === collaboration.organizationEventId &&
+                    (acceptOrganizationCollaborationMutation.isPending ||
+                      declineOrganizationCollaborationMutation.isPending);
+                  const isAcceptLoading =
+                    isActionPendingForRow && pendingCollaborationAction === 'accept';
+                  const isDeclineLoading =
+                    isActionPendingForRow && pendingCollaborationAction === 'decline';
+
+                  return (
+                    <Table.Tr key={collaboration.organizationEventId}>
+                      <Table.Td>
+                        <Text size="sm" fw={500}>
+                          {collaboration.organizationName}
+                        </Text>
+                      </Table.Td>
+                      <Table.Td>
+                        <Text size="sm">
+                          {collaboration.teamNumber ?? '—'}
+                        </Text>
+                      </Table.Td>
+                      <Table.Td>
+                        <Text size="sm">{collaboration.eventName}</Text>
+                      </Table.Td>
+                      <Table.Td>
+                        <Text size="sm" ta="center">
+                          {collaboration.eventWeek ?? '—'}
+                        </Text>
+                      </Table.Td>
+                      <Table.Td>
+                        <Text size="sm" ta="center">
+                          {collaboration.eventYear ?? '—'}
+                        </Text>
+                      </Table.Td>
+                      <Table.Td>
+                        <Button
+                          color="green"
+                          variant="light"
+                          leftSection={<IconCheck size={16} />}
+                          loading={isAcceptLoading}
+                          disabled={isActionPendingForRow && pendingCollaborationAction === 'decline'}
+                          onClick={() => handleAcceptCollaboration(collaboration.organizationEventId)}
+                        >
+                          Accept
+                        </Button>
+                      </Table.Td>
+                      <Table.Td>
+                        <Button
+                          color="red"
+                          variant="light"
+                          leftSection={<IconX size={16} />}
+                          loading={isDeclineLoading}
+                          disabled={isActionPendingForRow && pendingCollaborationAction === 'accept'}
+                          onClick={() => handleDeclineCollaboration(collaboration.organizationEventId)}
+                        >
+                          Decline
+                        </Button>
+                      </Table.Td>
+                    </Table.Tr>
+                  );
+                })
+              ) : (
+                <Table.Tr>
+                  <Table.Td colSpan={7}>
+                    <Text size="sm" c="dimmed">
+                      No pending scouting alliances.
+                    </Text>
+                  </Table.Td>
+                </Table.Tr>
+              )}
+            </Table.Tbody>
+          </Table>
+        </ScrollArea>
+      </Stack>
       <Modal
         opened={inviteModalOpened}
         onClose={handleCloseInviteModal}

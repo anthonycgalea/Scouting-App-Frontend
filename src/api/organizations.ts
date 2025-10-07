@@ -36,10 +36,19 @@ export interface OrganizationCollaboration {
   organizationEventId: string;
   organizationId: number;
   status: string;
+  organizationName: string;
+  teamNumber?: number | null;
+  eventName: string;
+  eventWeek?: number | null;
+  eventYear?: number | null;
 }
 
 export interface InviteOrganizationCollaborationRequest {
   organizationid: number;
+}
+
+export interface UpdateOrganizationCollaborationRequest {
+  organizationEventId: string;
 }
 
 export interface UpdateOrganizationMemberInput {
@@ -175,6 +184,44 @@ export const useInviteOrganizationCollaboration = () => {
 
   return useMutation({
     mutationFn: inviteOrganizationCollaboration,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: organizationCollaborationsQueryKey });
+    },
+  });
+};
+
+export const acceptOrganizationCollaboration = ({
+  organizationEventId,
+}: UpdateOrganizationCollaborationRequest) =>
+  apiFetch<void>('organization/collab', {
+    method: 'PATCH',
+    json: { organizationEventId },
+  });
+
+export const declineOrganizationCollaboration = ({
+  organizationEventId,
+}: UpdateOrganizationCollaborationRequest) =>
+  apiFetch<void>('organization/collab', {
+    method: 'DELETE',
+    json: { organizationEventId },
+  });
+
+export const useAcceptOrganizationCollaboration = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: acceptOrganizationCollaboration,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: organizationCollaborationsQueryKey });
+    },
+  });
+};
+
+export const useDeclineOrganizationCollaboration = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: declineOrganizationCollaboration,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: organizationCollaborationsQueryKey });
     },
