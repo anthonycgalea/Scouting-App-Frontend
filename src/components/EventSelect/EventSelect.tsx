@@ -377,6 +377,14 @@ export function EventSelect() {
     const selected = event.isActive;
     return (
       <Table.Tr key={event.eventKey} className={cx({ [classes.rowSelected]: selected })}>
+        <Table.Td w={80} ta="center">
+          <Radio
+            name="active-event"
+            aria-label={`Select ${event.eventName} as active event`}
+            checked={selected}
+            onChange={() => handleSelectActiveEvent(event.eventKey)}
+          />
+        </Table.Td>
         <Table.Td>
           <Text size="sm" fw={500}>
             {event.eventName}
@@ -391,14 +399,6 @@ export function EventSelect() {
           <Text size="sm" ta="center">
             {event.eventYear ?? '—'}
           </Text>
-        </Table.Td>
-        <Table.Td w={80} ta="center">
-          <Radio
-            name="active-event"
-            aria-label={`Select ${event.eventName} as active event`}
-            checked={selected}
-            onChange={() => handleSelectActiveEvent(event.eventKey)}
-          />
         </Table.Td>
         <Table.Td ta="right">
           {isAdminUser && (
@@ -500,15 +500,15 @@ export function EventSelect() {
         <Table miw={650} verticalSpacing="sm">
           <Table.Thead>
             <Table.Tr>
+              <Table.Th w={80} ta="center">
+                Active
+              </Table.Th>
               <Table.Th>Event Name</Table.Th>
               <Table.Th w={80} ta="center">
                 Week
               </Table.Th>
               <Table.Th w={80} ta="center">
                 Year
-              </Table.Th>
-              <Table.Th w={80} ta="center">
-                Active
               </Table.Th>
               <Table.Th w={60}>
                 <VisuallyHidden>Delete</VisuallyHidden>
