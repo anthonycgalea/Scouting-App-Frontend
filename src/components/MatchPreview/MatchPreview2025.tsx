@@ -246,8 +246,7 @@ export const MatchPreview2025 = ({
                   ta="center"
                 >
                   <Stack gap={2} align="center">
-                    <Text fw={500}>Red {index + 1}</Text>
-                    <Text fw={700} fz="sm">
+                    <Text fw={700} fz="md">
                       {isValidTeam ? teamNumber : 'TBD'}
                     </Text>
                   </Stack>
@@ -273,8 +272,7 @@ export const MatchPreview2025 = ({
                   ta="center"
                 >
                   <Stack gap={2} align="center">
-                    <Text fw={500}>Blue {index + 1}</Text>
-                    <Text fw={700} fz="sm">
+                    <Text fw={700} fz="md">
                       {isValidTeam ? teamNumber : 'TBD'}
                     </Text>
                   </Stack>
@@ -550,7 +548,7 @@ const AllianceTeamImageDisplay = ({ teamNumber, imageQuery }: AllianceTeamImageD
   }
 
   if (isError || images.length === 0) {
-    return <MissingTeamImage teamNumber={teamNumber} />;
+    return <MissingTeamImage />;
   }
 
   return <TeamImageCarousel teamNumber={teamNumber} images={images} />;
@@ -571,7 +569,7 @@ const TeamImageCarousel = ({ teamNumber, images }: TeamImageCarouselProps) => {
   }, [images]);
 
   if (!images.length) {
-    return <MissingTeamImage teamNumber={teamNumber} />;
+    return <MissingTeamImage />;
   }
 
   const showControls = images.length > 1;
@@ -687,11 +685,7 @@ const TeamImageCarousel = ({ teamNumber, images }: TeamImageCarouselProps) => {
   );
 };
 
-interface MissingTeamImageProps {
-  teamNumber: number;
-}
-
-const MissingTeamImage = ({ teamNumber }: MissingTeamImageProps) => (
+const MissingTeamImage = () => (
   <Stack align="center" gap="xs" w={180}>
     <Stack
       align="center"
@@ -709,9 +703,6 @@ const MissingTeamImage = ({ teamNumber }: MissingTeamImageProps) => (
         No images
       </Text>
     </Stack>
-    <Text size="sm" fw={500}>
-      Team {teamNumber}
-    </Text>
   </Stack>
 );
 
