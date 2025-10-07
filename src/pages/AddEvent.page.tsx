@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { IconPlus } from '@tabler/icons-react';
 import { Box, Button, Group, ScrollArea, Select, Table, Text, TextInput, Title } from '@mantine/core';
 import { useNavigate } from '@tanstack/react-router';
@@ -17,11 +17,6 @@ export function AddEventPage() {
   const { canAccessOrganizationPages, isCheckingAccess } = useRequireOrganizationAccess();
   const currentYear = new Date().getFullYear();
   const navigate = useNavigate({ from: '/eventSelect/add' });
-  const {
-    data: events,
-    isLoading,
-    isError,
-  } = useEvents(currentYear);
   const { data: userInfo } = useUserInfo();
   const isUserLoggedIn = userInfo?.id !== undefined && userInfo?.id !== null;
   const {
@@ -35,6 +30,63 @@ export function AddEventPage() {
     isLoading: isOrganizationEventsLoading,
     isError: isOrganizationEventsError,
   } = useOrganizationEvents({ enabled: isUserLoggedIn && !!organizationId });
+  const organizationEventList: OrganizationEventDetail[] = organizationEvents ?? [];
+  const organizationEventYears = useMemo(() => {
+    return Array.from(
+      new Set(
+        organizationEventList
+          .map((event) => event.eventYear)
+          .filter((year): year is number => typeof year === 'number')
+      )
+    ).sort((a, b) => b - a);
+  }, [organizationEventList]);
+  const activeOrganizationEventYear =
+    organizationEventList.find((event) => event.isActive)?.eventYear ?? null;
+  const baseYearList = useMemo(() => {
+    const yearSet = new Set<number>();
+
+    for (let offset = 0; offset < 10; offset += 1) {
+      yearSet.add(currentYear - offset);
+    }
+
+    organizationEventYears.forEach((year) => yearSet.add(year));
+
+    return Array.from(yearSet).sort((a, b) => b - a);
+  }, [currentYear, organizationEventYears]);
+  const fallbackYearNumber =
+    activeOrganizationEventYear ?? baseYearList[0] ?? currentYear;
+  const [selectedYear, setSelectedYear] = useState<string>(
+    fallbackYearNumber.toString()
+  );
+  const [hasUserSelectedYear, setHasUserSelectedYear] = useState(false);
+
+  useEffect(() => {
+    const fallbackValue = fallbackYearNumber.toString();
+
+    if (!hasUserSelectedYear) {
+      if (selectedYear !== fallbackValue) {
+        setSelectedYear(fallbackValue);
+      }
+      return;
+    }
+
+    const parsedYear = Number.parseInt(selectedYear, 10);
+    if (Number.isNaN(parsedYear) || !baseYearList.includes(parsedYear)) {
+      setSelectedYear(fallbackValue);
+      setHasUserSelectedYear(false);
+    }
+  }, [baseYearList, fallbackYearNumber, hasUserSelectedYear, selectedYear]);
+
+  const selectedYearNumber = Number.parseInt(selectedYear, 10);
+  const eventYearForQuery = Number.isNaN(selectedYearNumber)
+    ? fallbackYearNumber
+    : selectedYearNumber;
+
+  const {
+    data: events,
+    isLoading,
+    isError,
+  } = useEvents(eventYearForQuery);
 
   const {
     mutate: createOrganizationEvent,
@@ -43,16 +95,44 @@ export function AddEventPage() {
 
   const [pendingEventKey, setPendingEventKey] = useState<string | null>(null);
 
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedWeek, setSelectedWeek] = useState<string>('all');
+
+  useEffect(() => {
+    setSelectedWeek('all');
+  }, [eventYearForQuery]);
+
   const eventList: EventSummary[] = events ?? [];
-  const organizationEventList: OrganizationEventDetail[] = organizationEvents ?? [];
+
+  const yearOptions = useMemo(() => {
+    const yearSet = new Set<number>(baseYearList);
+
+    eventList.forEach((event) => yearSet.add(event.year));
+    yearSet.add(eventYearForQuery);
+
+    const sortedYears = Array.from(yearSet).sort((a, b) => b - a);
+
+    return sortedYears.map((year) => ({
+      value: year.toString(),
+      label: year.toString(),
+    }));
+  }, [baseYearList, eventList, eventYearForQuery]);
+
+  const handleYearChange = (value: string | null) => {
+    if (!value) {
+      setHasUserSelectedYear(false);
+      setSelectedYear(fallbackYearNumber.toString());
+      return;
+    }
+
+    setHasUserSelectedYear(true);
+    setSelectedYear(value);
+  };
 
   const existingEventKeys = useMemo(
     () => new Set(organizationEventList.map((event) => event.eventKey)),
     [organizationEventList]
   );
-
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedWeek, setSelectedWeek] = useState<string>('all');
 
   const weekOptions = useMemo(() => {
     const weeks = Array.from(
@@ -171,6 +251,13 @@ export function AddEventPage() {
           style={{ minWidth: 240 }}
         />
         <Select
+          label="Year"
+          data={yearOptions}
+          value={selectedYear}
+          onChange={handleYearChange}
+          style={{ width: 160 }}
+        />
+        <Select
           label="Week"
           data={weekOptions}
           value={selectedWeek}
@@ -218,7 +305,7 @@ export function AddEventPage() {
               <Table.Tr>
                 <Table.Td colSpan={3}>
                   <Text size="sm" c="dimmed">
-                    No events found for {currentYear}.
+                    No events found for {eventYearForQuery}.
                   </Text>
                 </Table.Td>
               </Table.Tr>
