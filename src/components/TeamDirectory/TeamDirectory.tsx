@@ -1,13 +1,23 @@
 import { useEventTeams } from '@/api';
 import { Button, Center, Loader, Table, Text } from '@mantine/core';
 import { Link } from '@tanstack/react-router';
-import classes from './TeamDirectory.module.css';
 
-const placeholder = (
-  <Text fz="sm" c="dimmed">
-    Coming soon
-  </Text>
-);
+import {
+  TeamCommonCommentsBadgeList,
+  useTeamCommonComments,
+} from '@/components/SuperScout/TeamCommonComments';
+
+function TeamCommonCommentsCell({ teamNumber }: { teamNumber: number }) {
+  const result = useTeamCommonComments(teamNumber);
+
+  return (
+    <TeamCommonCommentsBadgeList
+      result={result}
+      badgeSize="sm"
+      loaderSize="sm"
+    />
+  );
+}
 
 export function TeamDirectory() {
   const {
@@ -62,8 +72,9 @@ export function TeamDirectory() {
           </Table.Td>
           <Table.Td>{team.team_name}</Table.Td>
           <Table.Td>{location || <Text c="dimmed">Unknown</Text>}</Table.Td>
-          <Table.Td className={classes.centerColumn}>{placeholder}</Table.Td>
-          <Table.Td>{placeholder}</Table.Td>
+          <Table.Td>
+            <TeamCommonCommentsCell teamNumber={team.team_number} />
+          </Table.Td>
         </Table.Tr>
       );
     });
@@ -76,8 +87,7 @@ export function TeamDirectory() {
             <Table.Th>Team #</Table.Th>
             <Table.Th>Team Name</Table.Th>
             <Table.Th>Location</Table.Th>
-            <Table.Th className={classes.centerColumn}>Pit Scouted?</Table.Th>
-            <Table.Th>Matches Scouted</Table.Th>
+            <Table.Th>Common Comments</Table.Th>
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>{rows}</Table.Tbody>
