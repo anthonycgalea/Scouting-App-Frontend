@@ -39,8 +39,8 @@ export function TeamDetailPage() {
   };
 
   return (
-    <Box p="md">
-      <Stack gap="md">
+    <Box p="md" h="100%">
+      <Stack gap="md" h="100%">
         <Suspense fallback={<Skeleton height={34} width="50%" radius="sm" />}>
           {Number.isNaN(teamNumber) ? (
             <Alert color="red" title="Invalid team number" />
@@ -49,15 +49,19 @@ export function TeamDetailPage() {
           )}
         </Suspense>
         <TeamPageToggle value={activeSection} onChange={(value) => setActiveSection(value)} />
-        <Suspense
-          fallback={
-            <Center mih={200}>
-              <Loader />
-            </Center>
-          }
-        >
-          {renderActiveSection()}
-        </Suspense>
+        <Box style={{ flex: 1, minHeight: 0, display: 'flex' }}>
+          <Suspense
+            fallback={
+              <Center style={{ flex: 1, width: '100%' }}>
+                <Loader />
+              </Center>
+            }
+          >
+            <Box h="100%" style={{ minHeight: 0, flex: 1 }}>
+              {renderActiveSection()}
+            </Box>
+          </Suspense>
+        </Box>
       </Stack>
     </Box>
   );

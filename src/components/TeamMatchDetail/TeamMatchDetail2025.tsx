@@ -1,6 +1,6 @@
 import { type ReactNode, useCallback, useMemo, useState } from 'react';
 import cx from 'clsx';
-import { Alert, Badge, Group, Rating, ScrollArea, Table, Text } from '@mantine/core';
+import { Alert, Badge, Group, Rating, ScrollArea, Stack, Table, Text } from '@mantine/core';
 import type {
   Endgame2025,
   SuperScoutField,
@@ -525,17 +525,17 @@ export function TeamMatchDetail2025({
   ));
 
   return (
-    <>
+    <Stack gap="sm" h="100%" style={{ flex: 1, minHeight: 0 }}>
       {isSuperScoutError ? (
-        <Alert color="red" title="Unable to load SuperScout data" mb="sm">
+        <Alert color="red" title="Unable to load SuperScout data">
           We could not retrieve SuperScout observations for this team. The table may be missing
           supplemental comments.
         </Alert>
       ) : null}
       <ScrollArea
-        h={400}
         scrollbars="xy"
         onScrollPositionChange={({ y }) => setScrolled(y !== 0)}
+        style={{ flex: 1, minHeight: 0 }}
       >
         <Table miw={1100}>
           <Table.Thead className={cx(classes.header, { [classes.scrolled]: scrolled })}>
@@ -555,6 +555,6 @@ export function TeamMatchDetail2025({
           <Table.Tbody>{rows}</Table.Tbody>
         </Table>
       </ScrollArea>
-    </>
+    </Stack>
   );
 }
