@@ -1,7 +1,15 @@
-import { useMemo } from 'react';
-import { Box, Card, Center, Flex, Loader, Stack, Text, Title } from '@mantine/core';
+import { type ReactNode, useMemo } from 'react';
+import { ActionIcon, Box, Card, Center, Flex, Group, Loader, Stack, Text, Title } from '@mantine/core';
+import { IconRefresh } from '@tabler/icons-react';
 import { useParams } from '@tanstack/react-router';
-import { useMatchPreview, useMatchSchedule } from '@/api';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  matchSimulationQueryKey,
+  runMatchSimulation,
+  useMatchPreview,
+  useMatchSchedule,
+  useMatchSimulation,
+} from '@/api';
 import { MatchPreview2025 } from '@/components/MatchPreview/MatchPreview2025';
 import classes from './MatchPreview.module.css';
 
@@ -79,6 +87,30 @@ export function MatchPreviewPage() {
     isLoading: isMatchPreviewLoading,
     isError: isMatchPreviewError,
   } = useMatchPreview(previewParams);
+  const simulationQueryKey = previewParams ? matchSimulationQueryKey(previewParams) : undefined;
+  const {
+    data: simulationResult,
+    isLoading: isSimulationLoading,
+    isError: isSimulationError,
+    isFetching: isSimulationFetching,
+  } = useMatchSimulation(previewParams);
+  const queryClient = useQueryClient();
+  const { mutate: triggerSimulation, isPending: isSimulationRunning } = useMutation({
+    mutationFn: runMatchSimulation,
+    onSuccess: async () => {
+      if (simulationQueryKey) {
+        await queryClient.invalidateQueries({ queryKey: simulationQueryKey });
+      }
+    },
+  });
+
+  const handleSimulationRefresh = () => {
+    if (!previewParams || isSimulationRunning) {
+      return;
+    }
+
+    triggerSimulation(previewParams);
+  };
 
   if (isMatchPreviewLoading) {
     return (
@@ -108,6 +140,40 @@ export function MatchPreviewPage() {
 
   const season = matchPreview.season;
   const shouldUse2025Preview = season === 1;
+
+  const isSimulationBusy = isSimulationLoading || isSimulationRunning || isSimulationFetching;
+  let simulationContent: ReactNode;
+
+  if (isSimulationLoading && !simulationResult) {
+    simulationContent = (
+      <Center mih={80}>
+        <Loader size="sm" />
+      </Center>
+    );
+  } else if (isSimulationError) {
+    simulationContent = (
+      <Text c="red.6" fw={500}>
+        Unable to load the match simulation.
+      </Text>
+    );
+  } else if (simulationResult == null || (typeof simulationResult === 'string' && simulationResult.length === 0)) {
+    simulationContent = <Text c="dimmed">Simulation results will appear here.</Text>;
+  } else {
+    const simulationText =
+      typeof simulationResult === 'string'
+        ? simulationResult
+        : JSON.stringify(simulationResult, null, 2);
+
+    simulationContent = (
+      <Text
+        component="pre"
+        style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
+        c="dimmed"
+      >
+        {simulationText}
+      </Text>
+    );
+  }
 
   const previewCard = shouldUse2025Preview ? (
     <MatchPreview2025 match={match} preview={matchPreview} />
@@ -163,8 +229,21 @@ export function MatchPreviewPage() {
             >
               <Box className={classes.cardContent}>
                 <Stack gap="sm">
-                  <Title order={4}>Prediction</Title>
-                  <Text c="dimmed">Prediction details will appear here.</Text>
+                  <Group justify="space-between" align="center">
+                    <Title order={4}>Simulation</Title>
+                    <ActionIcon
+                      aria-label="Refresh match simulation"
+                      size="lg"
+                      radius="md"
+                      variant="default"
+                      style={{ backgroundColor: 'var(--mantine-color-body)' }}
+                      onClick={handleSimulationRefresh}
+                      disabled={!previewParams || isSimulationBusy}
+                    >
+                      {isSimulationBusy ? <Loader size="sm" /> : <IconRefresh size={20} />}
+                    </ActionIcon>
+                  </Group>
+                  {simulationContent}
                 </Stack>
               </Box>
             </Card>

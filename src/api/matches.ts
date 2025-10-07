@@ -75,6 +75,22 @@ export const fetchMatchPreview = ({ matchLevel, matchNumber }: MatchPreviewReque
     `event/match/${encodeURIComponent(matchLevel.toLowerCase())}/${matchNumber}/preview`
   );
 
+export type MatchSimulationResponse = unknown;
+
+export const matchSimulationQueryKey = (params?: MatchPreviewRequest) =>
+  ['match-simulation', params?.matchLevel, params?.matchNumber] as const;
+
+export const fetchMatchSimulation = ({ matchLevel, matchNumber }: MatchPreviewRequest) =>
+  apiFetch<MatchSimulationResponse>(
+    `event/match/${encodeURIComponent(matchLevel.toLowerCase())}/${matchNumber}/simulation`
+  );
+
+export const runMatchSimulation = ({ matchLevel, matchNumber }: MatchPreviewRequest) =>
+  apiFetch<MatchSimulationResponse>(
+    `event/match/${encodeURIComponent(matchLevel.toLowerCase())}/${matchNumber}/simulation`,
+    { method: 'POST' }
+  );
+
 export const matchScheduleQueryKey = () => ['match-schedule'] as const;
 
 export const fetchMatchSchedule = () => apiFetch<MatchScheduleEntry[]>('event/matches');
@@ -142,6 +158,22 @@ export const useMatchPreview = (params?: MatchPreviewRequest) =>
       }
 
       return fetchMatchPreview(params);
+    },
+    enabled:
+      Boolean(params?.matchLevel) &&
+      Number.isFinite(params?.matchNumber) &&
+      (params?.matchNumber ?? 0) > 0,
+  });
+
+export const useMatchSimulation = (params?: MatchPreviewRequest) =>
+  useQuery({
+    queryKey: matchSimulationQueryKey(params),
+    queryFn: () => {
+      if (!params) {
+        throw new Error('Match simulation parameters are required');
+      }
+
+      return fetchMatchSimulation(params);
     },
     enabled:
       Boolean(params?.matchLevel) &&
