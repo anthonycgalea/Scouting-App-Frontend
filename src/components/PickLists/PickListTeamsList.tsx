@@ -31,6 +31,8 @@ import clsx from 'clsx';
 import type { PickListRank } from '@/api/pickLists';
 import type { EventTeam } from '@/api/teams';
 
+import { TeamCommonCommentsTooltip } from '@/components/SuperScout/TeamCommonComments';
+
 import classes from './PickListTeamsList.module.css';
 
 interface PickListTeamsListProps {
@@ -180,6 +182,8 @@ function SortableTeamCard({ rank, teamDetails, onRemove, onSaveNotes, onToggleDn
             </Stack>
           </Popover.Dropdown>
         </Popover>
+
+        <TeamCommonCommentsTooltip teamNumber={rank.team_number} />
 
         <Tooltip label="Remove" withArrow>
           <ActionIcon

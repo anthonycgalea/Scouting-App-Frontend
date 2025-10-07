@@ -6,6 +6,8 @@ import { IconExternalLink, IconNote } from '@tabler/icons-react';
 import type { PickListRank } from '@/api/pickLists';
 import type { EventTeam } from '@/api/teams';
 
+import { TeamCommonCommentsTooltip } from '@/components/SuperScout/TeamCommonComments';
+
 import classes from './PickListTeamsList.module.css';
 
 interface PickListPreviewProps {
@@ -129,6 +131,7 @@ function PickListPreviewSection({
                   </ActionIcon>
                 </Tooltip>
               ) : null}
+              <TeamCommonCommentsTooltip teamNumber={rank.team_number} />
               <Tooltip
                 label={`Open team ${rank.team_number} page`}
                 withinPortal
