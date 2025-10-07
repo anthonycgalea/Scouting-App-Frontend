@@ -35,7 +35,6 @@ export interface OrganizationEventDetail {
   week?: number | null;
   isPublic: boolean;
   isActive: boolean;
-  orgEventId?: number;
 }
 
 export interface UpdateOrganizationEventsRequestItem {
@@ -53,7 +52,6 @@ export interface CreateOrganizationEventRequest {
 
 export interface DeleteOrganizationEventRequest {
   eventKey: string;
-  organizationEventId?: number;
 }
 
 export const eventsQueryKey = (year: number) => ['events', year] as const;
@@ -192,21 +190,11 @@ export const updateOrganizationEvents = (body: UpdateOrganizationEventsRequest) 
     json: body,
   });
 
-export const deleteOrganizationEvent = ({
-  eventKey,
-  organizationEventId,
-}: DeleteOrganizationEventRequest) => {
-  const payload: JsonBody = { eventKey };
-
-  if (organizationEventId !== undefined) {
-    payload.organization_event_id = organizationEventId;
-  }
-
-  return apiFetch<void>('organization/event', {
+export const deleteOrganizationEvent = (payload: DeleteOrganizationEventRequest) =>
+  apiFetch<void>('organization/event', {
     method: 'DELETE',
-    json: payload,
+    json: payload as JsonBody,
   });
-};
 
 export interface UpdateOrganizationEventsVariables {
   events: UpdateOrganizationEventsRequest;
