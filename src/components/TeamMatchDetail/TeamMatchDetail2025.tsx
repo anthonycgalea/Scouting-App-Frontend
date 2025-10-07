@@ -151,6 +151,12 @@ const SEASON_TABLE_CONFIGS: Record<number, SeasonMatchTableConfig> = {
             render: () => '—',
           },
           {
+            key: 'superScoutDefense',
+            title: 'Defense',
+            align: 'center',
+            render: () => '—',
+          },
+          {
             key: 'superScoutOverall',
             title: 'Overall',
             align: 'center',
@@ -303,18 +309,27 @@ export function TeamMatchDetail2025({
   );
 
   const renderSuperScoutRating = useCallback(
-    (row: TeamMatchData, key: 'driver_rating' | 'robot_overall') => {
+    (
+      row: TeamMatchData,
+      key: 'driver_rating' | 'defense_rating' | 'robot_overall',
+      options?: { nullLabel?: string }
+    ) => {
       if (isSuperScoutLoading) {
         return renderLoadingText();
       }
 
       const entry = getSuperScoutEntry(row);
+      const nullLabel = options?.nullLabel ?? '—';
       const rawValue =
-        key === 'driver_rating' ? entry?.driver_rating ?? null : entry?.robot_overall ?? null;
+        key === 'driver_rating'
+          ? entry?.driver_rating ?? null
+          : key === 'defense_rating'
+            ? entry?.defense_rating ?? null
+            : entry?.robot_overall ?? null;
       const value = typeof rawValue === 'number' ? rawValue : 0;
 
       if (!value) {
-        return '—';
+        return nullLabel;
       }
 
       return <Rating value={value} count={5} readOnly size="sm" />;
@@ -406,6 +421,14 @@ export function TeamMatchDetail2025({
             return {
               ...column,
               render: (row: TeamMatchData) => renderSuperScoutRating(row, 'driver_rating'),
+            };
+          }
+
+          if (column.key === 'superScoutDefense') {
+            return {
+              ...column,
+              render: (row: TeamMatchData) =>
+                renderSuperScoutRating(row, 'defense_rating', { nullLabel: 'N/A' }),
             };
           }
 
