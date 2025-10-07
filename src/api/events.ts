@@ -34,6 +34,7 @@ export interface OrganizationEventDetail {
   eventName: string;
   short_name?: string;
   week?: number | null;
+  eventYear?: number | null;
   isPublic: boolean;
   isActive: boolean;
 }

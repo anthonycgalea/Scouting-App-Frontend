@@ -5,7 +5,6 @@ import {
   ActionIcon,
   Button,
   Modal,
-  Radio,
   Group,
   ScrollArea,
   Stack,
@@ -116,10 +115,9 @@ export function EventSelect() {
     }
   }, [data, organizationId]);
 
-  const activeEventId = events.find((event) => event.isActive)?.eventKey ?? '';
   const selectedEvent = useMemo(
-    () => events.find((event) => event.eventKey === activeEventId) ?? null,
-    [events, activeEventId]
+    () => events.find((event) => event.isActive) ?? null,
+    [events]
   );
   const selectedOrganizationEventId = selectedEvent?.organizationEventId ?? null;
   const hasSelectedEvent = Boolean(selectedEvent);
@@ -168,15 +166,6 @@ export function EventSelect() {
       return matchesName || matchesTeamNumber;
     });
   }, [availableOrganizations, inviteSearchTerm]);
-
-  const setActiveEventId = (eventKey: string) => {
-    setEvents((current) =>
-      current.map((event) => ({
-        ...event,
-        isActive: event.eventKey === eventKey,
-      }))
-    );
-  };
 
   const toggleEventPublic = (eventKey: string) => {
     setEvents((current) =>
@@ -261,16 +250,9 @@ export function EventSelect() {
   };
 
   const rows = events.map((event) => {
-    const selected = activeEventId === event.eventKey;
+    const selected = event.isActive;
     return (
       <Table.Tr key={event.eventKey} className={cx({ [classes.rowSelected]: selected })}>
-        <Table.Td>
-          <Radio
-            aria-label={`Set ${event.eventName} as the active event`}
-            value={event.eventKey}
-            name="active-event"
-          />
-        </Table.Td>
         <Table.Td>
           <Text size="sm" fw={500}>
             {event.eventName}
@@ -279,6 +261,11 @@ export function EventSelect() {
         <Table.Td>
           <Text size="sm" ta="center">
             {event.week ?? '—'}
+          </Text>
+        </Table.Td>
+        <Table.Td>
+          <Text size="sm" ta="center">
+            {event.eventYear ?? '—'}
           </Text>
         </Table.Td>
         <Table.Td>
@@ -373,60 +360,60 @@ export function EventSelect() {
   return (
     <Stack>
       <ScrollArea>
-        <Radio.Group value={activeEventId} onChange={setActiveEventId} name="active-event">
-          <Table miw={650} verticalSpacing="sm">
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th w={40}>Active</Table.Th>
-                <Table.Th>Event Name</Table.Th>
-                <Table.Th w={80} ta="center">
-                  Week
-                </Table.Th>
-                <Table.Th>Public</Table.Th>
-                <Table.Th w={60}>
-                  <VisuallyHidden>Delete</VisuallyHidden>
-                </Table.Th>
+        <Table miw={650} verticalSpacing="sm">
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>Event Name</Table.Th>
+              <Table.Th w={80} ta="center">
+                Week
+              </Table.Th>
+              <Table.Th w={80} ta="center">
+                Year
+              </Table.Th>
+              <Table.Th>Public</Table.Th>
+              <Table.Th w={60}>
+                <VisuallyHidden>Delete</VisuallyHidden>
+              </Table.Th>
             </Table.Tr>
           </Table.Thead>
-            <Table.Tbody>
-              {isLoadingEvents ? (
-                <Table.Tr>
-                  <Table.Td colSpan={5}>
-                    <Text size="sm" c="dimmed">
-                      Loading events...
-                    </Text>
-                  </Table.Td>
-                </Table.Tr>
-              ) : isErrorLoadingEvents ? (
-                <Table.Tr>
-                  <Table.Td colSpan={5}>
-                    <Text size="sm" c="red">
-                      Unable to load events. Please try again later.
-                    </Text>
-                  </Table.Td>
-                </Table.Tr>
-              ) : shouldPromptForOrganization ? (
-                <Table.Tr>
-                  <Table.Td colSpan={5}>
-                    <Text size="sm" c="dimmed">
-                      Select an organization to manage its events.
-                    </Text>
-                  </Table.Td>
-                </Table.Tr>
-              ) : rows.length > 0 ? (
-                rows
-              ) : (
-                <Table.Tr>
-                  <Table.Td colSpan={5}>
-                    <Text size="sm" c="dimmed">
-                      No events have been added yet.
-                    </Text>
-                  </Table.Td>
-                </Table.Tr>
-              )}
-            </Table.Tbody>
-          </Table>
-        </Radio.Group>
+          <Table.Tbody>
+            {isLoadingEvents ? (
+              <Table.Tr>
+                <Table.Td colSpan={5}>
+                  <Text size="sm" c="dimmed">
+                    Loading events...
+                  </Text>
+                </Table.Td>
+              </Table.Tr>
+            ) : isErrorLoadingEvents ? (
+              <Table.Tr>
+                <Table.Td colSpan={5}>
+                  <Text size="sm" c="red">
+                    Unable to load events. Please try again later.
+                  </Text>
+                </Table.Td>
+              </Table.Tr>
+            ) : shouldPromptForOrganization ? (
+              <Table.Tr>
+                <Table.Td colSpan={5}>
+                  <Text size="sm" c="dimmed">
+                    Select an organization to manage its events.
+                  </Text>
+                </Table.Td>
+              </Table.Tr>
+            ) : rows.length > 0 ? (
+              rows
+            ) : (
+              <Table.Tr>
+                <Table.Td colSpan={5}>
+                  <Text size="sm" c="dimmed">
+                    No events have been added yet.
+                  </Text>
+                </Table.Td>
+              </Table.Tr>
+            )}
+          </Table.Tbody>
+        </Table>
       </ScrollArea>
       <Group justify="space-between" w="100%">
         <Group gap="sm">
