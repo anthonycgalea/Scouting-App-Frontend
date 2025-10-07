@@ -162,11 +162,6 @@ const SEASON_TABLE_CONFIGS: Record<number, SeasonMatchTableConfig> = {
             align: 'center',
             render: () => '—',
           },
-          {
-            key: 'superScoutNotes',
-            title: 'Notes',
-            render: () => '—',
-          },
         ],
       },
     ],
@@ -337,16 +332,26 @@ export function TeamMatchDetail2025({
     [getSuperScoutEntry, isSuperScoutLoading, renderLoadingText]
   );
 
-  const renderSuperScoutNotes = useCallback(
+  const renderNotesCell = useCallback(
     (row: TeamMatchData) => {
+      const matchNotes = typeof row.notes === 'string' ? row.notes.trim() : '';
+
       if (isSuperScoutLoading) {
-        return renderLoadingText();
+        return matchNotes || renderLoadingText();
       }
 
-      const entry = getSuperScoutEntry(row);
-      const notes = typeof entry?.notes === 'string' ? entry.notes.trim() : '';
+      const superScoutNotes = (() => {
+        const entry = getSuperScoutEntry(row);
+        return typeof entry?.notes === 'string' ? entry.notes.trim() : '';
+      })();
 
-      return notes.length > 0 ? notes : '—';
+      const combinedNotes = [matchNotes, superScoutNotes].filter((value) => value.length > 0);
+
+      if (combinedNotes.length === 0) {
+        return '—';
+      }
+
+      return combinedNotes.join('; ');
     },
     [getSuperScoutEntry, isSuperScoutLoading, renderLoadingText]
   );
@@ -403,6 +408,22 @@ export function TeamMatchDetail2025({
     });
 
     const trailingGroups = seasonConfig.trailingGroups?.map((group) => {
+      if (group.title === 'Notes') {
+        return {
+          ...group,
+          columns: group.columns.map((column) => {
+            if (column.key === 'notes') {
+              return {
+                ...column,
+                render: (row: TeamMatchData) => renderNotesCell(row),
+              };
+            }
+
+            return column;
+          }),
+        };
+      }
+
       if (group.title !== 'SuperScout') {
         return group;
       }
@@ -439,13 +460,6 @@ export function TeamMatchDetail2025({
             };
           }
 
-          if (column.key === 'superScoutNotes') {
-            return {
-              ...column,
-              render: (row: TeamMatchData) => renderSuperScoutNotes(row),
-            };
-          }
-
           return column;
         }),
       };
@@ -461,8 +475,8 @@ export function TeamMatchDetail2025({
     isValidationError,
     isValidationLoading,
     renderStartPositionCell,
+    renderNotesCell,
     renderSuperScoutComments,
-    renderSuperScoutNotes,
     renderSuperScoutRating,
     seasonConfig,
     validationLookup,
