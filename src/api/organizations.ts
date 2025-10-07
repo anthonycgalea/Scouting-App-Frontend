@@ -14,6 +14,10 @@ export const allOrganizationsQueryKey = ['all-organizations'] as const;
 export const organizationApplicationsQueryKey = ['organization', 'applications'] as const;
 export const organizationMembersQueryKey = ['organization', 'members'] as const;
 export const organizationCollaborationsQueryKey = ['organization', 'collaborations'] as const;
+export const organizationCollaborationRequestsQueryKey = [
+  'organization',
+  'collaboration-requests',
+] as const;
 
 export interface OrganizationApplication {
   displayName: string;
@@ -64,6 +68,9 @@ export const fetchOrganizationApplications = () =>
 export const fetchOrganizationCollaborations = () =>
   apiFetch<OrganizationCollaboration[]>('organization/collab');
 
+export const fetchOrganizationCollaborationRequests = () =>
+  apiFetch<OrganizationCollaboration[]>('organization/collab/requests');
+
 export const fetchOrganizationMembers = () =>
   apiFetch<OrganizationMember[]>('organization/members');
 
@@ -108,6 +115,15 @@ export const useOrganizationCollaborations = ({ enabled }: { enabled?: boolean }
   useQuery<OrganizationCollaboration[]>({
     queryKey: organizationCollaborationsQueryKey,
     queryFn: fetchOrganizationCollaborations,
+    enabled,
+  });
+
+export const useOrganizationCollaborationRequests = ({
+  enabled,
+}: { enabled?: boolean } = {}) =>
+  useQuery<OrganizationCollaboration[]>({
+    queryKey: organizationCollaborationRequestsQueryKey,
+    queryFn: fetchOrganizationCollaborationRequests,
     enabled,
   });
 
@@ -186,6 +202,9 @@ export const useInviteOrganizationCollaboration = () => {
     mutationFn: inviteOrganizationCollaboration,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: organizationCollaborationsQueryKey });
+      void queryClient.invalidateQueries({
+        queryKey: organizationCollaborationRequestsQueryKey,
+      });
     },
   });
 };
@@ -213,6 +232,9 @@ export const useAcceptOrganizationCollaboration = () => {
     mutationFn: acceptOrganizationCollaboration,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: organizationCollaborationsQueryKey });
+      void queryClient.invalidateQueries({
+        queryKey: organizationCollaborationRequestsQueryKey,
+      });
     },
   });
 };
@@ -224,6 +246,9 @@ export const useDeclineOrganizationCollaboration = () => {
     mutationFn: declineOrganizationCollaboration,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: organizationCollaborationsQueryKey });
+      void queryClient.invalidateQueries({
+        queryKey: organizationCollaborationRequestsQueryKey,
+      });
     },
   });
 };

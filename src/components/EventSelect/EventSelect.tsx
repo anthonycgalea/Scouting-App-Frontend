@@ -34,6 +34,7 @@ import {
   useInviteOrganizationCollaboration,
   useOrganizationEvents,
   useOrganizationCollaborations,
+  useOrganizationCollaborationRequests,
   useUpdateOrganizationEvents,
   useDeleteOrganizationEvent,
   useAcceptOrganizationCollaboration,
@@ -93,6 +94,13 @@ export function EventSelect() {
     isLoading: isOrganizationCollaborationsLoading,
     isError: isOrganizationCollaborationsError,
   } = useOrganizationCollaborations({ enabled: isUserLoggedIn && !!organizationId });
+  const {
+    data: organizationCollaborationRequests,
+    isLoading: isOrganizationCollaborationRequestsLoading,
+    isError: isOrganizationCollaborationRequestsError,
+  } = useOrganizationCollaborationRequests({
+    enabled: isUserLoggedIn && !!organizationId,
+  });
   const inviteOrganizationCollaborationMutation = useInviteOrganizationCollaboration();
   const acceptOrganizationCollaborationMutation = useAcceptOrganizationCollaboration();
   const declineOrganizationCollaborationMutation = useDeclineOrganizationCollaboration();
@@ -282,13 +290,7 @@ export function EventSelect() {
     return collaborationMap;
   }, [organizationCollaborations]);
 
-  const pendingCollaborations = useMemo(
-    () =>
-      (organizationCollaborations ?? []).filter(
-        (collaboration) => collaboration.status === 'PENDING'
-      ),
-    [organizationCollaborations]
-  );
+  const pendingCollaborations = organizationCollaborationRequests ?? [];
 
   const handleSelectActiveEvent = (eventKey: string) => {
     setEvents((current) =>
@@ -497,8 +499,8 @@ export function EventSelect() {
 
   const isInviteListLoading = isAllOrganizationsLoading || isOrganizationCollaborationsLoading;
   const hasInviteListError = isAllOrganizationsError || isOrganizationCollaborationsError;
-  const isPendingCollaborationsLoading = isOrganizationCollaborationsLoading;
-  const hasPendingCollaborationsError = isOrganizationCollaborationsError;
+  const isPendingCollaborationsLoading = isOrganizationCollaborationRequestsLoading;
+  const hasPendingCollaborationsError = isOrganizationCollaborationRequestsError;
 
   const hasChanges =
     events.length !== initialEvents.length ||
