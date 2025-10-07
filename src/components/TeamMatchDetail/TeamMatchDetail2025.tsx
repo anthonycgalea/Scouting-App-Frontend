@@ -1,18 +1,20 @@
 import { type ReactNode, useMemo, useState } from 'react';
 import cx from 'clsx';
-import { Alert, Center, Group, Loader, ScrollArea, Table, Text } from '@mantine/core';
-import {
+import { Alert, Group, ScrollArea, Table, Text } from '@mantine/core';
+import type {
   Endgame2025,
   TeamMatchData,
+  TeamMatchValidationEntry,
   TeamMatchValidationStatus,
-  useTeamMatchData,
-  useTeamMatchValidation,
 } from '@/api';
 import { ValidationStatusIcon } from '../ValidationStatusIcon';
-import classes from './TeamMatchTable.module.css';
+import classes from './TeamMatchDetail2025.module.css';
 
-interface TeamMatchTableProps {
-  teamNumber: number;
+interface TeamMatchDetail2025Props {
+  data: TeamMatchData[];
+  validationData: TeamMatchValidationEntry[];
+  isValidationLoading: boolean;
+  isValidationError: boolean;
 }
 
 type ColumnAlignment = 'left' | 'center' | 'right';
@@ -113,24 +115,15 @@ const SEASON_TABLE_CONFIGS: Record<number, SeasonMatchTableConfig> = {
   },
 };
 
-export function TeamMatchTable({ teamNumber }: TeamMatchTableProps) {
+export function TeamMatchDetail2025({
+  data,
+  validationData,
+  isValidationLoading,
+  isValidationError,
+}: TeamMatchDetail2025Props) {
   const [scrolled, setScrolled] = useState(false);
-  const {
-    data,
-    isLoading,
-    isError,
-  } = useTeamMatchData(teamNumber);
-  const {
-    data: validationData = [],
-    isLoading: isValidationLoading,
-    isError: isValidationError,
-  } = useTeamMatchValidation();
 
   const sortedData = useMemo(() => {
-    if (!data) {
-      return [];
-    }
-
     return [...data].sort((a, b) => {
       const priorityA = getMatchLevelPriority(String(a.match_level ?? '').trim().toUpperCase());
       const priorityB = getMatchLevelPriority(String(b.match_level ?? '').trim().toUpperCase());
@@ -143,7 +136,7 @@ export function TeamMatchTable({ teamNumber }: TeamMatchTableProps) {
     });
   }, [data]);
 
-  const season = data?.[0]?.season;
+  const season = data[0]?.season;
 
   const seasonConfig = useMemo(() => {
     if (season) {
@@ -202,34 +195,6 @@ export function TeamMatchTable({ teamNumber }: TeamMatchTableProps) {
       leadColumns,
     };
   }, [isValidationError, isValidationLoading, seasonConfig, validationLookup]);
-
-  if (!Number.isFinite(teamNumber)) {
-    return <Alert color="red" title="Invalid team number" />;
-  }
-
-  if (isLoading) {
-    return (
-      <Center mih={200}>
-        <Loader />
-      </Center>
-    );
-  }
-
-  if (isError) {
-    return (
-      <Alert color="red" title="Unable to load match data">
-        We couldn't retrieve match data for Team {teamNumber}. Please try again later.
-      </Alert>
-    );
-  }
-
-  if (!data || data.length === 0) {
-    return (
-      <Alert color="blue" title="No match data available">
-        We do not have any match data for Team {teamNumber} at this event yet.
-      </Alert>
-    );
-  }
 
   if (!tableConfig) {
     return (
