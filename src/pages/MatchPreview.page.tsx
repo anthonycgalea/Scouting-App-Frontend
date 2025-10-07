@@ -3,6 +3,7 @@ import { Box, Card, Center, Flex, Loader, Stack, Text, Title } from '@mantine/co
 import { useParams } from '@tanstack/react-router';
 import { useMatchPreview, useMatchSchedule } from '@/api';
 import { MatchPreview2025 } from '@/components/MatchPreview/MatchPreview2025';
+import classes from './MatchPreview.module.css';
 
 export function MatchPreviewPage() {
   const { matchLevel, matchNumber } = useParams({
@@ -111,18 +112,28 @@ export function MatchPreviewPage() {
   const previewCard = shouldUse2025Preview ? (
     <MatchPreview2025 match={match} preview={matchPreview} />
   ) : (
-    <Card withBorder radius="md" shadow="sm" padding="lg">
-      <Text fw={500} ta="center">
-        {season != null
-          ? `Match preview is not yet available for season ${season}.`
-          : 'Match preview is not available for this match.'}
-      </Text>
+    <Card
+      withBorder
+      radius="md"
+      shadow="sm"
+      padding="lg"
+      className={classes.cardRoot}
+    >
+      <Box className={classes.cardContent}>
+        <Center h="100%">
+          <Text fw={500} ta="center">
+            {season != null
+              ? `Match preview is not yet available for season ${season}.`
+              : 'Match preview is not available for this match.'}
+          </Text>
+        </Center>
+      </Box>
     </Card>
   );
 
   return (
-    <Box p="md">
-      <Stack gap="lg">
+    <Box p="md" className={classes.pageWrapper}>
+      <Stack gap="lg" className={classes.pageStack}>
         <Title order={2} ta="center">
           {matchLevelLabel} Match {numericMatchNumber} Preview
         </Title>
@@ -130,14 +141,32 @@ export function MatchPreviewPage() {
           gap="lg"
           align="stretch"
           direction={{ base: 'column', lg: 'row' }}
+          className={classes.contentFlex}
+          style={{ minHeight: 0 }}
         >
-          <Box style={{ flex: '1 1 55%' }}>{previewCard}</Box>
-          <Box style={{ flex: '1 1 45%' }}>
-            <Card withBorder radius="md" shadow="sm" padding="lg" h="100%">
-              <Stack gap="sm">
-                <Title order={4}>Prediction</Title>
-                <Text c="dimmed">Prediction details will appear here.</Text>
-              </Stack>
+          <Box
+            className={`${classes.cardColumn} ${classes.previewColumn}`}
+            style={{ minHeight: 0 }}
+          >
+            {previewCard}
+          </Box>
+          <Box
+            className={`${classes.cardColumn} ${classes.predictionColumn}`}
+            style={{ minHeight: 0 }}
+          >
+            <Card
+              withBorder
+              radius="md"
+              shadow="sm"
+              padding="lg"
+              className={classes.cardRoot}
+            >
+              <Box className={classes.cardContent}>
+                <Stack gap="sm">
+                  <Title order={4}>Prediction</Title>
+                  <Text c="dimmed">Prediction details will appear here.</Text>
+                </Stack>
+              </Box>
             </Card>
           </Box>
         </Flex>
