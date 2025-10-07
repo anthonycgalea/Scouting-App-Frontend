@@ -224,9 +224,8 @@ export const MatchPreview2025 = ({
             >
               Red Alliance
             </Table.Th>
-            <Table.Th className={classes.fieldHeader} ta="center">
-              Field
-            </Table.Th>
+            <Table.Th />
+              
             <Table.Th
               colSpan={4}
               className={clsx(classes.blueCell, classes.allianceHeader)}
