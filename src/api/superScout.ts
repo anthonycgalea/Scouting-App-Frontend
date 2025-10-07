@@ -16,3 +16,22 @@ export const useSuperScoutFields = () =>
     queryKey: superScoutFieldsQueryKey(),
     queryFn: fetchSuperScoutFields,
   });
+
+export interface SuperScoutStatus {
+  eventCode: string;
+  matchLevel: string;
+  matchNumber: number;
+  red: boolean;
+  blue: boolean;
+}
+
+export const superScoutStatusesQueryKey = () => ['super-scout-statuses'] as const;
+
+export const fetchSuperScoutStatuses = () =>
+  apiFetch<SuperScoutStatus[]>('scout/superscouted');
+
+export const useSuperScoutStatuses = () =>
+  useQuery({
+    queryKey: superScoutStatusesQueryKey(),
+    queryFn: fetchSuperScoutStatuses,
+  });
