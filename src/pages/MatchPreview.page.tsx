@@ -131,8 +131,8 @@ export function MatchPreviewPage() {
           align="stretch"
           direction={{ base: 'column', lg: 'row' }}
         >
-          <Box style={{ flex: '1 1 60%' }}>{previewCard}</Box>
-          <Box style={{ flex: '1 1 40%' }}>
+          <Box style={{ flex: '1 1 55%' }}>{previewCard}</Box>
+          <Box style={{ flex: '1 1 45%' }}>
             <Card withBorder radius="md" shadow="sm" padding="lg" h="100%">
               <Stack gap="sm">
                 <Title order={4}>Prediction</Title>

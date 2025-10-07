@@ -408,7 +408,7 @@ export const MatchPreview2025 = ({ match, preview }: MatchPreview2025Props) => {
             </Table.Td>
             <Table.Td className={clsx(classes.fieldCell, classes.totalFieldCell)}>
               <Text fw={700} ta="center">
-                Autonomous Total
+                Auto Total
               </Text>
             </Table.Td>
             <Table.Td className={classes.blueCell}>
