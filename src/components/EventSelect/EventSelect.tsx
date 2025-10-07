@@ -7,6 +7,7 @@ import {
   Modal,
   Group,
   ScrollArea,
+  Select,
   Stack,
   Switch,
   Table,
@@ -96,6 +97,8 @@ export function EventSelect() {
     type: 'success' | 'error';
     message: string;
   } | null>(null);
+  const [selectedYear, setSelectedYear] = useState<string>('all');
+  const [hasUserSelectedYear, setHasUserSelectedYear] = useState(false);
 
   const deleteIconColor = colorScheme === 'dark' ? 'red' : 'black';
   const isAdminUser = userRole?.role === 'ADMIN';
@@ -119,6 +122,63 @@ export function EventSelect() {
     () => events.find((event) => event.isActive) ?? null,
     [events]
   );
+  const availableYears = useMemo(() => {
+    return Array.from(
+      new Set(
+        events
+          .map((event) => event.eventYear)
+          .filter((year): year is number => typeof year === 'number')
+      )
+    ).sort((a, b) => b - a);
+  }, [events]);
+  const yearOptions = useMemo(() => {
+    return [
+      { value: 'all', label: 'All Years' },
+      ...availableYears.map((year) => ({
+        value: year.toString(),
+        label: year.toString(),
+      })),
+    ];
+  }, [availableYears]);
+  const activeEventYearValue = selectedEvent?.eventYear
+    ? selectedEvent.eventYear.toString()
+    : null;
+
+  useEffect(() => {
+    const fallbackYearValue =
+      activeEventYearValue ??
+      (availableYears.length > 0 ? availableYears[0].toString() : 'all');
+
+    if (!hasUserSelectedYear) {
+      if (selectedYear !== fallbackYearValue) {
+        setSelectedYear(fallbackYearValue);
+      }
+      return;
+    }
+
+    const validValues = new Set(yearOptions.map((option) => option.value));
+
+    if (!validValues.has(selectedYear)) {
+      setSelectedYear(fallbackYearValue);
+      setHasUserSelectedYear(false);
+    }
+  }, [
+    activeEventYearValue,
+    availableYears,
+    hasUserSelectedYear,
+    selectedYear,
+    yearOptions,
+  ]);
+
+  const filteredEvents = useMemo(() => {
+    if (selectedYear === 'all') {
+      return events;
+    }
+
+    return events.filter(
+      (event) => event.eventYear?.toString() === selectedYear
+    );
+  }, [events, selectedYear]);
   const selectedOrganizationEventId = selectedEvent?.organizationEventId ?? null;
   const hasSelectedEvent = Boolean(selectedEvent);
   const canInviteOrganizations = Boolean(organizationId && hasSelectedEvent);
@@ -178,6 +238,11 @@ export function EventSelect() {
   const handleRequestDeleteEvent = (event: OrganizationEventDetail) => {
     setEventPendingDeletion(event);
     openDeleteModal();
+  };
+
+  const handleYearChange = (value: string | null) => {
+    setHasUserSelectedYear(true);
+    setSelectedYear(value ?? 'all');
   };
 
   const handleCloseDeleteModal = () => {
@@ -249,7 +314,7 @@ export function EventSelect() {
     );
   };
 
-  const rows = events.map((event) => {
+  const rows = filteredEvents.map((event) => {
     const selected = event.isActive;
     return (
       <Table.Tr key={event.eventKey} className={cx({ [classes.rowSelected]: selected })}>
@@ -359,6 +424,16 @@ export function EventSelect() {
 
   return (
     <Stack>
+      <Group justify="flex-end" gap="sm">
+        <Select
+          label="Year"
+          data={yearOptions}
+          value={selectedYear}
+          onChange={handleYearChange}
+          style={{ width: 160 }}
+          disabled={yearOptions.length === 0}
+        />
+      </Group>
       <ScrollArea>
         <Table miw={650} verticalSpacing="sm">
           <Table.Thead>
@@ -407,7 +482,9 @@ export function EventSelect() {
               <Table.Tr>
                 <Table.Td colSpan={5}>
                   <Text size="sm" c="dimmed">
-                    No events have been added yet.
+                    {events.length > 0 && selectedYear !== 'all'
+                      ? `No events found for ${selectedYear}.`
+                      : 'No events have been added yet.'}
                   </Text>
                 </Table.Td>
               </Table.Tr>
