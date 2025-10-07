@@ -3,6 +3,7 @@ import cx from 'clsx';
 import {
   ActionIcon,
   Button,
+  Modal,
   Radio,
   Group,
   ScrollArea,
@@ -15,11 +16,14 @@ import {
 } from '@mantine/core';
 import { Link } from '@tanstack/react-router';
 import { IconPlus, IconTrash } from '@tabler/icons-react';
+import { useDisclosure } from '@mantine/hooks';
 import {
   type OrganizationEventDetail,
   useOrganizationEvents,
   useUpdateOrganizationEvents,
+  useDeleteOrganizationEvent,
   useUserInfo,
+  useUserRole,
   useUserOrganization,
 } from '@/api';
 import classes from './EventSelect.module.css';
@@ -42,6 +46,7 @@ const sortEventsByWeekDescending = (
 export function EventSelect() {
   const { data: userInfo } = useUserInfo();
   const isUserLoggedIn = userInfo?.id !== undefined && userInfo?.id !== null;
+  const { data: userRole } = useUserRole({ enabled: isUserLoggedIn });
   const {
     data: userOrganization,
     isLoading: isUserOrganizationLoading,
@@ -58,8 +63,17 @@ export function EventSelect() {
   const { colorScheme } = useMantineColorScheme();
   const { mutate: updateOrganizationEventsMutation, isPending: isSavingEvents } =
     useUpdateOrganizationEvents();
+  const {
+    mutate: deleteOrganizationEventMutation,
+    isPending: isDeletingEvent,
+  } = useDeleteOrganizationEvent();
+  const [deleteModalOpened, { open: openDeleteModal, close: closeDeleteModal }] =
+    useDisclosure(false);
+  const [eventPendingDeletion, setEventPendingDeletion] =
+    useState<OrganizationEventDetail | null>(null);
 
   const deleteIconColor = colorScheme === 'dark' ? 'red' : 'black';
+  const isAdminUser = userRole?.role === 'ADMIN';
 
   useEffect(() => {
     if (!organizationId) {
@@ -95,6 +109,37 @@ export function EventSelect() {
     );
   };
 
+  const handleRequestDeleteEvent = (event: OrganizationEventDetail) => {
+    setEventPendingDeletion(event);
+    openDeleteModal();
+  };
+
+  const handleCloseDeleteModal = () => {
+    closeDeleteModal();
+    setEventPendingDeletion(null);
+  };
+
+  const handleConfirmDeleteEvent = () => {
+    const eventKey = eventPendingDeletion?.eventKey;
+
+    if (!eventKey) {
+      return;
+    }
+
+    deleteOrganizationEventMutation(
+      { eventKey },
+      {
+        onSuccess: () => {
+          setEvents((current) => current.filter((event) => event.eventKey !== eventKey));
+          setInitialEvents((current) =>
+            current.filter((event) => event.eventKey !== eventKey)
+          );
+          handleCloseDeleteModal();
+        },
+      }
+    );
+  };
+
   const rows = events.map((event) => {
     const selected = activeEventId === event.eventKey;
     return (
@@ -124,13 +169,16 @@ export function EventSelect() {
           />
         </Table.Td>
         <Table.Td ta="right">
-          <ActionIcon
-            variant="transparent"
-            aria-label={`Delete ${event.eventName}`}
-            c={deleteIconColor}
-          >
-            <IconTrash stroke={1.5} />
-          </ActionIcon>
+          {isAdminUser && (
+            <ActionIcon
+              variant="transparent"
+              aria-label={`Delete ${event.eventName}`}
+              c={deleteIconColor}
+              onClick={() => handleRequestDeleteEvent(event)}
+            >
+              <IconTrash stroke={1.5} />
+            </ActionIcon>
+          )}
         </Table.Td>
       </Table.Tr>
     );
@@ -251,6 +299,29 @@ export function EventSelect() {
           Save Changes
         </Button>
       </Group>
+      <Modal
+        opened={deleteModalOpened}
+        onClose={handleCloseDeleteModal}
+        title="Delete Event"
+        centered
+      >
+        <Stack>
+          <Text>
+            Are you sure you want to delete {eventPendingDeletion?.eventName ?? 'this event'}?
+          </Text>
+          <Text c="red">
+            Stored data associated with this event will be unrecoverable.
+          </Text>
+          <Group justify="flex-end">
+            <Button variant="default" onClick={handleCloseDeleteModal} disabled={isDeletingEvent}>
+              Cancel
+            </Button>
+            <Button color="red" onClick={handleConfirmDeleteEvent} loading={isDeletingEvent}>
+              Delete Event
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </Stack>
   );
 }
