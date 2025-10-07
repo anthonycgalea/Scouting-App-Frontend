@@ -1,5 +1,11 @@
 import { Alert, Center, Loader } from '@mantine/core';
-import { type TeamMatchData, useTeamMatchData, useTeamMatchValidation } from '@/api';
+import {
+  type TeamMatchData,
+  useSuperScoutFields,
+  useSuperScoutMatchData,
+  useTeamMatchData,
+  useTeamMatchValidation,
+} from '@/api';
 import { TeamMatchDetail2025 } from './TeamMatchDetail2025';
 
 interface TeamMatchDetailProps {
@@ -19,6 +25,16 @@ export function TeamMatchDetail({ teamNumber }: TeamMatchDetailProps) {
     isLoading: isValidationLoading,
     isError: isValidationError,
   } = useTeamMatchValidation();
+  const {
+    data: superScoutData = [],
+    isLoading: isSuperScoutDataLoading,
+    isError: isSuperScoutDataError,
+  } = useSuperScoutMatchData(teamNumber);
+  const {
+    data: superScoutFields = [],
+    isLoading: isSuperScoutFieldsLoading,
+    isError: isSuperScoutFieldsError,
+  } = useSuperScoutFields();
 
   if (!Number.isFinite(teamNumber)) {
     return <Alert color="red" title="Invalid team number" />;
@@ -64,6 +80,10 @@ export function TeamMatchDetail({ teamNumber }: TeamMatchDetailProps) {
       validationData={validationData}
       isValidationLoading={isValidationLoading}
       isValidationError={isValidationError}
+      superScoutData={superScoutData}
+      superScoutFields={superScoutFields}
+      isSuperScoutLoading={isSuperScoutDataLoading || isSuperScoutFieldsLoading}
+      isSuperScoutError={isSuperScoutDataError || isSuperScoutFieldsError}
     />
   );
 }
