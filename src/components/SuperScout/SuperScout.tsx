@@ -13,7 +13,7 @@ import {
   useMantineColorScheme,
 } from '@mantine/core';
 import { Link } from '@tanstack/react-router';
-import type { MatchScheduleEntry } from '@/api';
+import { useSuperScoutStatuses, type MatchScheduleEntry } from '@/api';
 import classes from './SuperScout.module.css';
 
 interface RowData {
@@ -92,7 +92,28 @@ export function SuperScout({ matches }: SuperScoutProps) {
   const { colorScheme } = useMantineColorScheme();
   const allianceButtonVariant = colorScheme === 'dark' ? 'light' : 'filled';
 
+  const { data: superScoutStatuses = [] } = useSuperScoutStatuses();
+
   const schedule = useMemo(() => createRowData(matches), [matches]);
+
+  const superscoutedByMatch = useMemo(() => {
+    const statusMap = new Map<string, { red: boolean; blue: boolean }>();
+
+    superScoutStatuses.forEach((status) => {
+      const level = status.matchLevel?.toLowerCase();
+
+      if (!level) {
+        return;
+      }
+
+      statusMap.set(`${level}-${status.matchNumber}`, {
+        red: status.red,
+        blue: status.blue,
+      });
+    });
+
+    return statusMap;
+  }, [superScoutStatuses]);
 
   const sortedData = useMemo(
     () => sortData(schedule, { reversed: reverseSortDirection, matchSearch }),
@@ -113,6 +134,12 @@ export function SuperScout({ matches }: SuperScoutProps) {
 
   const rows = sortedData.map((row) => {
     const matchLevelPath = row.matchLevel?.toLowerCase();
+    const matchStatus = matchLevelPath
+      ? superscoutedByMatch.get(`${matchLevelPath}-${row.matchNumber}`)
+      : undefined;
+    const isRedSuperscouted = matchStatus?.red ?? false;
+    const isBlueSuperscouted = matchStatus?.blue ?? false;
+
     const redAllianceButton = matchLevelPath ? (
       <Button<typeof Link>
         color="red"
@@ -120,6 +147,7 @@ export function SuperScout({ matches }: SuperScoutProps) {
         fullWidth
         to={`/superScout/match/${matchLevelPath}/${row.matchNumber}/red`}
         variant={allianceButtonVariant}
+        disabled={isRedSuperscouted}
       >
         {formatAlliance([row.red1, row.red2, row.red3])}
       </Button>
@@ -136,6 +164,7 @@ export function SuperScout({ matches }: SuperScoutProps) {
         fullWidth
         to={`/superScout/match/${matchLevelPath}/${row.matchNumber}/blue`}
         variant={allianceButtonVariant}
+        disabled={isBlueSuperscouted}
       >
         {formatAlliance([row.blue1, row.blue2, row.blue3])}
       </Button>
