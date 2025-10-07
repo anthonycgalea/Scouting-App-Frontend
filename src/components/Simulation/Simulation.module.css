@@ -1,0 +1,51 @@
+.predictionCard {
+  background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+}
+
+.winBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--mantine-spacing-xs) * 0.75) var(--mantine-spacing-sm);
+  border-radius: var(--mantine-radius-sm);
+  font-weight: 600;
+  min-width: 72px;
+  text-align: center;
+}
+
+.winBadgeRed {
+  background-color: light-dark(var(--mantine-color-red-6), var(--mantine-color-red-8));
+  color: light-dark(var(--mantine-color-red-0), var(--mantine-color-red-1));
+}
+
+.winBadgeBlue {
+  background-color: light-dark(var(--mantine-color-blue-6), var(--mantine-color-blue-8));
+  color: light-dark(var(--mantine-color-blue-0), var(--mantine-color-blue-1));
+}
+
+.winBadgeNeutral {
+  background-color: light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
+  color: light-dark(var(--mantine-color-dark-7), var(--mantine-color-gray-1));
+}
+
+.allianceCard {
+  height: 100%;
+}
+
+.metricRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.metricLabel {
+  color: light-dark(var(--mantine-color-gray-6), var(--mantine-color-gray-4));
+}
+
+.redTitle {
+  color: light-dark(var(--mantine-color-red-7), var(--mantine-color-red-3));
+}
+
+.blueTitle {
+  color: light-dark(var(--mantine-color-blue-7), var(--mantine-color-blue-3));
+}

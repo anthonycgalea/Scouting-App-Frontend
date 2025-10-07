@@ -9,8 +9,10 @@ import {
   useMatchPreview,
   useMatchSchedule,
   useMatchSimulation,
+  type MatchSimulationResponse,
 } from '@/api';
 import { MatchPreview2025 } from '@/components/MatchPreview/MatchPreview2025';
+import { Simulation, type MatchSimulationData } from '@/components/Simulation';
 import classes from './MatchPreview.module.css';
 
 export function MatchPreviewPage() {
@@ -142,6 +144,19 @@ export function MatchPreviewPage() {
   const shouldUse2025Preview = season === 1;
 
   const isSimulationBusy = isSimulationLoading || isSimulationRunning || isSimulationFetching;
+  const isMatchSimulationData = (
+    value: MatchSimulationResponse | null | undefined
+  ): value is MatchSimulationData =>
+    typeof value === 'object' &&
+    value !== null &&
+    'season' in value &&
+    typeof (value as { season?: unknown }).season === 'number';
+  const simulationData = isMatchSimulationData(simulationResult)
+    ? simulationResult
+    : undefined;
+  const simulationSamplesText = simulationData
+    ? `${simulationData.n_samples.toLocaleString()} simulations`
+    : undefined;
   let simulationContent: ReactNode;
 
   if (isSimulationLoading && !simulationResult) {
@@ -158,20 +173,21 @@ export function MatchPreviewPage() {
     );
   } else if (simulationResult == null || (typeof simulationResult === 'string' && simulationResult.length === 0)) {
     simulationContent = <Text c="dimmed">Simulation results will appear here.</Text>;
-  } else {
-    const simulationText =
-      typeof simulationResult === 'string'
-        ? simulationResult
-        : JSON.stringify(simulationResult, null, 2);
-
+  } else if (typeof simulationResult === 'string') {
     simulationContent = (
       <Text
         component="pre"
         style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
         c="dimmed"
       >
-        {simulationText}
+        {simulationResult}
       </Text>
+    );
+  } else if (simulationData) {
+    simulationContent = <Simulation simulation={simulationData} season={season} />;
+  } else {
+    simulationContent = (
+      <Text c="dimmed">Simulation details are not available for this season yet.</Text>
     );
   }
 
@@ -229,20 +245,27 @@ export function MatchPreviewPage() {
             >
               <Box className={classes.cardContent}>
                 <Stack gap="sm">
-                  <Group justify="space-between" align="center">
-                    <Title order={4}>Simulation</Title>
-                    <ActionIcon
-                      aria-label="Refresh match simulation"
-                      size="lg"
-                      radius="md"
-                      variant="default"
-                      style={{ backgroundColor: 'var(--mantine-color-body)' }}
-                      onClick={handleSimulationRefresh}
-                      disabled={!previewParams || isSimulationBusy}
-                    >
-                      {isSimulationBusy ? <Loader size="sm" /> : <IconRefresh size={20} />}
-                    </ActionIcon>
-                  </Group>
+                  <Stack gap={4}>
+                    <Group justify="space-between" align="center">
+                      <Title order={4}>Simulation</Title>
+                      <ActionIcon
+                        aria-label="Refresh match simulation"
+                        size="lg"
+                        radius="md"
+                        variant="default"
+                        style={{ backgroundColor: 'var(--mantine-color-body)' }}
+                        onClick={handleSimulationRefresh}
+                        disabled={!previewParams || isSimulationBusy}
+                      >
+                        {isSimulationBusy ? <Loader size="sm" /> : <IconRefresh size={20} />}
+                      </ActionIcon>
+                    </Group>
+                    {simulationSamplesText ? (
+                      <Text fz="xs" c="dimmed">
+                        {simulationSamplesText}
+                      </Text>
+                    ) : null}
+                  </Stack>
                   {simulationContent}
                 </Stack>
               </Box>

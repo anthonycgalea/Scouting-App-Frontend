@@ -75,7 +75,36 @@ export const fetchMatchPreview = ({ matchLevel, matchNumber }: MatchPreviewReque
     `event/match/${encodeURIComponent(matchLevel.toLowerCase())}/${matchNumber}/preview`
   );
 
-export type MatchSimulationResponse = unknown;
+interface MatchSimulationBase {
+  event_key: string;
+  match_level: string;
+  match_number: number;
+  organization_id: number;
+  season: number;
+  timestamp: string;
+  n_samples: number;
+}
+
+export interface MatchSimulation2025 extends MatchSimulationBase {
+  red_alliance_win_pct: number;
+  blue_alliance_win_pct: number;
+  red_auto_rp: number;
+  red_w_coral_rp: number;
+  red_r_coral_rp: number;
+  red_endgame_rp: number;
+  red_wr_win_pct: number;
+  red_rr_win_pct: number;
+  red_rw_win_pct: number;
+  blue_auto_rp: number;
+  blue_w_coral_rp: number;
+  blue_r_coral_rp: number;
+  blue_endgame_rp: number;
+  blue_wr_win_pct: number;
+  blue_rr_win_pct: number;
+  blue_rw_win_pct: number;
+}
+
+export type MatchSimulationResponse = MatchSimulation2025 | string;
 
 export const matchSimulationQueryKey = (params?: MatchPreviewRequest) =>
   ['match-simulation', params?.matchLevel, params?.matchNumber] as const;
