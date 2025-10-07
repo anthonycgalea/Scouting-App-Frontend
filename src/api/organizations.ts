@@ -45,6 +45,7 @@ export interface OrganizationCollaboration {
   eventName: string;
   eventWeek?: number | null;
   eventYear?: number | null;
+  eventKey?: string;
 }
 
 export interface InviteOrganizationCollaborationRequest {
