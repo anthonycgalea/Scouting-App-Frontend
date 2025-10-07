@@ -13,6 +13,7 @@ export const organizationsQueryKey = ['organizations'] as const;
 export const allOrganizationsQueryKey = ['all-organizations'] as const;
 export const organizationApplicationsQueryKey = ['organization', 'applications'] as const;
 export const organizationMembersQueryKey = ['organization', 'members'] as const;
+export const organizationCollaborationsQueryKey = ['organization', 'collaborations'] as const;
 
 export interface OrganizationApplication {
   displayName: string;
@@ -31,6 +32,16 @@ export interface OrganizationMember {
   role: OrganizationMemberRole;
 }
 
+export interface OrganizationCollaboration {
+  organizationEventId: string;
+  organizationId: number;
+  status: string;
+}
+
+export interface InviteOrganizationCollaborationRequest {
+  organizationid: number;
+}
+
 export interface UpdateOrganizationMemberInput {
   userId: string;
   role: OrganizationMemberRole;
@@ -40,6 +51,9 @@ export const fetchOrganizations = () => apiFetch<Organization[]>('user/organizat
 export const fetchAllOrganizations = () => apiFetch<Organization[]>('organizations');
 export const fetchOrganizationApplications = () =>
   apiFetch<OrganizationApplication[]>('organization/applications');
+
+export const fetchOrganizationCollaborations = () =>
+  apiFetch<OrganizationCollaboration[]>('organization/collab');
 
 export const fetchOrganizationMembers = () =>
   apiFetch<OrganizationMember[]>('organization/members');
@@ -79,6 +93,13 @@ export const useAllOrganizations = () =>
   useQuery<Organization[]>({
     queryKey: allOrganizationsQueryKey,
     queryFn: fetchAllOrganizations,
+  });
+
+export const useOrganizationCollaborations = ({ enabled }: { enabled?: boolean } = {}) =>
+  useQuery<OrganizationCollaboration[]>({
+    queryKey: organizationCollaborationsQueryKey,
+    queryFn: fetchOrganizationCollaborations,
+    enabled,
   });
 
 export const useOrganizationApplications = ({ enabled }: { enabled?: boolean } = {}) =>
@@ -137,6 +158,25 @@ export const useDeleteOrganizationMember = () => {
     mutationFn: deleteOrganizationMember,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: organizationMembersQueryKey });
+    },
+  });
+};
+
+export const inviteOrganizationCollaboration = ({
+  organizationid,
+}: InviteOrganizationCollaborationRequest) =>
+  apiFetch<void>('organization/collab', {
+    method: 'POST',
+    json: { organizationid },
+  });
+
+export const useInviteOrganizationCollaboration = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: inviteOrganizationCollaboration,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: organizationCollaborationsQueryKey });
     },
   });
 };

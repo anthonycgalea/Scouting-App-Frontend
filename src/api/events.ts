@@ -29,6 +29,7 @@ export interface EventSummary {
 }
 
 export interface OrganizationEventDetail {
+  organizationEventId?: string;
   eventKey: string;
   eventName: string;
   short_name?: string;
