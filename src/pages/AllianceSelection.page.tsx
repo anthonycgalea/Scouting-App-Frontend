@@ -428,7 +428,7 @@ export function AllianceSelectionPage() {
                 <Table striped highlightOnHover>
                   <Table.Thead>
                     <Table.Tr>
-                      <Table.Th>Alliance</Table.Th>
+                      <Table.Th style={{ whiteSpace: 'nowrap' }}>Alliance #</Table.Th>
                       <Table.Th>Captain</Table.Th>
                       <Table.Th>First Pick</Table.Th>
                       <Table.Th>Second Pick</Table.Th>
@@ -441,8 +441,10 @@ export function AllianceSelectionPage() {
 
                       return (
                         <Table.Tr key={`alliance-${index}`}>
-                          <Table.Td>
-                            <Text fw={600}>Alliance {index + 1}</Text>
+                          <Table.Td style={{ whiteSpace: 'nowrap' }}>
+                            <Text fw={600} style={{ whiteSpace: 'nowrap' }}>
+                              Alliance {index + 1}
+                            </Text>
                           </Table.Td>
                           <Table.Td>
                             <TextInput
