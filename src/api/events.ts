@@ -50,6 +50,10 @@ export interface CreateOrganizationEventRequest {
   EventKey: string;
 }
 
+export interface DeleteOrganizationEventRequest {
+  eventKey: string;
+}
+
 export const eventsQueryKey = (year: number) => ['events', year] as const;
 
 export const fetchEvents = (year: number) => apiFetch<EventSummary[]>(`events/${year}`);
@@ -186,6 +190,12 @@ export const updateOrganizationEvents = (body: UpdateOrganizationEventsRequest) 
     json: body,
   });
 
+export const deleteOrganizationEvent = (payload: DeleteOrganizationEventRequest) =>
+  apiFetch<void>('organization/event', {
+    method: 'DELETE',
+    json: payload as JsonBody,
+  });
+
 export interface UpdateOrganizationEventsVariables {
   events: UpdateOrganizationEventsRequest;
 }
@@ -198,6 +208,19 @@ export const useUpdateOrganizationEvents = () => {
       updateOrganizationEvents(events),
     onSuccess: async () => {
       await invalidateEventDataQueries(queryClient);
+    },
+  });
+};
+
+export const useDeleteOrganizationEvent = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteOrganizationEvent,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: organizationEventsQueryKey(),
+      });
     },
   });
 };
