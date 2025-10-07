@@ -34,6 +34,15 @@ import {
 } from '@/api';
 import classes from './EventSelect.module.css';
 
+const ALLOWED_EVENT_YEARS = [2026, 2025] as const;
+const ALLOWED_EVENT_YEAR_OPTIONS = ALLOWED_EVENT_YEARS.map((year) => ({
+  value: year.toString(),
+  label: year.toString(),
+}));
+const ALLOWED_EVENT_YEAR_VALUE_SET = new Set(
+  ALLOWED_EVENT_YEAR_OPTIONS.map((option) => option.value)
+);
+
 const sortEventsByWeekDescending = (
   eventList: OrganizationEventDetail[]
 ): OrganizationEventDetail[] => {
@@ -97,7 +106,9 @@ export function EventSelect() {
     type: 'success' | 'error';
     message: string;
   } | null>(null);
-  const [selectedYear, setSelectedYear] = useState<string>('all');
+  const [selectedYear, setSelectedYear] = useState<string>(
+    ALLOWED_EVENT_YEAR_OPTIONS[0]?.value ?? ''
+  );
   const [hasUserSelectedYear, setHasUserSelectedYear] = useState(false);
 
   const deleteIconColor = colorScheme === 'dark' ? 'red' : 'black';
@@ -122,59 +133,57 @@ export function EventSelect() {
     () => events.find((event) => event.isActive) ?? null,
     [events]
   );
-  const availableYears = useMemo(() => {
+  const allowedEventYearsWithData = useMemo(() => {
+    const allowedYearSet = new Set<number>(ALLOWED_EVENT_YEARS);
+
     return Array.from(
       new Set(
         events
           .map((event) => event.eventYear)
-          .filter((year): year is number => typeof year === 'number')
+          .filter(
+            (year): year is number =>
+              typeof year === 'number' && allowedYearSet.has(year)
+          )
       )
     ).sort((a, b) => b - a);
   }, [events]);
-  const yearOptions = useMemo(() => {
-    return [
-      { value: 'all', label: 'All Years' },
-      ...availableYears.map((year) => ({
-        value: year.toString(),
-        label: year.toString(),
-      })),
-    ];
-  }, [availableYears]);
+  const yearOptions = useMemo(() => ALLOWED_EVENT_YEAR_OPTIONS, []);
   const activeEventYearValue = selectedEvent?.eventYear
     ? selectedEvent.eventYear.toString()
     : null;
+  const defaultYearValue = useMemo(() => {
+    if (activeEventYearValue && ALLOWED_EVENT_YEAR_VALUE_SET.has(activeEventYearValue)) {
+      return activeEventYearValue;
+    }
+
+    const availableYearValue = allowedEventYearsWithData[0]?.toString();
+
+    if (availableYearValue) {
+      return availableYearValue;
+    }
+
+    return ALLOWED_EVENT_YEAR_OPTIONS[0]?.value ?? '';
+  }, [activeEventYearValue, allowedEventYearsWithData]);
 
   useEffect(() => {
-    const fallbackYearValue =
-      activeEventYearValue ??
-      (availableYears.length > 0 ? availableYears[0].toString() : 'all');
-
     if (!hasUserSelectedYear) {
-      if (selectedYear !== fallbackYearValue) {
-        setSelectedYear(fallbackYearValue);
+      if (selectedYear !== defaultYearValue) {
+        setSelectedYear(defaultYearValue);
       }
       return;
     }
 
-    const validValues = new Set(yearOptions.map((option) => option.value));
-
-    if (!validValues.has(selectedYear)) {
-      setSelectedYear(fallbackYearValue);
+    if (!ALLOWED_EVENT_YEAR_VALUE_SET.has(selectedYear)) {
+      setSelectedYear(defaultYearValue);
       setHasUserSelectedYear(false);
     }
   }, [
-    activeEventYearValue,
-    availableYears,
+    defaultYearValue,
     hasUserSelectedYear,
     selectedYear,
-    yearOptions,
   ]);
 
   const filteredEvents = useMemo(() => {
-    if (selectedYear === 'all') {
-      return events;
-    }
-
     return events.filter(
       (event) => event.eventYear?.toString() === selectedYear
     );
@@ -241,8 +250,14 @@ export function EventSelect() {
   };
 
   const handleYearChange = (value: string | null) => {
+    if (!value) {
+      setHasUserSelectedYear(false);
+      setSelectedYear(defaultYearValue);
+      return;
+    }
+
     setHasUserSelectedYear(true);
-    setSelectedYear(value ?? 'all');
+    setSelectedYear(value);
   };
 
   const handleCloseDeleteModal = () => {

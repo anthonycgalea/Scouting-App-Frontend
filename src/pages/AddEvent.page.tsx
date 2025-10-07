@@ -13,9 +13,10 @@ import {
 } from '../api';
 import { useRequireOrganizationAccess } from '@/hooks/useRequireOrganizationAccess';
 
+const ALLOWED_EVENT_YEARS = [2026, 2025] as const;
+
 export function AddEventPage() {
   const { canAccessOrganizationPages, isCheckingAccess } = useRequireOrganizationAccess();
-  const currentYear = new Date().getFullYear();
   const navigate = useNavigate({ from: '/eventSelect/add' });
   const { data: userInfo } = useUserInfo();
   const isUserLoggedIn = userInfo?.id !== undefined && userInfo?.id !== null;
@@ -31,30 +32,38 @@ export function AddEventPage() {
     isError: isOrganizationEventsError,
   } = useOrganizationEvents({ enabled: isUserLoggedIn && !!organizationId });
   const organizationEventList: OrganizationEventDetail[] = organizationEvents ?? [];
+  const allowedEventYearSet = useMemo(
+    () => new Set<number>(ALLOWED_EVENT_YEARS),
+    []
+  );
   const organizationEventYears = useMemo(() => {
     return Array.from(
       new Set(
         organizationEventList
           .map((event) => event.eventYear)
-          .filter((year): year is number => typeof year === 'number')
+          .filter(
+            (year): year is number =>
+              typeof year === 'number' && allowedEventYearSet.has(year)
+          )
       )
     ).sort((a, b) => b - a);
-  }, [organizationEventList]);
+  }, [allowedEventYearSet, organizationEventList]);
   const activeOrganizationEventYear =
     organizationEventList.find((event) => event.isActive)?.eventYear ?? null;
-  const baseYearList = useMemo(() => {
-    const yearSet = new Set<number>();
-
-    for (let offset = 0; offset < 10; offset += 1) {
-      yearSet.add(currentYear - offset);
+  const fallbackYearNumber = useMemo(() => {
+    if (
+      typeof activeOrganizationEventYear === 'number' &&
+      allowedEventYearSet.has(activeOrganizationEventYear)
+    ) {
+      return activeOrganizationEventYear;
     }
 
-    organizationEventYears.forEach((year) => yearSet.add(year));
+    if (organizationEventYears.length > 0) {
+      return organizationEventYears[0];
+    }
 
-    return Array.from(yearSet).sort((a, b) => b - a);
-  }, [currentYear, organizationEventYears]);
-  const fallbackYearNumber =
-    activeOrganizationEventYear ?? baseYearList[0] ?? currentYear;
+    return ALLOWED_EVENT_YEARS[0];
+  }, [activeOrganizationEventYear, allowedEventYearSet, organizationEventYears]);
   const [selectedYear, setSelectedYear] = useState<string>(
     fallbackYearNumber.toString()
   );
@@ -71,11 +80,11 @@ export function AddEventPage() {
     }
 
     const parsedYear = Number.parseInt(selectedYear, 10);
-    if (Number.isNaN(parsedYear) || !baseYearList.includes(parsedYear)) {
+    if (Number.isNaN(parsedYear) || !allowedEventYearSet.has(parsedYear)) {
       setSelectedYear(fallbackValue);
       setHasUserSelectedYear(false);
     }
-  }, [baseYearList, fallbackYearNumber, hasUserSelectedYear, selectedYear]);
+  }, [allowedEventYearSet, fallbackYearNumber, hasUserSelectedYear, selectedYear]);
 
   const selectedYearNumber = Number.parseInt(selectedYear, 10);
   const eventYearForQuery = Number.isNaN(selectedYearNumber)
@@ -105,18 +114,11 @@ export function AddEventPage() {
   const eventList: EventSummary[] = events ?? [];
 
   const yearOptions = useMemo(() => {
-    const yearSet = new Set<number>(baseYearList);
-
-    eventList.forEach((event) => yearSet.add(event.year));
-    yearSet.add(eventYearForQuery);
-
-    const sortedYears = Array.from(yearSet).sort((a, b) => b - a);
-
-    return sortedYears.map((year) => ({
+    return ALLOWED_EVENT_YEARS.map((year) => ({
       value: year.toString(),
       label: year.toString(),
     }));
-  }, [baseYearList, eventList, eventYearForQuery]);
+  }, []);
 
   const handleYearChange = (value: string | null) => {
     if (!value) {
