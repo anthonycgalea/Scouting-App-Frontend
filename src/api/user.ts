@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from './httpClient';
-import { organizationsQueryKey } from './organizations';
+import { organizationsQueryKey, organizationCollaborationRequestsQueryKey } from './organizations';
 
 export interface UserInfoResponse {
   id: string | number;
@@ -48,6 +48,10 @@ export const useUpdateUserOrganization = () => {
       void queryClient.invalidateQueries({ queryKey: organizationsQueryKey });
       void queryClient.invalidateQueries({ queryKey: userRoleQueryKey });
       void queryClient.invalidateQueries({ queryKey: userOrganizationQueryKey });
+      void queryClient.invalidateQueries({
+        queryKey: organizationCollaborationRequestsQueryKey,
+      });
+      queryClient.removeQueries({ queryKey: organizationCollaborationRequestsQueryKey });
     },
   });
 };
