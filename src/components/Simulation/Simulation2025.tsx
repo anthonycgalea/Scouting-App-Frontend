@@ -20,34 +20,6 @@ const formatPercentage = (value: number | null | undefined) => {
   })}%`;
 };
 
-const formatRankingPoint = (value: number | null | undefined) => {
-  if (value == null || Number.isNaN(value)) {
-    return '—';
-  }
-
-  return value.toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-};
-
-const computeCoralRankingPoint = (
-  wCoral: number | null | undefined,
-  rCoral: number | null | undefined
-) => {
-  const values = [wCoral, rCoral].filter(
-    (entry): entry is number => entry != null && Number.isFinite(entry)
-  );
-
-  if (values.length === 0) {
-    return undefined;
-  }
-
-  const total = values.reduce((sum, entry) => sum + entry, 0);
-
-  return total / values.length;
-};
-
 export const Simulation2025 = ({ simulation }: Simulation2025Props) => {
   const redWinPct = simulation.red_alliance_win_pct;
   const blueWinPct = simulation.blue_alliance_win_pct;
@@ -72,15 +44,6 @@ export const Simulation2025 = ({ simulation }: Simulation2025Props) => {
     [classes.winBadgeBlue]: isBlueFavorite,
     [classes.winBadgeNeutral]: !isRedFavorite && !isBlueFavorite,
   });
-
-  const redCoralRp = computeCoralRankingPoint(
-    simulation.red_w_coral_rp,
-    simulation.red_r_coral_rp
-  );
-  const blueCoralRp = computeCoralRankingPoint(
-    simulation.blue_w_coral_rp,
-    simulation.blue_r_coral_rp
-  );
 
   return (
     <Stack gap="md">
@@ -110,15 +73,24 @@ export const Simulation2025 = ({ simulation }: Simulation2025Props) => {
             </Text>
             <div className={classes.metricRow}>
               <Text className={classes.metricLabel}>Auto RP</Text>
-              <Text fw={600}>{formatRankingPoint(simulation.red_auto_rp)}</Text>
+              <Text fw={600}>{formatPercentage(simulation.red_auto_rp)}</Text>
             </div>
-            <div className={classes.metricRow}>
-              <Text className={classes.metricLabel}>Coral RP</Text>
-              <Text fw={600}>{formatRankingPoint(redCoralRp)}</Text>
+            <div className={classes.metricGroup}>
+              <Text className={classes.metricLabel}>Coral Success</Text>
+              <div className={classes.metricSubGroup}>
+                <div className={classes.metricSubRow}>
+                  <Text className={classes.metricSubLabel}>Win</Text>
+                  <Text fw={600}>{formatPercentage(simulation.red_w_coral_rp)}</Text>
+                </div>
+                <div className={classes.metricSubRow}>
+                  <Text className={classes.metricSubLabel}>RP</Text>
+                  <Text fw={600}>{formatPercentage(simulation.red_r_coral_rp)}</Text>
+                </div>
+              </div>
             </div>
             <div className={classes.metricRow}>
               <Text className={classes.metricLabel}>Endgame RP</Text>
-              <Text fw={600}>{formatRankingPoint(simulation.red_endgame_rp)}</Text>
+              <Text fw={600}>{formatPercentage(simulation.red_endgame_rp)}</Text>
             </div>
           </Stack>
         </Card>
@@ -130,15 +102,24 @@ export const Simulation2025 = ({ simulation }: Simulation2025Props) => {
             </Text>
             <div className={classes.metricRow}>
               <Text className={classes.metricLabel}>Auto RP</Text>
-              <Text fw={600}>{formatRankingPoint(simulation.blue_auto_rp)}</Text>
+              <Text fw={600}>{formatPercentage(simulation.blue_auto_rp)}</Text>
             </div>
-            <div className={classes.metricRow}>
-              <Text className={classes.metricLabel}>Coral RP</Text>
-              <Text fw={600}>{formatRankingPoint(blueCoralRp)}</Text>
+            <div className={classes.metricGroup}>
+              <Text className={classes.metricLabel}>Coral Success</Text>
+              <div className={classes.metricSubGroup}>
+                <div className={classes.metricSubRow}>
+                  <Text className={classes.metricSubLabel}>Win</Text>
+                  <Text fw={600}>{formatPercentage(simulation.blue_w_coral_rp)}</Text>
+                </div>
+                <div className={classes.metricSubRow}>
+                  <Text className={classes.metricSubLabel}>RP</Text>
+                  <Text fw={600}>{formatPercentage(simulation.blue_r_coral_rp)}</Text>
+                </div>
+              </div>
             </div>
             <div className={classes.metricRow}>
               <Text className={classes.metricLabel}>Endgame RP</Text>
-              <Text fw={600}>{formatRankingPoint(simulation.blue_endgame_rp)}</Text>
+              <Text fw={600}>{formatPercentage(simulation.blue_endgame_rp)}</Text>
             </div>
           </Stack>
         </Card>

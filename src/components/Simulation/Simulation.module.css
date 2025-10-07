@@ -42,6 +42,31 @@
   color: light-dark(var(--mantine-color-gray-6), var(--mantine-color-gray-4));
 }
 
+.metricGroup {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--mantine-spacing-xs) * 0.5);
+}
+
+.metricSubGroup {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--mantine-spacing-xs) * 0.25);
+}
+
+.metricSubRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.metricSubLabel {
+  color: light-dark(var(--mantine-color-gray-6), var(--mantine-color-gray-4));
+  font-size: var(--mantine-font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 .redTitle {
   color: light-dark(var(--mantine-color-red-7), var(--mantine-color-red-3));
 }
