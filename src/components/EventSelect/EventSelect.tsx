@@ -122,6 +122,7 @@ export function EventSelect() {
     [events, activeEventId]
   );
   const selectedOrganizationEventId = selectedEvent?.organizationEventId ?? null;
+  const canInviteOrganizations = Boolean(organizationId && selectedOrganizationEventId);
 
   const availableOrganizations = useMemo(() => {
     if (!selectedOrganizationEventId) {
@@ -193,11 +194,6 @@ export function EventSelect() {
     setInviteFeedback(null);
     setInviteSearchTerm('');
     openInviteModal();
-  };
-
-  const handleOpenInviteModalForEvent = (eventKey: string) => {
-    setActiveEventId(eventKey);
-    handleOpenInviteModal();
   };
 
   const handleCloseInviteModal = () => {
@@ -286,17 +282,6 @@ export function EventSelect() {
             onChange={() => toggleEventPublic(event.eventKey)}
           />
         </Table.Td>
-        <Table.Td>
-          <Button
-            variant="light"
-            size="xs"
-            leftSection={<IconMail stroke={1.5} />}
-            onClick={() => handleOpenInviteModalForEvent(event.eventKey)}
-            disabled={!event.organizationEventId}
-          >
-            Invite Scouting Alliance
-          </Button>
-        </Table.Td>
         <Table.Td ta="right">
           {isAdminUser && (
             <ActionIcon
@@ -383,7 +368,7 @@ export function EventSelect() {
     <Stack>
       <ScrollArea>
         <Radio.Group value={activeEventId} onChange={setActiveEventId} name="active-event">
-          <Table miw={700} verticalSpacing="sm">
+          <Table miw={650} verticalSpacing="sm">
             <Table.Thead>
               <Table.Tr>
                 <Table.Th w={40}>Active</Table.Th>
@@ -392,7 +377,6 @@ export function EventSelect() {
                   Week
                 </Table.Th>
                 <Table.Th>Public</Table.Th>
-                <Table.Th w={220}>Invite</Table.Th>
                 <Table.Th w={60}>
                   <VisuallyHidden>Delete</VisuallyHidden>
                 </Table.Th>
@@ -401,7 +385,7 @@ export function EventSelect() {
             <Table.Tbody>
               {isLoadingEvents ? (
                 <Table.Tr>
-                  <Table.Td colSpan={6}>
+                  <Table.Td colSpan={5}>
                     <Text size="sm" c="dimmed">
                       Loading events...
                     </Text>
@@ -409,7 +393,7 @@ export function EventSelect() {
                 </Table.Tr>
               ) : isErrorLoadingEvents ? (
                 <Table.Tr>
-                  <Table.Td colSpan={6}>
+                  <Table.Td colSpan={5}>
                     <Text size="sm" c="red">
                       Unable to load events. Please try again later.
                     </Text>
@@ -417,7 +401,7 @@ export function EventSelect() {
                 </Table.Tr>
               ) : shouldPromptForOrganization ? (
                 <Table.Tr>
-                  <Table.Td colSpan={6}>
+                  <Table.Td colSpan={5}>
                     <Text size="sm" c="dimmed">
                       Select an organization to manage its events.
                     </Text>
@@ -427,7 +411,7 @@ export function EventSelect() {
                 rows
               ) : (
                 <Table.Tr>
-                  <Table.Td colSpan={6}>
+                  <Table.Td colSpan={5}>
                     <Text size="sm" c="dimmed">
                       No events have been added yet.
                     </Text>
@@ -449,6 +433,15 @@ export function EventSelect() {
             disabled={!organizationId}
           >
             Add Event
+          </Button>
+          <Button
+            variant="light"
+            size="md"
+            leftSection={<IconMail stroke={1.5} />}
+            onClick={handleOpenInviteModal}
+            disabled={!canInviteOrganizations}
+          >
+            Invite Scouting Alliance
           </Button>
         </Group>
         <Button
