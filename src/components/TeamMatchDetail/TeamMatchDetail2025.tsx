@@ -1,8 +1,10 @@
-import { type ReactNode, useMemo, useState } from 'react';
+import { type ReactNode, useCallback, useMemo, useState } from 'react';
 import cx from 'clsx';
-import { Alert, Group, ScrollArea, Table, Text } from '@mantine/core';
+import { Alert, Badge, Group, Rating, ScrollArea, Table, Text } from '@mantine/core';
 import type {
   Endgame2025,
+  SuperScoutField,
+  SuperScoutMatchEntry,
   TeamMatchData,
   TeamMatchValidationEntry,
   TeamMatchValidationStatus,
@@ -15,6 +17,10 @@ interface TeamMatchDetail2025Props {
   validationData: TeamMatchValidationEntry[];
   isValidationLoading: boolean;
   isValidationError: boolean;
+  superScoutData: SuperScoutMatchEntry[];
+  superScoutFields: SuperScoutField[];
+  isSuperScoutLoading: boolean;
+  isSuperScoutError: boolean;
 }
 
 type ColumnAlignment = 'left' | 'center' | 'right';
@@ -35,6 +41,7 @@ interface SeasonMatchTableConfig {
   leadColumns: ColumnDefinition[];
   groups: ColumnGroupDefinition[];
   trailingColumns: ColumnDefinition[];
+  trailingGroups?: ColumnGroupDefinition[];
 }
 
 const ENDGAME_2025_LABELS: Record<Endgame2025, string> = {
@@ -84,7 +91,18 @@ const SEASON_TABLE_CONFIGS: Record<number, SeasonMatchTableConfig> = {
     groups: [
       {
         title: 'Autonomous Coral',
-        columns: [numberColumn('al4c', 'L4'), numberColumn('al3c', 'L3'), numberColumn('al2c', 'L2'), numberColumn('al1c', 'L1')],
+        columns: [
+          {
+            key: 'startPosition',
+            title: 'Start Position',
+            align: 'center',
+            render: () => '—',
+          },
+          numberColumn('al4c', 'L4'),
+          numberColumn('al3c', 'L3'),
+          numberColumn('al2c', 'L2'),
+          numberColumn('al1c', 'L1'),
+        ],
       },
       {
         title: 'Autonomous Algae',
@@ -106,20 +124,64 @@ const SEASON_TABLE_CONFIGS: Record<number, SeasonMatchTableConfig> = {
         align: 'center',
         render: (row) => ENDGAME_2025_LABELS[row.endgame] ?? row.endgame,
       },
+    ],
+    trailingGroups: [
       {
-        key: 'notes',
         title: 'Notes',
-        render: (row) => row.notes?.trim() || '—',
+        columns: [
+          {
+            key: 'notes',
+            title: 'Notes',
+            render: (row) => row.notes?.trim() || '—',
+          },
+        ],
+      },
+      {
+        title: 'SuperScout',
+        columns: [
+          {
+            key: 'superScoutComments',
+            title: 'Comments',
+            render: () => '—',
+          },
+          {
+            key: 'superScoutDriverAbility',
+            title: 'Driver Ability',
+            align: 'center',
+            render: () => '—',
+          },
+          {
+            key: 'superScoutOverall',
+            title: 'Overall',
+            align: 'center',
+            render: () => '—',
+          },
+          {
+            key: 'superScoutNotes',
+            title: 'Notes',
+            render: () => '—',
+          },
+        ],
       },
     ],
   },
 };
+
+const formatStartPosition = (value: string) =>
+  value
+    .split('_')
+    .map((part) => part.charAt(0) + part.slice(1).toLowerCase())
+    .join(' ');
 
 export function TeamMatchDetail2025({
   data,
   validationData,
   isValidationLoading,
   isValidationError,
+  superScoutData,
+  superScoutFields,
+  isSuperScoutLoading,
+  isSuperScoutError,
 }: TeamMatchDetail2025Props) {
   const [scrolled, setScrolled] = useState(false);
 
@@ -159,6 +221,121 @@ export function TeamMatchDetail2025({
     return entries;
   }, [validationData]);
 
+  const superScoutLookup = useMemo(() => {
+    const entries = new Map<string, SuperScoutMatchEntry>();
+
+    superScoutData.forEach((entry) => {
+      entries.set(
+        buildValidationKey(entry.match_level, entry.match_number, entry.team_number),
+        entry
+      );
+    });
+
+    return entries;
+  }, [superScoutData]);
+
+  const renderLoadingText = useCallback(
+    () => (
+      <Text size="sm" c="dimmed">
+        Loading…
+      </Text>
+    ),
+    []
+  );
+
+  const getSuperScoutEntry = useCallback(
+    (row: TeamMatchData) =>
+      superScoutLookup.get(
+        buildValidationKey(row.match_level, row.match_number, row.team_number)
+      ),
+    [superScoutLookup]
+  );
+
+  const renderStartPositionCell = useCallback(
+    (row: TeamMatchData) => {
+      if (isSuperScoutLoading) {
+        return renderLoadingText();
+      }
+
+      const entry = getSuperScoutEntry(row);
+      const value = typeof entry?.startPosition === 'string' ? entry.startPosition.trim() : '';
+
+      if (!value) {
+        return '—';
+      }
+
+      return formatStartPosition(value);
+    },
+    [getSuperScoutEntry, isSuperScoutLoading, renderLoadingText]
+  );
+
+  const renderSuperScoutComments = useCallback(
+    (row: TeamMatchData) => {
+      if (isSuperScoutLoading) {
+        return renderLoadingText();
+      }
+
+      const entry = getSuperScoutEntry(row);
+
+      if (!entry) {
+        return '—';
+      }
+
+      const record = entry as Record<string, unknown>;
+
+      const activeFields = superScoutFields.filter((field) => record[field.key] === true);
+
+      if (activeFields.length === 0) {
+        return '—';
+      }
+
+      return (
+        <Group gap={4} wrap="wrap" justify="flex-start">
+          {activeFields.map((field) => (
+            <Badge key={field.key} variant="light" size="sm">
+              {field.label}
+            </Badge>
+          ))}
+        </Group>
+      );
+    },
+    [getSuperScoutEntry, isSuperScoutLoading, renderLoadingText, superScoutFields]
+  );
+
+  const renderSuperScoutRating = useCallback(
+    (row: TeamMatchData, key: 'driver_rating' | 'robot_overall') => {
+      if (isSuperScoutLoading) {
+        return renderLoadingText();
+      }
+
+      const entry = getSuperScoutEntry(row);
+      const rawValue =
+        key === 'driver_rating' ? entry?.driver_rating ?? null : entry?.robot_overall ?? null;
+      const value = typeof rawValue === 'number' ? rawValue : 0;
+
+      if (!value) {
+        return '—';
+      }
+
+      return <Rating value={value} count={5} readOnly size="sm" />;
+    },
+    [getSuperScoutEntry, isSuperScoutLoading, renderLoadingText]
+  );
+
+  const renderSuperScoutNotes = useCallback(
+    (row: TeamMatchData) => {
+      if (isSuperScoutLoading) {
+        return renderLoadingText();
+      }
+
+      const entry = getSuperScoutEntry(row);
+      const notes = typeof entry?.notes === 'string' ? entry.notes.trim() : '';
+
+      return notes.length > 0 ? notes : '—';
+    },
+    [getSuperScoutEntry, isSuperScoutLoading, renderLoadingText]
+  );
+
   const tableConfig = useMemo(() => {
     if (!seasonConfig) {
       return undefined;
@@ -190,11 +367,83 @@ export function TeamMatchDetail2025({
       };
     });
 
+    const groups = seasonConfig.groups.map((group) => {
+      if (group.title !== 'Autonomous Coral') {
+        return group;
+      }
+
+      return {
+        ...group,
+        columns: group.columns.map((column) => {
+          if (column.key !== 'startPosition') {
+            return column;
+          }
+
+          return {
+            ...column,
+            render: (row: TeamMatchData) => renderStartPositionCell(row),
+          };
+        }),
+      };
+    });
+
+    const trailingGroups = seasonConfig.trailingGroups?.map((group) => {
+      if (group.title !== 'SuperScout') {
+        return group;
+      }
+
+      return {
+        ...group,
+        columns: group.columns.map((column) => {
+          if (column.key === 'superScoutComments') {
+            return {
+              ...column,
+              render: (row: TeamMatchData) => renderSuperScoutComments(row),
+            };
+          }
+
+          if (column.key === 'superScoutDriverAbility') {
+            return {
+              ...column,
+              render: (row: TeamMatchData) => renderSuperScoutRating(row, 'driver_rating'),
+            };
+          }
+
+          if (column.key === 'superScoutOverall') {
+            return {
+              ...column,
+              render: (row: TeamMatchData) => renderSuperScoutRating(row, 'robot_overall'),
+            };
+          }
+
+          if (column.key === 'superScoutNotes') {
+            return {
+              ...column,
+              render: (row: TeamMatchData) => renderSuperScoutNotes(row),
+            };
+          }
+
+          return column;
+        }),
+      };
+    });
+
     return {
       ...seasonConfig,
       leadColumns,
+      groups,
+      trailingGroups,
     };
-  }, [isValidationError, isValidationLoading, seasonConfig, validationLookup]);
+  }, [
+    isValidationError,
+    isValidationLoading,
+    renderStartPositionCell,
+    renderSuperScoutComments,
+    renderSuperScoutNotes,
+    renderSuperScoutRating,
+    seasonConfig,
+    validationLookup,
+  ]);
 
   if (!tableConfig) {
     return (
@@ -215,7 +464,8 @@ export function TeamMatchDetail2025({
       </Table.Th>
     ));
 
-  const hasColumnGroups = tableConfig.groups.length > 0;
+  const trailingGroups = tableConfig.trailingGroups ?? [];
+  const hasColumnGroups = tableConfig.groups.length > 0 || trailingGroups.length > 0;
 
   const groupHeaderCells = tableConfig.groups.map((group) => (
     <Table.Th key={group.title} colSpan={group.columns.length} style={{ textAlign: 'center' }}>
@@ -223,7 +473,21 @@ export function TeamMatchDetail2025({
     </Table.Th>
   ));
 
+  const trailingGroupHeaderCells = trailingGroups.map((group) => (
+    <Table.Th key={group.title} colSpan={group.columns.length} style={{ textAlign: 'center' }}>
+      {group.title}
+    </Table.Th>
+  ));
+
   const groupColumnHeaders = tableConfig.groups.flatMap((group) =>
+    group.columns.map((column) => (
+      <Table.Th key={`${group.title}-${column.key}`} style={{ textAlign: column.align ?? 'left', whiteSpace: 'nowrap' }}>
+        {column.title}
+      </Table.Th>
+    )),
+  );
+
+  const trailingGroupColumnHeaders = trailingGroups.flatMap((group) =>
     group.columns.map((column) => (
       <Table.Th key={`${group.title}-${column.key}`} style={{ textAlign: column.align ?? 'left', whiteSpace: 'nowrap' }}>
         {column.title}
@@ -250,20 +514,43 @@ export function TeamMatchDetail2025({
           {column.render(row)}
         </Table.Td>
       ))}
+      {trailingGroups.flatMap((group) =>
+        group.columns.map((column) => (
+          <Table.Td key={`${group.title}-${column.key}`} style={{ textAlign: column.align ?? 'left' }}>
+            {column.render(row)}
+          </Table.Td>
+        )),
+      )}
     </Table.Tr>
   ));
 
   return (
     <>
-      <ScrollArea h={400} onScrollPositionChange={({ y }) => setScrolled(y !== 0)}>
-        <Table miw={900}>
+      {isSuperScoutError ? (
+        <Alert color="red" title="Unable to load SuperScout data" mb="sm">
+          We could not retrieve SuperScout observations for this team. The table may be missing
+          supplemental comments.
+        </Alert>
+      ) : null}
+      <ScrollArea
+        h={400}
+        scrollbars="xy"
+        onScrollPositionChange={({ y }) => setScrolled(y !== 0)}
+      >
+        <Table miw={1100}>
           <Table.Thead className={cx(classes.header, { [classes.scrolled]: scrolled })}>
             <Table.Tr>
               {renderHeaderRow(tableConfig.leadColumns, hasColumnGroups ? { rowSpan: 2 } : undefined)}
               {hasColumnGroups ? groupHeaderCells : null}
               {renderHeaderRow(tableConfig.trailingColumns, hasColumnGroups ? { rowSpan: 2 } : undefined)}
+              {hasColumnGroups ? trailingGroupHeaderCells : null}
             </Table.Tr>
-            {hasColumnGroups ? <Table.Tr>{groupColumnHeaders}</Table.Tr> : null}
+            {hasColumnGroups ? (
+              <Table.Tr>
+                {groupColumnHeaders}
+                {trailingGroupColumnHeaders}
+              </Table.Tr>
+            ) : null}
           </Table.Thead>
           <Table.Tbody>{rows}</Table.Tbody>
         </Table>
