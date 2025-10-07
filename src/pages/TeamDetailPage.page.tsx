@@ -6,8 +6,8 @@ import {
 } from '@/components/TeamPageToggle/TeamPageToggle';
 import { useParams } from '@tanstack/react-router';
 
-const TeamMatchTable = lazy(async () => ({
-  default: (await import('@/components/TeamMatchTable/TeamMatchTable')).TeamMatchTable,
+const TeamMatchDetail = lazy(async () => ({
+  default: (await import('@/components/TeamMatchDetail/TeamMatchDetail')).TeamMatchDetail,
 }));
 
 const TeamAnalytics = lazy(async () => ({
@@ -34,7 +34,7 @@ export function TeamDetailPage() {
       case 'pit-scouting':
         return <TeamPitScout teamNumber={teamNumber} />;
       default:
-        return <TeamMatchTable teamNumber={teamNumber} />;
+        return <TeamMatchDetail teamNumber={teamNumber} />;
     }
   };
 
