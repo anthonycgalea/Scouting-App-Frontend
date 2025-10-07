@@ -121,13 +121,17 @@ export function EventSelect() {
 
   const handleConfirmDeleteEvent = () => {
     const eventKey = eventPendingDeletion?.eventKey;
+    const organizationEventId = eventPendingDeletion?.orgEventId;
 
     if (!eventKey) {
       return;
     }
 
     deleteOrganizationEventMutation(
-      { eventKey },
+      {
+        eventKey,
+        organizationEventId,
+      },
       {
         onSuccess: () => {
           setEvents((current) => current.filter((event) => event.eventKey !== eventKey));
