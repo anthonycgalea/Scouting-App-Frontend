@@ -6,6 +6,7 @@ import {
   Center,
   Flex,
   Image,
+  Modal,
   Skeleton,
   Stack,
   Table,
@@ -173,35 +174,6 @@ export const MatchPreview2025 = ({
 
   const hasValidTeam = (teamNumber: number) => Number.isFinite(teamNumber) && teamNumber > 0;
 
-  const getAllianceStatus = (
-    teamNumbers: [number, number, number],
-    queries: AllianceImageQueries
-  ) => {
-    const hasTeams = teamNumbers.some((teamNumber) => hasValidTeam(teamNumber));
-    const hasImagesOrLoading = teamNumbers.some((teamNumber, index) => {
-      if (!hasValidTeam(teamNumber)) {
-        return false;
-      }
-
-      const query = queries[index];
-
-      if (query.isLoading) {
-        return true;
-      }
-
-      return (query.data?.length ?? 0) > 0;
-    });
-
-    return { hasTeams, hasImagesOrLoading };
-  };
-
-  const redAllianceStatus = getAllianceStatus(redTeamNumbers, redAllianceImageQueries);
-  const blueAllianceStatus = getAllianceStatus(blueTeamNumbers, blueAllianceImageQueries);
-
-  const shouldShowImageRow =
-    (redAllianceStatus.hasTeams && redAllianceStatus.hasImagesOrLoading) ||
-    (blueAllianceStatus.hasTeams && blueAllianceStatus.hasImagesOrLoading);
-
   const autonomousFields: FieldConfig[] = [
     { key: 'auto-level4', label: 'L4', getTeamStat: (team) => team?.auto.level4 },
     { key: 'auto-level3', label: 'L3', getTeamStat: (team) => team?.auto.level3 },
@@ -294,43 +266,41 @@ export const MatchPreview2025 = ({
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
-          {shouldShowImageRow && (
-            <Table.Tr>
-              {redTeamNumbers.map((teamNumber, index) => (
-                <Table.Td
-                  key={`red-image-${index}`}
-                  style={{ verticalAlign: 'top' }}
-                >
-                  <Center>
-                    <AllianceTeamImageDisplay
-                      teamNumber={teamNumber}
-                      imageQuery={redAllianceImageQueries[index]}
-                    />
-                  </Center>
-                </Table.Td>
-              ))}
-              <Table.Td className={classes.redCell} />
-              <Table.Td className={classes.fieldCell}>
-                <Text fw={500} ta="center">
-                  Robot Photo
-                </Text>
+          <Table.Tr>
+            {redTeamNumbers.map((teamNumber, index) => (
+              <Table.Td
+                key={`red-image-${index}`}
+                style={{ verticalAlign: 'top' }}
+              >
+                <Center>
+                  <AllianceTeamImageDisplay
+                    teamNumber={teamNumber}
+                    imageQuery={redAllianceImageQueries[index]}
+                  />
+                </Center>
               </Table.Td>
-              <Table.Td className={classes.blueCell} />
-              {blueTeamNumbers.map((teamNumber, index) => (
-                <Table.Td
-                  key={`blue-image-${index}`}
-                  style={{ verticalAlign: 'top' }}
-                >
-                  <Center>
-                    <AllianceTeamImageDisplay
-                      teamNumber={teamNumber}
-                      imageQuery={blueAllianceImageQueries[index]}
-                    />
-                  </Center>
-                </Table.Td>
-              ))}
-            </Table.Tr>
-          )}
+            ))}
+            <Table.Td className={classes.redCell} />
+            <Table.Td className={classes.fieldCell}>
+              <Text fw={500} ta="center">
+                Robot Photo
+              </Text>
+            </Table.Td>
+            <Table.Td className={classes.blueCell} />
+            {blueTeamNumbers.map((teamNumber, index) => (
+              <Table.Td
+                key={`blue-image-${index}`}
+                style={{ verticalAlign: 'top' }}
+              >
+                <Center>
+                  <AllianceTeamImageDisplay
+                    teamNumber={teamNumber}
+                    imageQuery={blueAllianceImageQueries[index]}
+                  />
+                </Center>
+              </Table.Td>
+            ))}
+          </Table.Tr>
           <Table.Tr>
             {redTeamNumbers.map((teamNumber, index) => {
               const isValidTeam = hasValidTeam(teamNumber);
@@ -610,9 +580,11 @@ interface TeamImageCarouselProps {
 
 const TeamImageCarousel = ({ teamNumber, images }: TeamImageCarouselProps) => {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     setActiveIndex(0);
+    setIsModalOpen(false);
   }, [images]);
 
   if (!images.length) {
@@ -621,6 +593,7 @@ const TeamImageCarousel = ({ teamNumber, images }: TeamImageCarouselProps) => {
 
   const showControls = images.length > 1;
   const currentImage = images[activeIndex];
+  const hasImageUrl = Boolean(currentImage?.image_url);
 
   const handlePrevious = () => {
     setActiveIndex((current) => (current - 1 + images.length) % images.length);
@@ -630,42 +603,104 @@ const TeamImageCarousel = ({ teamNumber, images }: TeamImageCarouselProps) => {
     setActiveIndex((current) => (current + 1) % images.length);
   };
 
+  const handleImageClick = () => {
+    if (!hasImageUrl) {
+      return;
+    }
+
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+  };
+
+  const imageAlt =
+    currentImage.description || `Team ${teamNumber} image ${activeIndex + 1}`;
+
   return (
-    <Stack gap="xs" align="center" w={180}>
-      <Flex align="center" gap="xs" justify="center" w="100%">
-        {showControls && (
-          <ActionIcon aria-label={`Previous image for team ${teamNumber}`} variant="light" size="sm"
-            onClick={handlePrevious}
+    <>
+      <Stack gap="xs" align="center" w={180}>
+        <Flex align="center" gap="xs" justify="center" w="100%">
+          {showControls && (
+            <ActionIcon
+              aria-label={`Previous image for team ${teamNumber}`}
+              variant="light"
+              size="sm"
+              onClick={handlePrevious}
+            >
+              <IconChevronLeft size={16} stroke={1.5} />
+            </ActionIcon>
+          )}
+          <Box
+            w={140}
+            h={120}
+            style={{
+              overflow: 'hidden',
+              borderRadius: 'var(--mantine-radius-md)',
+            }}
           >
-            <IconChevronLeft size={16} stroke={1.5} />
-          </ActionIcon>
-        )}
-        <Box w={140} h={120} style={{ overflow: 'hidden', borderRadius: 'var(--mantine-radius-md)' }}>
-          <Image
-            src={currentImage.image_url}
-            alt={currentImage.description || `Team ${teamNumber} image ${activeIndex + 1}`}
-            fit="cover"
-            height={120}
-            width={140}
-            radius="md"
-            fallbackSrc=""
-          />
-        </Box>
-        {showControls && (
-          <ActionIcon aria-label={`Next image for team ${teamNumber}`} variant="light" size="sm"
-            onClick={handleNext}
-          >
-            <IconChevronRight size={16} stroke={1.5} />
-          </ActionIcon>
-        )}
-      </Flex>
-      <Text size="sm" c="dimmed">
-        {activeIndex + 1} / {images.length}
-      </Text>
-      <Text size="sm" fw={500}>
-        Team {teamNumber}
-      </Text>
-    </Stack>
+            <UnstyledButton
+              onClick={handleImageClick}
+              aria-label={`View larger image for team ${teamNumber}`}
+              style={{
+                width: '100%',
+                height: '100%',
+                cursor: hasImageUrl ? 'pointer' : 'default',
+              }}
+            >
+              <Image
+                src={currentImage.image_url}
+                alt={imageAlt}
+                fit="cover"
+                height={120}
+                width={140}
+                radius="md"
+                fallbackSrc=""
+              />
+            </UnstyledButton>
+          </Box>
+          {showControls && (
+            <ActionIcon
+              aria-label={`Next image for team ${teamNumber}`}
+              variant="light"
+              size="sm"
+              onClick={handleNext}
+            >
+              <IconChevronRight size={16} stroke={1.5} />
+            </ActionIcon>
+          )}
+        </Flex>
+        <Text size="sm" c="dimmed">
+          {activeIndex + 1} / {images.length}
+        </Text>
+        <Text size="sm" fw={500}>
+          Team {teamNumber}
+        </Text>
+      </Stack>
+      <Modal
+        opened={isModalOpen}
+        onClose={handleCloseModal}
+        centered
+        size="auto"
+        title={`Team ${teamNumber} image`}
+      >
+        <Image
+          src={currentImage.image_url}
+          alt={imageAlt}
+          fit="contain"
+          mah={500}
+          maw={600}
+          radius="md"
+          fallbackSrc=""
+        />
+        {currentImage.description ? (
+          <Text mt="sm" size="sm">
+            {currentImage.description}
+          </Text>
+        ) : null}
+      </Modal>
+    </>
   );
 };
 
