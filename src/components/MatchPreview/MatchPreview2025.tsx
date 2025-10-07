@@ -236,33 +236,51 @@ export const MatchPreview2025 = ({
             </Table.Th>
           </Table.Tr>
           <Table.Tr>
-            {redTeamNumbers.map((_, index) => (
-              <Table.Th
-                key={`red-station-${index}`}
-                className={clsx(classes.redCell, classes.stationHeader)}
-                ta="center"
-              >
-                Red {index + 1}
-              </Table.Th>
-            ))}
+            {redTeamNumbers.map((teamNumber, index) => {
+              const isValidTeam = hasValidTeam(teamNumber);
+
+              return (
+                <Table.Th
+                  key={`red-station-${index}`}
+                  className={clsx(classes.redCell, classes.stationHeader)}
+                  ta="center"
+                >
+                  <Stack gap={2} align="center">
+                    <Text fw={500}>Red {index + 1}</Text>
+                    <Text fw={700} fz="sm">
+                      {isValidTeam ? teamNumber : 'TBD'}
+                    </Text>
+                  </Stack>
+                </Table.Th>
+              );
+            })}
             <Table.Th className={clsx(classes.redCell, classes.stationHeader)} ta="center">
-              &nbsp;
+              <Text fw={500}>Predicted</Text>
             </Table.Th>
             <Table.Th className={classes.fieldHeader} ta="center">
               &nbsp;
             </Table.Th>
             <Table.Th className={clsx(classes.blueCell, classes.stationHeader)} ta="center">
-              &nbsp;
+              <Text fw={500}>Predicted</Text>
             </Table.Th>
-            {blueTeamNumbers.map((_, index) => (
-              <Table.Th
-                key={`blue-station-${index}`}
-                className={clsx(classes.blueCell, classes.stationHeader)}
-                ta="center"
-              >
-                Blue {index + 1}
-              </Table.Th>
-            ))}
+            {blueTeamNumbers.map((teamNumber, index) => {
+              const isValidTeam = hasValidTeam(teamNumber);
+
+              return (
+                <Table.Th
+                  key={`blue-station-${index}`}
+                  className={clsx(classes.blueCell, classes.stationHeader)}
+                  ta="center"
+                >
+                  <Stack gap={2} align="center">
+                    <Text fw={500}>Blue {index + 1}</Text>
+                    <Text fw={700} fz="sm">
+                      {isValidTeam ? teamNumber : 'TBD'}
+                    </Text>
+                  </Stack>
+                </Table.Th>
+              );
+            })}
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
@@ -281,11 +299,7 @@ export const MatchPreview2025 = ({
               </Table.Td>
             ))}
             <Table.Td className={classes.redCell} />
-            <Table.Td className={classes.fieldCell}>
-              <Text fw={500} ta="center">
-                Robot Photo
-              </Text>
-            </Table.Td>
+            <Table.Td className={classes.fieldCell} />
             <Table.Td className={classes.blueCell} />
             {blueTeamNumbers.map((teamNumber, index) => (
               <Table.Td
@@ -300,37 +314,6 @@ export const MatchPreview2025 = ({
                 </Center>
               </Table.Td>
             ))}
-          </Table.Tr>
-          <Table.Tr>
-            {redTeamNumbers.map((teamNumber, index) => {
-              const isValidTeam = hasValidTeam(teamNumber);
-
-              return (
-                <Table.Td key={`red-team-${index}`} ta="center">
-                  <Text fw={500}>{isValidTeam ? teamNumber : 'TBD'}</Text>
-                </Table.Td>
-              );
-            })}
-            <Table.Td className={classes.redCell} ta="center">
-              <Text fw={500}>Predicted</Text>
-            </Table.Td>
-            <Table.Td className={classes.fieldCell}>
-              <Text fw={500} ta="center">
-                Team Number
-              </Text>
-            </Table.Td>
-            <Table.Td className={classes.blueCell} ta="center">
-              <Text fw={500}>Predicted</Text>
-            </Table.Td>
-            {blueTeamNumbers.map((teamNumber, index) => {
-              const isValidTeam = hasValidTeam(teamNumber);
-
-              return (
-                <Table.Td key={`blue-team-${index}`} ta="center">
-                  <Text fw={500}>{isValidTeam ? teamNumber : 'TBD'}</Text>
-                </Table.Td>
-              );
-            })}
           </Table.Tr>
           <Table.Tr>
             <Table.Th colSpan={9} className={classes.sectionHeader}>
