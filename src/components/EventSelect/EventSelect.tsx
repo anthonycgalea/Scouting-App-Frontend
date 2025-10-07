@@ -259,7 +259,7 @@ export function EventSelect() {
     });
   }, [availableOrganizations, inviteSearchTerm]);
 
-  const activeCollaborationsByEventId = useMemo(() => {
+  const activeCollaborationsByEventKey = useMemo(() => {
     const activeStatuses = new Set(['ACTIVE', 'ACCEPTED']);
     const collaborationMap = new Map<string, string[]>();
 
@@ -270,9 +270,9 @@ export function EventSelect() {
         continue;
       }
 
-      const { organizationEventId, teamNumber, organizationName } = collaboration;
+      const { eventKey, teamNumber, organizationName } = collaboration;
 
-      if (!organizationEventId) {
+      if (!eventKey) {
         continue;
       }
 
@@ -282,9 +282,9 @@ export function EventSelect() {
         continue;
       }
 
-      const existingTeams = collaborationMap.get(organizationEventId) ?? [];
+      const existingTeams = collaborationMap.get(eventKey) ?? [];
 
-      collaborationMap.set(organizationEventId, [...existingTeams, formattedTeam]);
+      collaborationMap.set(eventKey, [...existingTeams, formattedTeam]);
     }
 
     return collaborationMap;
@@ -416,8 +416,8 @@ export function EventSelect() {
 
   const rows = filteredEvents.map((event) => {
     const selected = event.isActive;
-    const activeCollaborationTeams = event.organizationEventId
-      ? activeCollaborationsByEventId.get(event.organizationEventId) ?? []
+    const activeCollaborationTeams = event.eventKey
+      ? activeCollaborationsByEventKey.get(event.eventKey) ?? []
       : [];
     const hasActiveCollaboration = activeCollaborationTeams.length > 0;
     return (
