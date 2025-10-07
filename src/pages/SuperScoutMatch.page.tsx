@@ -160,7 +160,7 @@ export function SuperScoutMatchPage() {
         team_number: Number(teamNumber ?? 0),
         match_number: match.match_number,
         match_level: match.match_level ?? matchLevel,
-        ...(startPosition !== undefined ? { start_position: startPosition } : {}),
+        ...(startPosition !== undefined ? { startPosition } : {}),
         notes: teamState.notes,
         ...(defenseRating !== undefined ? { defense_rating: defenseRating } : {}),
         driver_rating: teamState.driverRating ?? 0,
