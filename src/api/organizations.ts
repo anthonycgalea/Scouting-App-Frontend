@@ -235,6 +235,9 @@ export const useAcceptOrganizationCollaboration = () => {
       void queryClient.invalidateQueries({
         queryKey: organizationCollaborationRequestsQueryKey,
       });
+      if (typeof window !== 'undefined') {
+        window.location.reload();
+      }
     },
   });
 };
@@ -249,6 +252,9 @@ export const useDeclineOrganizationCollaboration = () => {
       void queryClient.invalidateQueries({
         queryKey: organizationCollaborationRequestsQueryKey,
       });
+      if (typeof window !== 'undefined') {
+        window.location.reload();
+      }
     },
   });
 };
