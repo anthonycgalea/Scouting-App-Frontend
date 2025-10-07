@@ -9,7 +9,7 @@ import {
   ScrollArea,
   Select,
   Stack,
-  Switch,
+  Radio,
   Table,
   Text,
   TextInput,
@@ -251,11 +251,12 @@ export function EventSelect() {
     [organizationCollaborations]
   );
 
-  const toggleEventPublic = (eventKey: string) => {
+  const handleSelectActiveEvent = (eventKey: string) => {
     setEvents((current) =>
-      current.map((event) =>
-        event.eventKey === eventKey ? { ...event, isPublic: !event.isPublic } : event
-      )
+      current.map((event) => ({
+        ...event,
+        isActive: event.eventKey === eventKey,
+      }))
     );
   };
 
@@ -391,11 +392,12 @@ export function EventSelect() {
             {event.eventYear ?? '—'}
           </Text>
         </Table.Td>
-        <Table.Td>
-          <Switch
-            aria-label={`Toggle public visibility for ${event.eventName}`}
-            checked={event.isPublic}
-            onChange={() => toggleEventPublic(event.eventKey)}
+        <Table.Td w={80} ta="center">
+          <Radio
+            name="active-event"
+            aria-label={`Select ${event.eventName} as active event`}
+            checked={selected}
+            onChange={() => handleSelectActiveEvent(event.eventKey)}
           />
         </Table.Td>
         <Table.Td ta="right">
@@ -505,7 +507,9 @@ export function EventSelect() {
               <Table.Th w={80} ta="center">
                 Year
               </Table.Th>
-              <Table.Th>Public</Table.Th>
+              <Table.Th w={80} ta="center">
+                Active
+              </Table.Th>
               <Table.Th w={60}>
                 <VisuallyHidden>Delete</VisuallyHidden>
               </Table.Th>
