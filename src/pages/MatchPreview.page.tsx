@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Box, Card, Center, Loader, Stack, Text, Title } from '@mantine/core';
+import { Box, Card, Center, Flex, Loader, Stack, Text, Title } from '@mantine/core';
 import { useParams } from '@tanstack/react-router';
 import { useMatchPreview, useMatchSchedule } from '@/api';
 import { MatchPreview2025 } from '@/components/MatchPreview/MatchPreview2025';
@@ -108,23 +108,39 @@ export function MatchPreviewPage() {
   const season = matchPreview.season;
   const shouldUse2025Preview = season === 1;
 
+  const previewCard = shouldUse2025Preview ? (
+    <MatchPreview2025 match={match} preview={matchPreview} />
+  ) : (
+    <Card withBorder radius="md" shadow="sm" padding="lg">
+      <Text fw={500} ta="center">
+        {season != null
+          ? `Match preview is not yet available for season ${season}.`
+          : 'Match preview is not available for this match.'}
+      </Text>
+    </Card>
+  );
+
   return (
     <Box p="md">
       <Stack gap="lg">
         <Title order={2} ta="center">
           {matchLevelLabel} Match {numericMatchNumber} Preview
         </Title>
-        {shouldUse2025Preview ? (
-          <MatchPreview2025 match={match} preview={matchPreview} />
-        ) : (
-          <Card withBorder radius="md" shadow="sm" padding="lg">
-            <Text fw={500} ta="center">
-              {season != null
-                ? `Match preview is not yet available for season ${season}.`
-                : 'Match preview is not available for this match.'}
-            </Text>
-          </Card>
-        )}
+        <Flex
+          gap="lg"
+          align="stretch"
+          direction={{ base: 'column', lg: 'row' }}
+        >
+          <Box style={{ flex: '1 1 60%' }}>{previewCard}</Box>
+          <Box style={{ flex: '1 1 40%' }}>
+            <Card withBorder radius="md" shadow="sm" padding="lg" h="100%">
+              <Stack gap="sm">
+                <Title order={4}>Prediction</Title>
+                <Text c="dimmed">Prediction details will appear here.</Text>
+              </Stack>
+            </Card>
+          </Box>
+        </Flex>
       </Stack>
     </Box>
   );
