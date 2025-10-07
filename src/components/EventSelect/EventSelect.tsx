@@ -122,18 +122,23 @@ export function EventSelect() {
     [events, activeEventId]
   );
   const selectedOrganizationEventId = selectedEvent?.organizationEventId ?? null;
-  const canInviteOrganizations = Boolean(organizationId && selectedOrganizationEventId);
+  const hasSelectedEvent = Boolean(selectedEvent);
+  const canInviteOrganizations = Boolean(organizationId && hasSelectedEvent);
 
   const availableOrganizations = useMemo(() => {
-    if (!selectedOrganizationEventId) {
+    if (!hasSelectedEvent) {
       return [];
     }
 
-    const collaborationOrganizationIds = new Set(
-      (organizationCollaborations ?? [])
-        .filter((collaboration) => collaboration.organizationEventId === selectedOrganizationEventId)
-        .map((collaboration) => collaboration.organizationId)
-    );
+    const collaborationOrganizationIds = selectedOrganizationEventId
+      ? new Set(
+          (organizationCollaborations ?? [])
+            .filter(
+              (collaboration) => collaboration.organizationEventId === selectedOrganizationEventId
+            )
+            .map((collaboration) => collaboration.organizationId)
+        )
+      : new Set<number>();
 
     return (allOrganizations ?? []).filter(
       (organization) =>
@@ -143,6 +148,7 @@ export function EventSelect() {
     allOrganizations,
     organizationCollaborations,
     organizationId,
+    hasSelectedEvent,
     selectedOrganizationEventId,
   ]);
 
@@ -203,7 +209,7 @@ export function EventSelect() {
   };
 
   const handleInviteOrganization = async (targetOrganizationId: number) => {
-    if (!selectedOrganizationEventId) {
+    if (!hasSelectedEvent) {
       setInviteFeedback({
         type: 'error',
         message: 'Select an event before inviting organizations.',
@@ -461,11 +467,9 @@ export function EventSelect() {
         size="lg"
       >
         <Stack gap="md">
-          {selectedOrganizationEventId ? (
+          {selectedEvent ? (
             <>
-              {selectedEvent ? (
-                <Title order={4}>Invite organizations to {selectedEvent.eventName}</Title>
-              ) : null}
+              <Title order={4}>Invite organizations to {selectedEvent.eventName}</Title>
               <TextInput
                 label="Search"
                 placeholder="Search organizations"
