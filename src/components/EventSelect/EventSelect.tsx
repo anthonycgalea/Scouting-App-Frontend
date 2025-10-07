@@ -14,11 +14,19 @@ import {
   Text,
   TextInput,
   Title,
+  Tooltip,
   VisuallyHidden,
   useMantineColorScheme,
 } from '@mantine/core';
 import { Link } from '@tanstack/react-router';
-import { IconCheck, IconMail, IconPlus, IconTrash, IconX } from '@tabler/icons-react';
+import {
+  IconCheck,
+  IconHeartHandshake,
+  IconMail,
+  IconPlus,
+  IconTrash,
+  IconX,
+} from '@tabler/icons-react';
 import { useDisclosure } from '@mantine/hooks';
 import {
   type OrganizationEventDetail,
@@ -243,6 +251,37 @@ export function EventSelect() {
     });
   }, [availableOrganizations, inviteSearchTerm]);
 
+  const activeCollaborationsByEventId = useMemo(() => {
+    const activeStatuses = new Set(['ACTIVE', 'ACCEPTED']);
+    const collaborationMap = new Map<string, string[]>();
+
+    for (const collaboration of organizationCollaborations ?? []) {
+      const status = collaboration.status?.toUpperCase();
+
+      if (!status || !activeStatuses.has(status)) {
+        continue;
+      }
+
+      const { organizationEventId, teamNumber, organizationName } = collaboration;
+
+      if (!organizationEventId) {
+        continue;
+      }
+
+      const formattedTeam = teamNumber ? `Team ${teamNumber}` : organizationName;
+
+      if (!formattedTeam) {
+        continue;
+      }
+
+      const existingTeams = collaborationMap.get(organizationEventId) ?? [];
+
+      collaborationMap.set(organizationEventId, [...existingTeams, formattedTeam]);
+    }
+
+    return collaborationMap;
+  }, [organizationCollaborations]);
+
   const pendingCollaborations = useMemo(
     () =>
       (organizationCollaborations ?? []).filter(
@@ -375,6 +414,10 @@ export function EventSelect() {
 
   const rows = filteredEvents.map((event) => {
     const selected = event.isActive;
+    const activeCollaborationTeams = event.organizationEventId
+      ? activeCollaborationsByEventId.get(event.organizationEventId) ?? []
+      : [];
+    const hasActiveCollaboration = activeCollaborationTeams.length > 0;
     return (
       <Table.Tr key={event.eventKey} className={cx({ [classes.rowSelected]: selected })}>
         <Table.Td w={80} ta="center">
@@ -386,9 +429,19 @@ export function EventSelect() {
           />
         </Table.Td>
         <Table.Td>
-          <Text size="sm" fw={500}>
-            {event.eventName}
-          </Text>
+          <Group gap="xs">
+            <Text size="sm" fw={500}>
+              {event.eventName}
+            </Text>
+            {hasActiveCollaboration && (
+              <Tooltip
+                label={`Collaborating with: ${activeCollaborationTeams.join(', ')}`}
+                withArrow
+              >
+                <IconHeartHandshake stroke={1.5} />
+              </Tooltip>
+            )}
+          </Group>
         </Table.Td>
         <Table.Td>
           <Text size="sm" ta="center">
