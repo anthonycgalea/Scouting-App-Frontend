@@ -49,6 +49,8 @@ const useAllianceTeamImages = (
 interface MatchPreview2025Props {
   match: MatchScheduleEntry;
   preview: MatchPreviewResponse;
+  className?: string;
+  contentClassName?: string;
 }
 
 type AllianceTeam = TeamMatchPreview | undefined;
@@ -140,7 +142,12 @@ interface FieldConfig {
   getTeamStat: (team: AllianceTeam) => MetricStatistics | undefined;
 }
 
-export const MatchPreview2025 = ({ match, preview }: MatchPreview2025Props) => {
+export const MatchPreview2025 = ({
+  match,
+  preview,
+  className,
+  contentClassName,
+}: MatchPreview2025Props) => {
   const redTeams: AllianceTeam[] = [
     preview.red.teams[0],
     preview.red.teams[1],
@@ -227,8 +234,15 @@ export const MatchPreview2025 = ({ match, preview }: MatchPreview2025Props) => {
   };
 
   return (
-    <Card withBorder radius="md" shadow="sm" padding="lg">
-      <Table highlightOnHover withColumnBorders className={classes.table}>
+    <Card
+      withBorder
+      radius="md"
+      shadow="sm"
+      padding="lg"
+      className={clsx(classes.cardRoot, className)}
+    >
+      <Box className={clsx(classes.cardContent, contentClassName)}>
+        <Table highlightOnHover withColumnBorders className={classes.table}>
         <Table.Thead>
           <Table.Tr>
             <Table.Th
@@ -555,6 +569,7 @@ export const MatchPreview2025 = ({ match, preview }: MatchPreview2025Props) => {
           </Table.Tr>
         </Table.Tbody>
       </Table>
+      </Box>
     </Card>
   );
 };

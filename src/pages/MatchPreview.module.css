@@ -1,3 +1,47 @@
+.pageWrapper {
+  min-height: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.pageStack {
+  flex: 1;
+  min-height: 0;
+}
+
+.contentFlex {
+  flex: 1;
+  min-height: 0;
+}
+
+.cardColumn {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.previewColumn {
+  flex: 1 1 55%;
+}
+
+.predictionColumn {
+  flex: 1 1 45%;
+}
+
+.cardRoot {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.cardContent {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
 .table {
   width: 100%;
   table-layout: fixed;
