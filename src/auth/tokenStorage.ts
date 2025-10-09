@@ -4,7 +4,7 @@ import { SUPABASE_CUSTOM_STORAGE_KEY, SUPABASE_STORAGE_KEY_SUFFIX } from './supa
 const TOKEN_STORAGE_KEY = 'scouting-app.auth.tokens';
 const USER_STORAGE_KEY = 'scouting-app.auth.user';
 const SUPABASE_STORAGE_PREFIX = 'sb-';
-const TOKEN_EXPIRATION_BUFFER_MS = 60_000;
+const TOKEN_EXPIRATION_BUFFER_MS = 10 * 60_000;
 
 const isBrowser = typeof window !== 'undefined';
 
@@ -111,10 +111,6 @@ const syncTokensFromSupabaseStorage = (): StoredTokens | null => {
     return null;
   }
 
-  if (supabaseTokens.expiresAt && Date.now() >= supabaseTokens.expiresAt) {
-    return null;
-  }
-
   persistStoredTokens(supabaseTokens);
 
   return supabaseTokens;
@@ -137,11 +133,6 @@ const readPersistedTokens = (): StoredTokens | null => {
       return null;
     }
 
-    if (parsedValue.expiresAt && Date.now() >= parsedValue.expiresAt) {
-      window.localStorage.removeItem(TOKEN_STORAGE_KEY);
-      return null;
-    }
-
     return parsedValue;
   } catch (error) {
     window.localStorage.removeItem(TOKEN_STORAGE_KEY);
@@ -159,6 +150,9 @@ const shouldRefreshTokens = (tokens: StoredTokens) => {
 
   return Date.now() >= tokens.expiresAt - TOKEN_EXPIRATION_BUFFER_MS;
 };
+
+const isExpired = (tokens: StoredTokens) =>
+  !!tokens.expiresAt && Date.now() >= tokens.expiresAt;
 
 const refreshSupabaseTokens = async (tokens: StoredTokens): Promise<StoredTokens | null> => {
   const supabaseClient = await loadSupabaseClient();
@@ -272,6 +266,10 @@ export const ensureValidAccessToken = async (): Promise<string | null> => {
 
   const refreshedTokens = await refreshSupabaseTokens(storedTokens);
   const nextTokens = refreshedTokens ?? storedTokens;
+
+  if (shouldRefreshTokens(nextTokens) && isExpired(nextTokens)) {
+    return null;
+  }
 
   return nextTokens.accessToken;
 };
