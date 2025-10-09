@@ -4,7 +4,7 @@ import { SUPABASE_CUSTOM_STORAGE_KEY, SUPABASE_STORAGE_KEY_SUFFIX } from './supa
 const TOKEN_STORAGE_KEY = 'scouting-app.auth.tokens';
 const USER_STORAGE_KEY = 'scouting-app.auth.user';
 const SUPABASE_STORAGE_PREFIX = 'sb-';
-const TOKEN_EXPIRATION_BUFFER_MS = 60_000;
+const TOKEN_EXPIRATION_BUFFER_MS = 10 * 60_000;
 
 const isBrowser = typeof window !== 'undefined';
 
