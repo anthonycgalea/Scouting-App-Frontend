@@ -1,4 +1,4 @@
-import { useCallback, useMemo, type KeyboardEvent } from 'react';
+import { useCallback, useMemo, type KeyboardEvent, type ReactElement } from 'react';
 import { useMantineColorScheme, useMantineTheme, rgba } from '@mantine/core';
 import {
   Bar,
@@ -35,6 +35,9 @@ type ChartDatum = TeamPerformanceSummary & {
   teamLabel: string;
 };
 
+type ChartTooltipPayload = { payload?: ChartDatum } & Record<string, unknown>;
+type ChartTooltipProps = TooltipProps<number, string> & { payload?: ChartTooltipPayload[] };
+
 const tooltipContent = (
   themeColors: {
     background: string;
@@ -43,12 +46,12 @@ const tooltipContent = (
     label: string;
   },
 ) =>
-  ({ active, payload }: TooltipProps<number, string>) => {
+  ({ active, payload }: ChartTooltipProps) => {
     if (!active || !payload || payload.length === 0) {
       return null;
     }
 
-    const point = payload[0]?.payload as ChartDatum | undefined;
+    const point = payload[0]?.payload;
 
     if (!point) {
       return null;
@@ -157,14 +160,14 @@ const BarChart2025 = ({ teams = [] }: BarChart2025Props) => {
       x?: number;
       y?: number;
       payload?: { value?: string; index?: number; payload?: ChartDatum };
-    }) => {
+    }): ReactElement<SVGElement> => {
       const datum =
         payload?.payload ??
         (payload && typeof payload.index === 'number' ? data[payload.index] : undefined) ??
         (payload?.value ? data.find((item) => item.teamLabel === payload.value) : undefined);
 
       if (!datum) {
-        return null;
+        return <g />;
       }
 
       const handleClick = () => navigateToTeam(datum.teamNumber);
@@ -196,8 +199,8 @@ const BarChart2025 = ({ teams = [] }: BarChart2025Props) => {
             onClick={handleClick}
             onKeyDown={handleKeyDown}
             aria-label={accessibleLabel}
-            title={datum.teamName ? `${datum.teamNumber} — ${datum.teamName}` : labelText}
           >
+            <title>{datum.teamName ? `${datum.teamNumber} — ${datum.teamName}` : labelText}</title>
             {labelText}
           </text>
         </g>

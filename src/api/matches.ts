@@ -277,7 +277,7 @@ export const updateValidationStatuses = (updates: ValidationStatusUpdate[]) =>
 });
 
 const buildMatchDataPayload = (update: MatchValidationDataUpdate) => {
-  const payload: TeamMatchData & { notes?: string | null } = {
+  const payload: (TeamMatchData & { notes?: string | null }) & Record<string, unknown> = {
     ...update.matchData,
     season: update.season,
     event_key: update.eventKey,

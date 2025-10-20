@@ -522,7 +522,7 @@ export function AllianceSelectionPage() {
                     data={pickListSelectOptions}
                     value={selectedPickListId}
                     onChange={setSelectedPickListId}
-                    withinPortal
+                    comboboxProps={{ withinPortal: true }}
                     renderOption={({ option }) => {
                       const isFavorited = favoritedPickListIds.has(option.value);
                       const optionLabel = isFavorited

@@ -142,7 +142,7 @@ export function HeadToHeadStatsTable({ teams, isLoading, isError }: HeadToHeadSt
 
   const metricHasData = useMemo(
     () =>
-      new Map(
+      new Map<string, boolean>(
         METRIC_SECTIONS.flatMap((section) =>
           section.metrics.map((metric) => {
             if (metric.type === 'summary') {
