@@ -52,7 +52,7 @@ export interface CreateOrganizationEventRequest {
   EventKey: string;
 }
 
-export interface DeleteOrganizationEventRequest {
+export interface DeleteOrganizationEventRequest extends Record<string, unknown> {
   eventKey: string;
 }
 
@@ -195,7 +195,7 @@ export const updateOrganizationEvents = (body: UpdateOrganizationEventsRequest) 
 export const deleteOrganizationEvent = (payload: DeleteOrganizationEventRequest) =>
   apiFetch<void>('organization/event', {
     method: 'DELETE',
-    json: payload as JsonBody,
+    json: payload,
   });
 
 export interface UpdateOrganizationEventsVariables {

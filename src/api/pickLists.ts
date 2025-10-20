@@ -80,7 +80,7 @@ export const useUpdatePickListGenerator = () => {
   });
 };
 
-export interface DeletePickListGeneratorRequest {
+export interface DeletePickListGeneratorRequest extends Record<string, unknown> {
   id: string;
 }
 
@@ -101,14 +101,14 @@ export const useDeletePickListGenerator = () => {
   });
 };
 
-export interface CreatePickListRank {
+export interface CreatePickListRank extends Record<string, unknown> {
   rank: number;
   team_number: number;
   notes?: string;
   dnp?: boolean;
 }
 
-export interface CreatePickListRequest {
+export interface CreatePickListRequest extends Record<string, unknown> {
   title: string;
   notes?: string;
   ranks: CreatePickListRank[];
@@ -183,7 +183,7 @@ export const useUpdatePickList = () => {
   });
 };
 
-export interface DeletePickListRequest {
+export interface DeletePickListRequest extends Record<string, unknown> {
   id: string;
 }
 

@@ -1,3 +1,4 @@
+import { type ReactElement } from 'react';
 import { Box, Loader } from '@mantine/core';
 import {
   IconCircle,
@@ -13,7 +14,7 @@ interface ValidationStatusIconProps {
   isError?: boolean;
 }
 
-const wrapIcon = (icon: JSX.Element, label: string) => (
+const wrapIcon = (icon: ReactElement, label: string) => (
   <Box component="span" aria-label={label} role="img" title={label}>
     {icon}
   </Box>

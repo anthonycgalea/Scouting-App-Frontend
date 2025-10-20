@@ -40,7 +40,7 @@ export interface PitScout2025 {
 
 export type PitScout = PitScout2025;
 
-export interface PitScoutIdentifier {
+export interface PitScoutIdentifier extends Record<string, unknown> {
   season: number;
   event_key: string;
   team_number: number;

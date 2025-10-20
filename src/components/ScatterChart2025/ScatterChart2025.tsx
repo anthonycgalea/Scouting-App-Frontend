@@ -25,14 +25,15 @@ type ScatterChart2025Props = {
   color?: string;
 };
 
-type ChartTooltipProps = TooltipProps<number, string>;
+type ChartTooltipPayload = { payload?: ChartPoint } & Record<string, unknown>;
+type ChartTooltipProps = TooltipProps<number, string> & { payload?: ChartTooltipPayload[] };
 
 const tooltipContent = ({ active, payload }: ChartTooltipProps) => {
   if (!active || !payload || payload.length === 0) {
     return null;
   }
 
-  const point = payload[0]?.payload as ChartPoint | undefined;
+  const point = payload[0]?.payload;
 
   if (!point) {
     return null;
