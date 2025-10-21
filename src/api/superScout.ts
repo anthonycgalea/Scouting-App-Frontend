@@ -33,18 +33,24 @@ export interface SuperScoutMatchEntry extends Record<string, unknown> {
   defense_rating?: number | null;
 }
 
-export const superScoutMatchDataQueryKey = (teamNumber: number) =>
-  ['super-scout-match-data', teamNumber] as const;
+export const superScoutMatchDataQueryKey = () => ['super-scout-match-data'] as const;
 
-export const fetchSuperScoutMatchData = (teamNumber: number) =>
-  apiFetch<SuperScoutMatchEntry[]>(`scout/superscout?team_number=${teamNumber}`);
+export const fetchSuperScoutMatchData = () =>
+  apiFetch<SuperScoutMatchEntry[]>('scout/superscout');
 
-export const useSuperScoutMatchData = (teamNumber: number) =>
-  useQuery({
-    queryKey: superScoutMatchDataQueryKey(teamNumber),
-    queryFn: () => fetchSuperScoutMatchData(teamNumber),
-    enabled: Number.isFinite(teamNumber),
+export const useSuperScoutMatchData = (teamNumber: number) => {
+  const isValidTeamNumber = Number.isFinite(teamNumber);
+
+  return useQuery<SuperScoutMatchEntry[], Error, SuperScoutMatchEntry[]>({
+    queryKey: superScoutMatchDataQueryKey(),
+    queryFn: fetchSuperScoutMatchData,
+    select: (entries) =>
+      isValidTeamNumber
+        ? entries.filter((entry) => entry.team_number === teamNumber)
+        : [],
+    enabled: isValidTeamNumber,
   });
+};
 
 export interface SuperScoutStatus {
   eventCode: string;
