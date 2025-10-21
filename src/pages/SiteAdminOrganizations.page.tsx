@@ -139,6 +139,11 @@ export function SiteAdminOrganizationsPage() {
       <Table.Td>
         <Text size="sm">Team {organization.team_number}</Text>
       </Table.Td>
+      <Table.Td>
+        <Group justify="flex-end">
+          <Button variant="light" size="xs">Add Team Admin</Button>
+        </Group>
+      </Table.Td>
     </Table.Tr>
   ));
 
@@ -179,12 +184,13 @@ export function SiteAdminOrganizationsPage() {
             <Table.Tr>
               <Table.Th>Organization</Table.Th>
               <Table.Th>Team</Table.Th>
+              <Table.Th />
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
             {isLoading ? (
               <Table.Tr>
-                <Table.Td colSpan={2}>
+                <Table.Td colSpan={3}>
                   <Text size="sm" c="dimmed">
                     Loading organizations...
                   </Text>
@@ -192,7 +198,7 @@ export function SiteAdminOrganizationsPage() {
               </Table.Tr>
             ) : isError ? (
               <Table.Tr>
-                <Table.Td colSpan={2}>
+                <Table.Td colSpan={3}>
                   <Text size="sm" c="red">
                     Unable to load organizations. Please try again later.
                   </Text>
@@ -202,7 +208,7 @@ export function SiteAdminOrganizationsPage() {
               rows
             ) : (
               <Table.Tr>
-                <Table.Td colSpan={2}>
+                <Table.Td colSpan={3}>
                   <Text size="sm" c="dimmed">
                     No organizations found.
                   </Text>
