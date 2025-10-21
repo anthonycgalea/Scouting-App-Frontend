@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { QueryKey } from '@tanstack/react-query';
 import { apiFetch } from './httpClient';
-import { organizationsQueryKey, organizationCollaborationRequestsQueryKey } from './organizations';
 
 export interface UserInfoResponse {
   id: string | number;
@@ -38,20 +38,37 @@ export const updateUserOrganization = (userOrganizationId: number | null) =>
 export const userRoleQueryKey = ['user', 'role'] as const;
 export const userOrganizationQueryKey = ['user', 'organization'] as const;
 
+const AUTHENTICATION_QUERY_KEYS = [
+  userInfoQueryKey,
+  userRoleQueryKey,
+  userOrganizationQueryKey,
+] as const satisfies readonly QueryKey[];
+
+const areQueryKeysEqual = (target: readonly unknown[], candidate: readonly unknown[]) =>
+  target.length === candidate.length && target.every((value, index) => candidate[index] === value);
+
+const isAuthenticationQueryKey = (queryKey: QueryKey) =>
+  AUTHENTICATION_QUERY_KEYS.some((authKey) => areQueryKeysEqual(authKey, queryKey));
+
 export const useUpdateUserOrganization = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: updateUserOrganization,
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: userInfoQueryKey });
-      void queryClient.invalidateQueries({ queryKey: organizationsQueryKey });
-      void queryClient.invalidateQueries({ queryKey: userRoleQueryKey });
-      void queryClient.invalidateQueries({ queryKey: userOrganizationQueryKey });
-      void queryClient.invalidateQueries({
-        queryKey: organizationCollaborationRequestsQueryKey,
+    onSuccess: async () => {
+      await queryClient.cancelQueries({
+        predicate: (query) => !isAuthenticationQueryKey(query.queryKey),
       });
-      queryClient.removeQueries({ queryKey: organizationCollaborationRequestsQueryKey });
+
+      queryClient.removeQueries({
+        predicate: (query) => !isAuthenticationQueryKey(query.queryKey),
+      });
+
+      await Promise.all(
+        AUTHENTICATION_QUERY_KEYS.map((queryKey) =>
+          queryClient.invalidateQueries({ queryKey })
+        )
+      );
     },
   });
 };
