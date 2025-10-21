@@ -41,14 +41,14 @@ interface AuthContextValue {
 
 const isBrowser = typeof window !== 'undefined';
 
-type OAuthProvider = 'discord' | 'slack';
+type OAuthProvider = 'discord' | 'slack_oidc';
 
 const OAUTH_PROVIDER_CONFIG: Record<OAuthProvider, { scopes?: string }> = {
   discord: {
     scopes: 'identify email',
   },
-  slack: {
-    scopes: 'identity.basic,identity.email',
+  slack_oidc: {
+    scopes: 'openid email profile',
   },
 };
 
@@ -223,7 +223,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    window.location.href = getSupabaseOAuthUrl('slack');
+    window.location.href = getSupabaseOAuthUrl('slack_oidc');
   }, []);
 
   const logout = useCallback(() => {
