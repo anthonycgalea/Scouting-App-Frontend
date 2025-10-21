@@ -156,10 +156,12 @@ export function SiteAdminOrganizationsPage() {
       const addedUser = adminUserList.find((user) => user.id === userId);
       const displayName = addedUser?.display_name ?? addedUser?.email ?? 'User';
 
-      setManageMemberFeedback({
+      setFeedback({
         type: 'success',
         message: `${displayName} added as a team admin for ${selectedOrganization.name}.`,
       });
+
+      handleCloseAddTeamAdminModal();
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error('Failed to add team admin', error);
@@ -390,6 +392,7 @@ export function SiteAdminOrganizationsPage() {
             : 'Add Team Admin'
         }
         centered
+        size="xl"
       >
         {selectedOrganization ? (
           <Box>
