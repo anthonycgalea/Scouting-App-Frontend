@@ -48,6 +48,11 @@ export interface OrganizationCollaboration {
   eventKey?: string;
 }
 
+export interface CreateOrganizationInput {
+  name: string;
+  team_number: number;
+}
+
 export interface InviteOrganizationCollaborationRequest {
   organizationid: number;
 }
@@ -93,6 +98,12 @@ export const deleteOrganizationApplication = ({ userId }: { userId: string }) =>
     json: { userId },
   });
 
+export const createOrganization = ({ name, team_number }: CreateOrganizationInput) =>
+  apiFetch<void>('admin/organizations/create', {
+    method: 'POST',
+    json: { name, team_number },
+  });
+
 export const applyToOrganization = (organizationId: number) =>
   apiFetch<void>('user/organization/apply', {
     method: 'POST',
@@ -106,10 +117,11 @@ export const useOrganizations = ({ enabled }: { enabled?: boolean } = {}) =>
     enabled,
   });
 
-export const useAllOrganizations = () =>
+export const useAllOrganizations = ({ enabled }: { enabled?: boolean } = {}) =>
   useQuery<Organization[]>({
     queryKey: allOrganizationsQueryKey,
     queryFn: fetchAllOrganizations,
+    enabled,
   });
 
 export const useOrganizationCollaborations = ({ enabled }: { enabled?: boolean } = {}) =>
@@ -184,6 +196,17 @@ export const useDeleteOrganizationMember = () => {
     mutationFn: deleteOrganizationMember,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: organizationMembersQueryKey });
+    },
+  });
+};
+
+export const useCreateOrganization = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createOrganization,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: allOrganizationsQueryKey });
     },
   });
 };

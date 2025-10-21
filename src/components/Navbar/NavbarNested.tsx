@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import {
   IconBulb,
+  IconCircleKey,
   IconFileAnalytics,
   IconGauge,
   IconLock,
@@ -61,6 +62,12 @@ const ORGANIZATION_LINKS_DATA = {
   ],
 };
 
+const SITE_ADMIN_LINKS_DATA = {
+  label: 'Site Admin',
+  icon: IconCircleKey,
+  to: '/admin/organizations',
+};
+
 export function NavbarNested() {
   const { user, loading, logout } = useAuth();
   const { data: userInfo } = useUserInfo();
@@ -68,6 +75,7 @@ export function NavbarNested() {
   const { data: userRole } = useUserRole({ enabled: isUserLoggedIn });
   const canAccessPrivilegedSections = isOrganizationRoleAllowed(userRole?.role ?? null);
   const canManageOrganizations = canAccessPrivilegedSections;
+  const isSiteAdmin = Boolean(userRole?.isSiteAdmin);
 
   const linksData = useMemo(
     () => {
@@ -83,9 +91,13 @@ export function NavbarNested() {
         links.push(ORGANIZATION_LINKS_DATA);
       }
 
+      if (isSiteAdmin) {
+        links.push(SITE_ADMIN_LINKS_DATA);
+      }
+
       return links;
     },
-    [canAccessPrivilegedSections, canManageOrganizations, isUserLoggedIn],
+    [canAccessPrivilegedSections, canManageOrganizations, isSiteAdmin, isUserLoggedIn],
   );
 
   const links = linksData.map((item) => <LinksGroup {...item} key={item.label} />);

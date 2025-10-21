@@ -33,6 +33,7 @@ import { PickListsPage } from './pages/PickLists.page';
 import { AllianceSelectionPage } from './pages/AllianceSelection.page';
 import { ListGeneratorPage } from './pages/ListGenerator.page';
 import { SuperScoutMatchPage } from './pages/SuperScoutMatch.page';
+import { SiteAdminOrganizationsPage } from './pages/SiteAdminOrganizations.page';
 
 const rootRoute = createRootRoute({
   component: function RootLayout() {
@@ -213,7 +214,13 @@ const listGeneratorRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/picking/listGenerators',
   component: ListGeneratorPage,
-})
+});
+
+const siteAdminOrganizationsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/admin/organizations',
+  component: SiteAdminOrganizationsPage,
+});
 
 // Build the route tree
 const routeTree = rootRoute.addChildren([
@@ -236,7 +243,8 @@ const routeTree = rootRoute.addChildren([
   teamMembersRoute.addChildren([]),
   organizationEventSelectRoute.addChildren([]),
   addEventRoute.addChildren([]),
-  applyToOrganizationRoute.addChildren([])
+  applyToOrganizationRoute.addChildren([]),
+  siteAdminOrganizationsRoute.addChildren([]),
 ]);
 
 
