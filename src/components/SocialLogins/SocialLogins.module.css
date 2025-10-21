@@ -16,6 +16,15 @@
   }
 }
 
+.slackButton {
+  background-color: #4a154b;
+  color: #fff;
+
+  @mixin hover {
+    background-color: #3f1140;
+  }
+}
+
 /* backgroundColor: theme.colors.dark[theme.colorScheme === 'dark' ? 9 : 6],
         color: '#fff',
         '&:hover': {
