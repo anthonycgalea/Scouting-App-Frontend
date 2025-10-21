@@ -25,6 +25,15 @@
   }
 }
 
+.teamsButton {
+  background-color: #464eb8;
+  color: #fff;
+
+  @mixin hover {
+    background-color: #3c43a1;
+  }
+}
+
 /* backgroundColor: theme.colors.dark[theme.colorScheme === 'dark' ? 9 : 6],
         color: '#fff',
         '&:hover': {
