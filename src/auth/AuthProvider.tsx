@@ -35,23 +35,20 @@ interface AuthContextValue {
   user: AuthUser | null;
   loading: boolean;
   loginWithDiscord: () => void;
-  loginWithGoogle: () => void;
   logout: () => void;
 }
 
 const isBrowser = typeof window !== 'undefined';
 
-const getSupabaseOAuthUrl = (provider: 'discord' | 'google') => {
-  const baseUrl = `${SUPABASE_URL}/auth/v1/authorize?provider=${provider}`;
+const getSupabaseDiscordOAuthUrl = () => {
+  const baseUrl = `${SUPABASE_URL}/auth/v1/authorize?provider=discord`;
 
   if (!isBrowser) {
     return baseUrl;
   }
 
   const authorizeUrl = new URL(baseUrl);
-  if (provider === 'discord') {
-    authorizeUrl.searchParams.set('scopes', 'identify email');
-  }
+  authorizeUrl.searchParams.set('scopes', 'identify email');
   authorizeUrl.searchParams.set('redirect_to', window.location.origin);
 
   return authorizeUrl.toString();
@@ -203,15 +200,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    window.location.href = getSupabaseOAuthUrl('discord');
-  }, []);
-
-  const loginWithGoogle = useCallback(() => {
-    if (!isBrowser) {
-      return;
-    }
-
-    window.location.href = getSupabaseOAuthUrl('google');
+    window.location.href = getSupabaseDiscordOAuthUrl();
   }, []);
 
   const logout = useCallback(() => {
@@ -227,10 +216,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       user,
       loading,
       loginWithDiscord,
-      loginWithGoogle,
       logout,
     }),
-    [user, loading, loginWithDiscord, loginWithGoogle, logout],
+    [user, loading, loginWithDiscord, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
