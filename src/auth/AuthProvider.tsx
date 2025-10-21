@@ -35,20 +35,35 @@ interface AuthContextValue {
   user: AuthUser | null;
   loading: boolean;
   loginWithDiscord: () => void;
+  loginWithSlack: () => void;
   logout: () => void;
 }
 
 const isBrowser = typeof window !== 'undefined';
 
-const getSupabaseDiscordOAuthUrl = () => {
-  const baseUrl = `${SUPABASE_URL}/auth/v1/authorize?provider=discord`;
+type OAuthProvider = 'discord' | 'slack';
+
+const OAUTH_PROVIDER_CONFIG: Record<OAuthProvider, { scopes?: string }> = {
+  discord: {
+    scopes: 'identify email',
+  },
+  slack: {
+    scopes: 'identity.basic,identity.email',
+  },
+};
+
+const getSupabaseOAuthUrl = (provider: OAuthProvider) => {
+  const baseUrl = `${SUPABASE_URL}/auth/v1/authorize?provider=${provider}`;
 
   if (!isBrowser) {
     return baseUrl;
   }
 
   const authorizeUrl = new URL(baseUrl);
-  authorizeUrl.searchParams.set('scopes', 'identify email');
+  const scopes = OAUTH_PROVIDER_CONFIG[provider].scopes;
+  if (scopes) {
+    authorizeUrl.searchParams.set('scopes', scopes);
+  }
   authorizeUrl.searchParams.set('redirect_to', window.location.origin);
 
   return authorizeUrl.toString();
@@ -200,7 +215,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    window.location.href = getSupabaseDiscordOAuthUrl();
+    window.location.href = getSupabaseOAuthUrl('discord');
+  }, []);
+
+  const loginWithSlack = useCallback(() => {
+    if (!isBrowser) {
+      return;
+    }
+
+    window.location.href = getSupabaseOAuthUrl('slack');
   }, []);
 
   const logout = useCallback(() => {
@@ -216,9 +239,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       user,
       loading,
       loginWithDiscord,
+      loginWithSlack,
       logout,
     }),
-    [user, loading, loginWithDiscord, logout],
+    [user, loading, loginWithDiscord, loginWithSlack, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
