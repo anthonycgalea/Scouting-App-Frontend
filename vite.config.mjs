@@ -3,7 +3,11 @@ import { defineConfig } from 'vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
 export default defineConfig({
+  base: '/',
   plugins: [react(), tsconfigPaths()],
+  build: {
+    outDir: 'dist',
+  },
   test: {
     globals: true,
     environment: 'jsdom',
