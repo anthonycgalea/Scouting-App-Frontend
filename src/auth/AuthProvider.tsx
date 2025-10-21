@@ -36,12 +36,13 @@ interface AuthContextValue {
   loading: boolean;
   loginWithDiscord: () => void;
   loginWithSlack: () => void;
+  loginWithAzure: () => void;
   logout: () => void;
 }
 
 const isBrowser = typeof window !== 'undefined';
 
-type OAuthProvider = 'discord' | 'slack_oidc';
+type OAuthProvider = 'discord' | 'slack_oidc' | 'azure';
 
 const OAUTH_PROVIDER_CONFIG: Record<OAuthProvider, { scopes?: string }> = {
   discord: {
@@ -49,6 +50,9 @@ const OAUTH_PROVIDER_CONFIG: Record<OAuthProvider, { scopes?: string }> = {
   },
   slack_oidc: {
     scopes: 'openid email profile',
+  },
+  azure: {
+    scopes: 'openid email profile offline_access',
   },
 };
 
@@ -226,6 +230,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     window.location.href = getSupabaseOAuthUrl('slack_oidc');
   }, []);
 
+  const loginWithAzure = useCallback(() => {
+    if (!isBrowser) {
+      return;
+    }
+
+    window.location.href = getSupabaseOAuthUrl('azure');
+  }, []);
+
   const logout = useCallback(() => {
     clearStoredTokens();
     clearStoredAuthUser();
@@ -240,9 +252,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       loading,
       loginWithDiscord,
       loginWithSlack,
+      loginWithAzure,
       logout,
     }),
-    [user, loading, loginWithDiscord, loginWithSlack, logout],
+    [user, loading, loginWithDiscord, loginWithSlack, loginWithAzure, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
