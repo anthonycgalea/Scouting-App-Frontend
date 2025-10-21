@@ -18,6 +18,7 @@ export const organizationCollaborationRequestsQueryKey = [
   'organization',
   'collaboration-requests',
 ] as const;
+export const adminUsersQueryKey = ['admin', 'users'] as const;
 
 export interface OrganizationApplication {
   displayName: string;
@@ -53,6 +54,16 @@ export interface CreateOrganizationInput {
   team_number: number;
 }
 
+export interface AdminUser {
+  id: string;
+  email: string;
+  auth_provider: string;
+  display_name: string | null;
+  logged_in_user_org?: number | null;
+  created_at: string;
+  updated_at?: string | null;
+}
+
 export interface InviteOrganizationCollaborationRequest {
   organizationid: number;
 }
@@ -64,6 +75,11 @@ export interface UpdateOrganizationCollaborationRequest {
 export interface UpdateOrganizationMemberInput {
   userId: string;
   role: OrganizationMemberRole;
+}
+
+export interface ManageOrganizationMemberInput {
+  user_id: string;
+  organization_id: number;
 }
 
 export const fetchOrganizations = () => apiFetch<Organization[]>('user/organizations');
@@ -84,6 +100,14 @@ export const updateOrganizationMember = ({ userId, role }: UpdateOrganizationMem
   apiFetch<void>('organization/members', {
     method: 'PATCH',
     json: { userId, role },
+  });
+
+export const fetchAdminUsers = () => apiFetch<AdminUser[]>('admin/users');
+
+export const manageOrganizationMember = ({ user_id, organization_id }: ManageOrganizationMemberInput) =>
+  apiFetch<void>('admin/organizations/members', {
+    method: 'POST',
+    json: { user_id, organization_id },
   });
 
 export const deleteOrganizationMember = ({ userId }: { userId: string }) =>
@@ -121,6 +145,13 @@ export const useAllOrganizations = ({ enabled }: { enabled?: boolean } = {}) =>
   useQuery<Organization[]>({
     queryKey: allOrganizationsQueryKey,
     queryFn: fetchAllOrganizations,
+    enabled,
+  });
+
+export const useAdminUsers = ({ enabled }: { enabled?: boolean } = {}) =>
+  useQuery<AdminUser[]>({
+    queryKey: adminUsersQueryKey,
+    queryFn: fetchAdminUsers,
     enabled,
   });
 
@@ -194,6 +225,17 @@ export const useDeleteOrganizationMember = () => {
 
   return useMutation({
     mutationFn: deleteOrganizationMember,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: organizationMembersQueryKey });
+    },
+  });
+};
+
+export const useManageOrganizationMember = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: manageOrganizationMember,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: organizationMembersQueryKey });
     },

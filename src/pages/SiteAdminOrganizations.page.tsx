@@ -13,7 +13,14 @@ import {
   TextInput,
   Title,
 } from '@mantine/core';
-import { useAllOrganizations, useCreateOrganization, type Organization } from '@/api';
+import {
+  useAdminUsers,
+  useAllOrganizations,
+  useCreateOrganization,
+  useManageOrganizationMember,
+  type AdminUser,
+  type Organization,
+} from '@/api';
 import { useRequireSiteAdminAccess } from '@/hooks/useRequireSiteAdminAccess';
 
 export function SiteAdminOrganizationsPage() {
@@ -21,7 +28,15 @@ export function SiteAdminOrganizationsPage() {
   const { data: organizations, isLoading, isError } = useAllOrganizations({
     enabled: canAccessSiteAdminPages,
   });
+  const {
+    data: adminUsers,
+    isLoading: isLoadingAdminUsers,
+    isError: isAdminUsersError,
+  } = useAdminUsers({
+    enabled: canAccessSiteAdminPages,
+  });
   const createOrganizationMutation = useCreateOrganization();
+  const manageOrganizationMemberMutation = useManageOrganizationMember();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [createModalOpened, setCreateModalOpened] = useState(false);
@@ -32,6 +47,14 @@ export function SiteAdminOrganizationsPage() {
     type: 'success' | 'error';
     message: string;
   } | null>(null);
+  const [addTeamAdminModalOpened, setAddTeamAdminModalOpened] = useState(false);
+  const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
+  const [userSearchTerm, setUserSearchTerm] = useState('');
+  const [manageMemberFeedback, setManageMemberFeedback] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
+  const [selectedUserForMutation, setSelectedUserForMutation] = useState<string | null>(null);
 
   if (isCheckingAccess || !canAccessSiteAdminPages) {
     return null;
@@ -40,6 +63,11 @@ export function SiteAdminOrganizationsPage() {
   const organizationList: Organization[] = useMemo(
     () => organizations ?? [],
     [organizations],
+  );
+
+  const adminUserList: AdminUser[] = useMemo(
+    () => adminUsers ?? [],
+    [adminUsers],
   );
 
   const filteredOrganizations = useMemo(() => {
@@ -70,6 +98,79 @@ export function SiteAdminOrganizationsPage() {
       }),
     [filteredOrganizations],
   );
+
+  const filteredAdminUsers = useMemo(() => {
+    const normalizedSearch = userSearchTerm.trim().toLowerCase();
+
+    const list = adminUserList;
+
+    if (!normalizedSearch) {
+      return list.toSorted((a, b) => {
+        const aName = a.display_name ?? a.email;
+        const bName = b.display_name ?? b.email;
+
+        return aName.localeCompare(bName);
+      });
+    }
+
+    return list
+      .filter((user) => {
+        const displayName = user.display_name ?? '';
+        const matchesDisplayName = displayName.toLowerCase().includes(normalizedSearch);
+        const matchesEmail = user.email.toLowerCase().includes(normalizedSearch);
+
+        return matchesDisplayName || matchesEmail;
+      })
+      .toSorted((a, b) => {
+        const aName = a.display_name ?? a.email;
+        const bName = b.display_name ?? b.email;
+
+        return aName.localeCompare(bName);
+      });
+  }, [adminUserList, userSearchTerm]);
+
+  const handleCloseAddTeamAdminModal = () => {
+    if (!manageOrganizationMemberMutation.isPending) {
+      setAddTeamAdminModalOpened(false);
+      setSelectedOrganization(null);
+      setUserSearchTerm('');
+      setManageMemberFeedback(null);
+      setSelectedUserForMutation(null);
+    }
+  };
+
+  const handleAddTeamAdmin = async (userId: string) => {
+    if (!selectedOrganization) {
+      return;
+    }
+
+    setSelectedUserForMutation(userId);
+    setManageMemberFeedback(null);
+
+    try {
+      await manageOrganizationMemberMutation.mutateAsync({
+        user_id: userId,
+        organization_id: selectedOrganization.id,
+      });
+
+      const addedUser = adminUserList.find((user) => user.id === userId);
+      const displayName = addedUser?.display_name ?? addedUser?.email ?? 'User';
+
+      setManageMemberFeedback({
+        type: 'success',
+        message: `${displayName} added as a team admin for ${selectedOrganization.name}.`,
+      });
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to add team admin', error);
+      setManageMemberFeedback({
+        type: 'error',
+        message: 'Failed to add team admin. Please try again.',
+      });
+    } finally {
+      setSelectedUserForMutation(null);
+    }
+  };
 
   const handleCloseCreateModal = () => {
     if (!createOrganizationMutation.isPending) {
@@ -139,13 +240,24 @@ export function SiteAdminOrganizationsPage() {
       <Table.Td>
         <Text size="sm">Team {organization.team_number}</Text>
       </Table.Td>
-      <Table.Td>
-        <Group justify="flex-end">
-          <Button variant="light" size="xs">Add Team Admin</Button>
-        </Group>
-      </Table.Td>
-    </Table.Tr>
-  ));
+          <Table.Td>
+            <Group justify="flex-end">
+              <Button
+                variant="light"
+                size="xs"
+                onClick={() => {
+                  setSelectedOrganization(organization);
+                  setAddTeamAdminModalOpened(true);
+                  setManageMemberFeedback(null);
+                  setUserSearchTerm('');
+                }}
+              >
+                Add Team Admin
+              </Button>
+            </Group>
+          </Table.Td>
+        </Table.Tr>
+      ));
 
   return (
     <Box p="md">
@@ -268,6 +380,107 @@ export function SiteAdminOrganizationsPage() {
             </Button>
           </Group>
         </Box>
+      </Modal>
+      <Modal
+        opened={addTeamAdminModalOpened}
+        onClose={handleCloseAddTeamAdminModal}
+        title={
+          selectedOrganization
+            ? `Add Team Admin — ${selectedOrganization.name}`
+            : 'Add Team Admin'
+        }
+        centered
+      >
+        {selectedOrganization ? (
+          <Box>
+            <Text size="sm" mb="sm">
+              Select a user to add as a team admin for {selectedOrganization.name}.
+            </Text>
+            <TextInput
+              label="Search Users"
+              placeholder="Search by name or email"
+              value={userSearchTerm}
+              onChange={(event) => setUserSearchTerm(event.currentTarget.value)}
+              mb="md"
+            />
+            {manageMemberFeedback ? (
+              <Alert
+                color={manageMemberFeedback.type === 'success' ? 'green' : 'red'}
+                mb="md"
+                variant="light"
+              >
+                {manageMemberFeedback.message}
+              </Alert>
+            ) : null}
+            {isLoadingAdminUsers ? (
+              <Text size="sm" c="dimmed">
+                Loading users...
+              </Text>
+            ) : isAdminUsersError ? (
+              <Text size="sm" c="red">
+                Unable to load users. Please try again later.
+              </Text>
+            ) : filteredAdminUsers.length === 0 ? (
+              <Text size="sm" c="dimmed">
+                No users found.
+              </Text>
+            ) : (
+              <ScrollArea h={240}>
+                <Table verticalSpacing="sm" miw={500}>
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>User</Table.Th>
+                      <Table.Th>Email</Table.Th>
+                      <Table.Th />
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {filteredAdminUsers.map((user) => {
+                      const userName = user.display_name ?? user.email;
+
+                      return (
+                        <Table.Tr key={user.id}>
+                          <Table.Td>
+                            <Text size="sm" fw={500}>
+                              {userName}
+                            </Text>
+                            <Text size="xs" c="dimmed">
+                              {user.auth_provider}
+                            </Text>
+                          </Table.Td>
+                          <Table.Td>
+                            <Text size="sm">{user.email}</Text>
+                          </Table.Td>
+                          <Table.Td>
+                            <Group justify="flex-end">
+                              <Button
+                                variant="light"
+                                size="xs"
+                                loading={
+                                  manageOrganizationMemberMutation.isPending &&
+                                  selectedUserForMutation === user.id
+                                }
+                                onClick={() => {
+                                  void handleAddTeamAdmin(user.id);
+                                }}
+                              >
+                                Add
+                              </Button>
+                            </Group>
+                          </Table.Td>
+                        </Table.Tr>
+                      );
+                    })}
+                  </Table.Tbody>
+                </Table>
+              </ScrollArea>
+            )}
+          </Box>
+        ) : (
+          <Text size="sm" c="dimmed">
+            No organization selected.
+          </Text>
+        )}
       </Modal>
     </Box>
   );
