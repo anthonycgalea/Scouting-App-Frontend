@@ -1,5 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { QueryKey } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query';
 import { apiFetch } from './httpClient';
 
 export interface UserInfoResponse {
@@ -93,6 +92,7 @@ export const useUpdateUserDisplayName = () => {
 
 export interface UserRoleResponse {
   role: string | null;
+  isSiteAdmin?: boolean;
 }
 
 export const fetchUserRole = () => apiFetch<UserRoleResponse>('user/role');
