@@ -580,6 +580,10 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
       );
     }
 
+    if (total !== null) {
+      tooltipMessages.push(`Scouting total: ${total}`);
+    }
+
     if (tbaTotal !== null) {
       tooltipMessages.push(`TBA total: ${tbaTotal}`);
     }
@@ -597,15 +601,12 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
       ? `${classes.numericCell} ${classes.numericMismatch}`
       : classes.numericCell;
 
-    const primaryColor = hasMismatch ? 'red.6' : total === null ? 'dimmed' : undefined;
+    //const primaryColor = hasMismatch ? 'red.6' : total === null ? 'dimmed' : undefined;
     const secondaryColor =
       difference === null ? undefined : difference === 0 ? 'green.6' : 'red.6';
 
     return (
       <Table.Td className={cellClass} title={title}>
-        <Text fw={600} c={primaryColor}>
-          {total !== null ? total : tbaTotal !== null ? tbaTotal : '—'}
-        </Text>
         {diffText !== undefined && (
           <Text fz="xs" c={secondaryColor}>
             Δ {diffText}
