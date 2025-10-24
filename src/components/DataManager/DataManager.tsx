@@ -17,7 +17,6 @@ import { useNavigate } from '@tanstack/react-router';
 import { DataManagerButtonMenu } from './DataManagerButtonMenu';
 import { ExportHeader } from '../ExportHeader/ExportHeader';
 import classes from './DataManager.module.css';
-import { ValidationStatusIcon } from '../ValidationStatusIcon';
 import {
   useMatchSchedule,
   useTeamMatchValidation,
@@ -119,11 +118,7 @@ interface DataManagerProps {
 
 export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
   const { data: scheduleData = [], isLoading, isError } = useMatchSchedule();
-  const {
-    data: validationData = [],
-    isLoading: isValidationLoading,
-    isError: isValidationError,
-  } = useTeamMatchValidation();
+  const { data: validationData = [] } = useTeamMatchValidation();
   const navigate = useNavigate();
   const matchesBySection = useMemo(
     () => groupMatchesBySection(scheduleData),
@@ -233,7 +228,6 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
   }, [scheduleData, validationData]);
 
   const renderTeamCell = (matchNumber: number, matchLevel: string, teamNumber: number) => {
-    const status = validationLookup.get(buildValidationKey(matchLevel, matchNumber, teamNumber));
     const matchKey = buildMatchKey(matchLevel, matchNumber);
     const teamsWithRecords = matchValidationLookup.get(matchKey);
     const hasRecord = teamsWithRecords?.has(teamNumber) ?? false;
@@ -248,14 +242,7 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
 
     return (
       <Table.Td className={classNames.join(' ')}>
-        <Group justify="center" align="center" gap="xs" wrap="nowrap">
-          <Text>{teamNumber}</Text>
-          <ValidationStatusIcon
-            status={status}
-            isLoading={isValidationLoading}
-            isError={isValidationError}
-          />
-        </Group>
+        <Text ta="center">{teamNumber}</Text>
       </Table.Td>
     );
   };
@@ -335,7 +322,7 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
           row.matchLevel,
           'RED',
           [row.red1, row.red2, row.red3],
-          classes.redCell
+          undefined
         )}
       </Table.Tr>
     );
@@ -351,7 +338,7 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
           row.matchLevel,
           'BLUE',
           [row.blue1, row.blue2, row.blue3],
-          classes.blueCell
+          undefined
         )}
       </Table.Tr>
     );
