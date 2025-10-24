@@ -1,5 +1,7 @@
-import { useEventTeams } from '@/api';
-import { Button, Center, Loader, Table, Text } from '@mantine/core';
+import { useMemo } from 'react';
+
+import { useEventTeams, useEventPitScoutRecords, useEventTeamImages } from '@/api';
+import { Badge, Button, Center, Loader, Table, Text } from '@mantine/core';
 import { Link } from '@tanstack/react-router';
 
 import {
@@ -25,8 +27,30 @@ export function TeamDirectory() {
     isLoading,
     isError,
   } = useEventTeams();
+  const {
+    data: pitScoutRecords = [],
+    isLoading: isLoadingPitScouts,
+    isError: isPitScoutError,
+  } = useEventPitScoutRecords();
+  const {
+    data: teamImages = [],
+    isLoading: isLoadingTeamImages,
+    isError: isTeamImagesError,
+  } = useEventTeamImages();
 
-  if (isLoading) {
+  const pitScoutTeamNumbers = useMemo(() => {
+    return new Set(pitScoutRecords.map((record) => record.team_number));
+  }, [pitScoutRecords]);
+
+  const teamNumbersWithPhotos = useMemo(() => {
+    return new Set(
+      teamImages
+        .filter((entry) => entry.images.length > 0)
+        .map((entry) => entry.teamNumber),
+    );
+  }, [teamImages]);
+
+  if (isLoading || isLoadingPitScouts || isLoadingTeamImages) {
     return (
       <Center mih={200}>
         <Loader />
@@ -34,7 +58,7 @@ export function TeamDirectory() {
     );
   }
 
-  if (isError) {
+  if (isError || isPitScoutError || isTeamImagesError) {
     return (
       <Center mih={200}>
         <Text c="red.6" fw={500}>
@@ -57,6 +81,9 @@ export function TeamDirectory() {
     .map((team) => {
       const location = team.location.trim();
 
+      const hasPitScoutRecord = pitScoutTeamNumbers.has(team.team_number);
+      const hasTeamPhoto = teamNumbersWithPhotos.has(team.team_number);
+
       return (
         <Table.Tr key={team.team_number}>
           <Table.Td>
@@ -75,12 +102,28 @@ export function TeamDirectory() {
           <Table.Td>
             <TeamCommonCommentsCell teamNumber={team.team_number} />
           </Table.Td>
+          <Table.Td>
+            <Badge
+              color={hasPitScoutRecord ? 'green' : 'gray'}
+              variant={hasPitScoutRecord ? 'light' : 'outline'}
+            >
+              {hasPitScoutRecord ? 'Yes' : 'No'}
+            </Badge>
+          </Table.Td>
+          <Table.Td>
+            <Badge
+              color={hasTeamPhoto ? 'blue' : 'gray'}
+              variant={hasTeamPhoto ? 'light' : 'outline'}
+            >
+              {hasTeamPhoto ? 'Yes' : 'No'}
+            </Badge>
+          </Table.Td>
         </Table.Tr>
       );
     });
 
   return (
-    <Table.ScrollContainer minWidth={800}>
+    <Table.ScrollContainer minWidth={900}>
       <Table verticalSpacing="xs">
         <Table.Thead>
           <Table.Tr>
@@ -88,6 +131,8 @@ export function TeamDirectory() {
             <Table.Th>Team Name</Table.Th>
             <Table.Th>Location</Table.Th>
             <Table.Th>Common Comments</Table.Th>
+            <Table.Th>Pit</Table.Th>
+            <Table.Th>Photo</Table.Th>
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>{rows}</Table.Tbody>
