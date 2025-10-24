@@ -256,13 +256,11 @@ const computeEndgameStatuses = (
       buildBotEndgameKeys(index)
     );
 
-    if (allianceLabel || botLabel) {
-      if (!allianceLabel || !botLabel) {
-        return 'UNKNOWN';
-      }
-
-      return allianceLabel === botLabel ? 'MATCH' : 'MISMATCH';
+    if (allianceLabel && botLabel && allianceLabel !== botLabel) {
+      return 'MISMATCH';
     }
+
+    const totalsLabel = allianceLabel ?? botLabel;
 
     if (!isValidTeamNumber(teamNumber)) {
       return 'UNKNOWN';
@@ -270,7 +268,11 @@ const computeEndgameStatuses = (
 
     const data = teamData[index];
     const scoutLabel = data?.endgame ? ENDGAME_LABELS[data.endgame] : undefined;
-    const tbaLabel = tbaEndgameMap.get(teamNumber);
+    const tbaLabel = tbaEndgameMap.get(teamNumber) ?? totalsLabel;
+
+    if (tbaLabel && totalsLabel && tbaLabel !== totalsLabel) {
+      return 'MISMATCH';
+    }
 
     if (!scoutLabel && !tbaLabel) {
       return 'UNKNOWN';
