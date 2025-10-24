@@ -104,6 +104,11 @@
   background-color: light-dark(var(--mantine-color-red-0), rgb(255 86 86 / 0.2));
 }
 
+.numericWarning {
+  background-color: light-dark(var(--mantine-color-yellow-0), var(--mantine-color-yellow-9));
+  color: light-dark(var(--mantine-color-dark-9), var(--mantine-color-yellow-1));
+}
+
 .numericMatch {
   background-color: light-dark(var(--mantine-color-green-2), var(--mantine-color-green-9));
   color: light-dark(var(--mantine-color-dark-9), var(--mantine-color-green-0));

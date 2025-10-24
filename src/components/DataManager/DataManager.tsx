@@ -598,12 +598,30 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
 
     const title = tooltipMessages.length > 0 ? tooltipMessages.join('\n') : undefined;
 
-    const hasMismatch = difference !== null && difference !== 0;
+    const isWarningDifference = (metricKey: keyof AllianceSummary['metrics'], diff: number) => {
+      const absoluteDifference = Math.abs(diff);
+
+      if (metricKey === 'autoCoral') {
+        return absoluteDifference === 1;
+      }
+
+      if (metricKey === 'teleopCoral') {
+        return absoluteDifference <= 3;
+      }
+
+      return false;
+    };
+
     const hasMatch = difference === 0;
+    const hasWarning =
+      difference !== null && difference !== 0 && isWarningDifference(metric, difference);
+    const hasMismatch = difference !== null && difference !== 0 && !hasWarning;
 
     const classNames = [classes.numericCell];
     if (hasMismatch) {
       classNames.push(classes.numericMismatch);
+    } else if (hasWarning) {
+      classNames.push(classes.numericWarning);
     } else if (hasMatch) {
       classNames.push(classes.numericMatch);
     }
@@ -617,8 +635,9 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
           </Text>
         );
       } else {
+        const textColor = hasMismatch ? 'red.6' : hasWarning ? 'yellow.8' : undefined;
         cellContent = (
-          <Text fz="xs" c="red.6">
+          <Text fz="xs" c={textColor}>
             Δ {diffText}
           </Text>
         );
