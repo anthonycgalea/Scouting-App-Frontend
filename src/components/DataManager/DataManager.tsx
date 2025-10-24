@@ -660,25 +660,36 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
       ? 'Some alliance metrics could not be retrieved. Values may be incomplete.'
       : undefined;
 
-    if (status === 'MATCH') {
+    if (status === 'UNKNOWN') {
       return (
-        <Table.Td className={classes.endgameMatch} title={title}>
-          ✓
+        <Table.Td title={title}>
+          —
         </Table.Td>
       );
     }
 
-    if (status === 'MISMATCH') {
-      return (
-        <Table.Td className={classes.endgameMismatch} title={title}>
-          ✗
-        </Table.Td>
+    const classNames = [classes.numericCell];
+
+    let cellContent: ReactNode = null;
+    if (status === 'MATCH') {
+      classNames.push(classes.numericMatch);
+      cellContent = (
+        <Text fz="lg">
+          ✅
+        </Text>
+      );
+    } else if (status === 'MISMATCH') {
+      classNames.push(classes.numericMismatch);
+      cellContent = (
+        <Text fz="lg" c="red.6">
+          ❌
+        </Text>
       );
     }
 
     return (
-      <Table.Td title={title}>
-        —
+      <Table.Td className={classNames.join(' ')} title={title}>
+        {cellContent}
       </Table.Td>
     );
   };

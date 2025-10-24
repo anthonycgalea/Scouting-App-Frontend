@@ -110,14 +110,3 @@
   font-weight: 600;
 }
 
-.endgameMatch {
-  font-size: var(--mantine-font-size-lg);
-  color: light-dark(var(--mantine-color-green-7), var(--mantine-color-green-3));
-  font-weight: 600;
-}
-
-.endgameMismatch {
-  font-size: var(--mantine-font-size-lg);
-  color: light-dark(var(--mantine-color-red-7), var(--mantine-color-red-3));
-  font-weight: 600;
-}
