@@ -36,209 +36,68 @@ import {
   type MatchValidationPairedRowEntry,
 } from './matchValidation.config';
 import classes from './MatchValidation.module.css';
+import {
+  ENDGAME_LABELS,
+  extractTbaTeamEntries,
+  formatEndgameValue,
+  getAllianceNumericValue,
+  getAllianceTotalsRecord,
+  getTeamMatchData,
+  isValidTeamNumber as isValidNumber,
+  parseEndgameKey,
+  parseNumericValue,
+  type TbaTeamEntry,
+} from './matchDataUtils';
 
-const ENDGAME_LABELS: Record<Endgame2025, string> = {
-  NONE: 'None',
-  PARK: 'Park',
-  SHALLOW: 'Shallow',
-  DEEP: 'Deep',
+const MATCH_LEVEL_LABELS: Record<string, string> = {
+  QUALIFICATION: 'Qualification',
+  QM: 'Qualification',
+  QUARTERFINAL: 'Playoff',
+  QF: 'Playoff',
+  SEMIFINAL: 'Playoff',
+  SF: 'Playoff',
+  PLAYOFF: 'Playoff',
+  FINAL: 'Finals',
+  F: 'Finals',
+  PRACTICE: 'Practice',
+  PR: 'Practice',
 };
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+const formatMatchLevelLabel = (value: string) => {
+  const normalized = value.trim().toUpperCase();
 
-const ALLIANCE_TOTAL_FIELD_KEYS = new Set([
-  'al4c',
-  'al3c',
-  'al2c',
-  'al1c',
-  'tl4c',
-  'tl3c',
-  'tl2c',
-  'tl1c',
-  'anet',
-  'aNet',
-  'tnet',
-  'tNet',
-  'net',
-  'aprocessor',
-  'aProcessor',
-  'tprocessor',
-  'tProcessor',
-  'processor',
-  'bot1endgame',
-  'bot2endgame',
-  'bot3endgame',
-  'bot1Endgame',
-  'bot2Endgame',
-  'bot3Endgame',
-]);
-
-const getAllianceTotalsRecord = (raw: unknown): Record<string, unknown> | undefined => {
-  if (!isRecord(raw)) {
-    return undefined;
+  if (normalized.length === 0) {
+    return '';
   }
 
-  const possibleNestedKeys = ['json', 'data', 'body', 'matchData', 'match_data'];
-  const visited = new Set<Record<string, unknown>>();
-  const queue: Record<string, unknown>[] = [raw];
-
-  while (queue.length > 0) {
-    const candidate = queue.shift();
-
-    if (!candidate || visited.has(candidate)) {
-      continue;
-    }
-
-    visited.add(candidate);
-
-    const hasKnownField = Object.keys(candidate).some((key) => ALLIANCE_TOTAL_FIELD_KEYS.has(key));
-
-    if (hasKnownField) {
-      return candidate;
-    }
-
-    possibleNestedKeys.forEach((key) => {
-      const value = candidate[key];
-
-      if (isRecord(value)) {
-        queue.push(value);
-      }
-    });
+  if (normalized in MATCH_LEVEL_LABELS) {
+    return MATCH_LEVEL_LABELS[normalized];
   }
 
-  return undefined;
+  const cleaned = normalized.replace(/[_-]+/g, ' ');
+
+  return cleaned
+    .split(' ')
+    .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
+    .join(' ');
 };
 
-const ALLIANCE_NUMERIC_FIELD_ALIASES: Partial<
-  Record<MatchValidationNumericField, readonly string[]>
-> = {
-  al4c: ['al4c'],
-  al3c: ['al3c'],
-  al2c: ['al2c'],
-  al1c: ['al1c'],
-  tl4c: ['tl4c'],
-  tl3c: ['tl3c'],
-  tl2c: ['tl2c'],
-  tl1c: ['tl1c'],
-  aNet: ['aNet', 'anet'],
-  tNet: ['tNet', 'tnet', 'net'],
-  aProcessor: ['aProcessor', 'aprocessor'],
-  tProcessor: ['tProcessor', 'tprocessor', 'processor'],
-};
+const formatAllianceLabel = (value: string) => {
+  const normalized = value.trim().toUpperCase();
 
-const getAllianceNumericValue = (
-  record: Record<string, unknown>,
-  field: MatchValidationNumericField
-) => {
-  const aliases = ALLIANCE_NUMERIC_FIELD_ALIASES[field] ?? [field];
-
-  for (const key of aliases) {
-    if (key in record) {
-      const parsed = parseNumericValue(record[key]);
-
-      if (parsed !== undefined) {
-        return parsed;
-      }
-    }
+  if (normalized === 'RED') {
+    return 'Red';
   }
 
-  return undefined;
-};
-
-interface TbaTeamEntry {
-  teamNumber: number;
-  data: Partial<TeamMatchData>;
-}
-
-const parseNumericValue = (value: unknown): number | undefined => {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return value;
+  if (normalized === 'BLUE') {
+    return 'Blue';
   }
 
-  if (typeof value === 'string') {
-    const parsed = Number.parseFloat(value);
-
-    if (Number.isFinite(parsed)) {
-      return parsed;
-    }
+  if (normalized.length === 0) {
+    return '';
   }
 
-  return undefined;
-};
-
-const parseTeamNumber = (value: unknown): number | undefined => {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return value;
-  }
-
-  if (typeof value === 'string') {
-    const digits = value.match(/\d+/);
-
-    if (digits) {
-      return Number.parseInt(digits[0] ?? '', 10);
-    }
-  }
-
-  return undefined;
-};
-
-const extractTeamEntryFromRecord = (record: Record<string, unknown>): TbaTeamEntry | undefined => {
-  const teamNumber = parseTeamNumber(
-    record.teamNumber ?? record.team_number ?? record.team ?? record.team_id ?? record.key
-  );
-
-  if (!isValidNumber(teamNumber)) {
-    return undefined;
-  }
-
-  const dataCandidate = record.data && typeof record.data === 'object' ? record.data : record;
-
-  return {
-    teamNumber,
-    data: dataCandidate as Partial<TeamMatchData>,
-  };
-};
-
-const normalizeTbaTeamEntries = (candidate: unknown): TbaTeamEntry[] => {
-  if (!candidate) {
-    return [];
-  }
-
-  if (Array.isArray(candidate)) {
-    return candidate
-      .map((item) => (item && typeof item === 'object' ? extractTeamEntryFromRecord(item) : undefined))
-      .filter((entry): entry is TbaTeamEntry => Boolean(entry));
-  }
-
-  if (typeof candidate === 'object') {
-    const entries: TbaTeamEntry[] = [];
-
-    Object.entries(candidate).forEach(([key, value]) => {
-      const teamNumberFromKey = parseTeamNumber(key);
-
-      if (teamNumberFromKey && value && typeof value === 'object') {
-        entries.push({
-          teamNumber: teamNumberFromKey,
-          data: value as Partial<TeamMatchData>,
-        });
-
-        return;
-      }
-
-      if (value && typeof value === 'object') {
-        const entry = extractTeamEntryFromRecord(value as Record<string, unknown>);
-
-        if (entry) {
-          entries.push(entry);
-        }
-      }
-    });
-
-    return entries;
-  }
-
-  return [];
+  return normalized.charAt(0) + normalized.slice(1).toLowerCase();
 };
 
 interface MatchMetadata {
@@ -405,183 +264,6 @@ const isCompleteMetadata = (
   metadata: MatchMetadata | undefined
 ): metadata is CompleteMatchMetadata => hasRequiredMatchMetadataFields(metadata);
 
-const extractTbaTeamEntries = (raw: unknown): TbaTeamEntry[] => {
-  if (!raw || typeof raw !== 'object') {
-    return [];
-  }
-
-  const root = raw as Record<string, unknown>;
-
-  const candidates: unknown[] = [
-    root.teams,
-    root.teamData,
-    root.team_data,
-    root.robots,
-    root.robotData,
-    root.robot_data,
-    root.bots,
-    root.botData,
-    root.bot_data,
-    root.matchData,
-    root.match_data,
-  ];
-
-  for (const candidate of candidates) {
-    const entries = normalizeTbaTeamEntries(candidate);
-
-    if (entries.length > 0) {
-      return entries;
-    }
-  }
-
-  return normalizeTbaTeamEntries(raw);
-};
-
-const formatEndgameValue = (value: unknown): string | undefined => {
-  if (typeof value !== 'string') {
-    return undefined;
-  }
-
-  const normalized = value.trim().toUpperCase();
-
-  if ((normalized as Endgame2025) in ENDGAME_LABELS) {
-    return ENDGAME_LABELS[normalized as Endgame2025];
-  }
-
-  if (normalized.length === 0) {
-    return undefined;
-  }
-
-  return value;
-};
-
-const isValidNumber = (value: number | undefined): value is number =>
-  typeof value === 'number' && Number.isFinite(value);
-
-const formatAllianceLabel = (value: string) => {
-  const normalized = value.trim().toUpperCase();
-
-  if (normalized === 'RED') {
-    return 'Red';
-  }
-
-  if (normalized === 'BLUE') {
-    return 'Blue';
-  }
-
-  if (normalized.length === 0) {
-    return '';
-  }
-
-  return normalized.charAt(0) + normalized.slice(1).toLowerCase();
-};
-
-const MATCH_LEVEL_LABELS: Record<string, string> = {
-  QUALIFICATION: 'Qualification',
-  QM: 'Qualification',
-  QUARTERFINAL: 'Playoff',
-  QF: 'Playoff',
-  SEMIFINAL: 'Playoff',
-  SF: 'Playoff',
-  PLAYOFF: 'Playoff',
-  FINAL: 'Finals',
-  F: 'Finals',
-  PRACTICE: 'Practice',
-  PR: 'Practice',
-};
-
-const formatMatchLevelLabel = (value: string) => {
-  const normalized = value.trim().toUpperCase();
-
-  if (normalized.length === 0) {
-    return '';
-  }
-
-  if (normalized in MATCH_LEVEL_LABELS) {
-    return MATCH_LEVEL_LABELS[normalized];
-  }
-
-  const cleaned = normalized.replace(/[_-]+/g, ' ');
-
-  return cleaned
-    .split(' ')
-    .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
-    .join(' ');
-};
-
-const SCOUT_MATCH_DATA_SOURCE_KEYS = ['matchData', 'match_data', 'data', 'json'] as const;
-
-const parseEndgameKey = (value: unknown): Endgame2025 | undefined => {
-  if (typeof value !== 'string') {
-    return undefined;
-  }
-
-  const normalized = value.trim().toUpperCase();
-
-  if ((normalized as Endgame2025) in ENDGAME_LABELS) {
-    return normalized as Endgame2025;
-  }
-
-  return undefined;
-};
-
-const extractScoutMatchData = (candidate: unknown): Partial<TeamMatchData> | undefined => {
-  if (!candidate) {
-    return undefined;
-  }
-
-  if (Array.isArray(candidate)) {
-    for (const item of candidate) {
-      const extracted = extractScoutMatchData(item);
-
-      if (extracted) {
-        return extracted;
-      }
-    }
-
-    return undefined;
-  }
-
-  if (typeof candidate !== 'object') {
-    return undefined;
-  }
-
-  const record = candidate as Record<string, unknown>;
-  const result: Partial<TeamMatchData> = {};
-
-  MATCH_VALIDATION_NUMERIC_FIELDS.forEach((field) => {
-    const numericValue = parseNumericValue(record[field]);
-
-    if (numericValue !== undefined) {
-      result[field] = numericValue;
-    }
-  });
-
-  const endgameValue = parseEndgameKey(record.endgame);
-
-  if (endgameValue) {
-    result.endgame = endgameValue;
-  }
-
-  if (Object.keys(result).length > 0) {
-    return result;
-  }
-
-  for (const key of SCOUT_MATCH_DATA_SOURCE_KEYS) {
-    if (record[key] !== undefined) {
-      const nested = extractScoutMatchData(record[key]);
-
-      if (nested) {
-        return nested;
-      }
-    }
-  }
-
-  return undefined;
-};
-
-const getTeamMatchData = (candidate: unknown): Partial<TeamMatchData> | undefined =>
-  extractScoutMatchData(candidate);
 
 const ENDGAME_OPTIONS: Array<{ value: Endgame2025; label: string }> = (
   Object.entries(ENDGAME_LABELS) as Array<[Endgame2025, string]>

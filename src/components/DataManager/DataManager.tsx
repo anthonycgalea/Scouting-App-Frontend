@@ -11,14 +11,18 @@ import {
   Text,
   UnstyledButton,
 } from '@mantine/core';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { DataManagerButtonMenu } from './DataManagerButtonMenu';
 import { ExportHeader } from '../ExportHeader/ExportHeader';
 import classes from './DataManager.module.css';
 import {
+  fetchEventTbaMatchData,
+  fetchScoutMatch,
   useMatchSchedule,
   useTeamMatchValidation,
   type MatchScheduleEntry,
+  type TeamMatchData,
   type TeamMatchValidationStatus,
 } from '@/api';
 import {
@@ -26,10 +30,23 @@ import {
   type MatchScheduleSection,
 } from '../MatchSchedule/MatchScheduleToggle';
 import { SECTION_DEFINITIONS, groupMatchesBySection } from '../MatchSchedule/matchSections';
+import type { MatchValidationNumericField } from '../MatchValidation/matchValidation.config';
+import {
+  ENDGAME_LABELS,
+  extractTbaTeamEntries,
+  formatEndgameValue,
+  getAllianceNumericValue,
+  getAllianceTotalsRecord,
+  getTeamMatchData,
+  isValidTeamNumber,
+  parseNumericValue,
+  type TbaTeamEntry,
+} from '../MatchValidation/matchDataUtils';
 
 interface RowData {
   matchNumber: number;
   matchLevel: string;
+  season?: number;
   red1: number;
   red2: number;
   red3: number;
@@ -37,6 +54,270 @@ interface RowData {
   blue2: number;
   blue3: number;
 }
+
+type AllianceMetricField = Extract<
+  MatchValidationNumericField,
+  'al4c' | 'al3c' | 'al2c' | 'al1c' | 'tl4c' | 'tl3c' | 'tl2c' | 'tl1c'
+>;
+
+const AUTO_CORAL_FIELDS = ['al4c', 'al3c', 'al2c', 'al1c'] as const satisfies readonly AllianceMetricField[];
+const TELEOP_CORAL_FIELDS = ['tl4c', 'tl3c', 'tl2c', 'tl1c'] as const satisfies readonly AllianceMetricField[];
+
+type AllianceColor = 'RED' | 'BLUE';
+type AllianceKey = `${string}-${AllianceColor}`;
+
+interface NumericComparison {
+  total: number | null;
+  tbaTotal: number | null;
+  difference: number | null;
+}
+
+type EndgameComparison = 'MATCH' | 'MISMATCH' | 'UNKNOWN';
+
+interface AllianceSummary {
+  metrics: {
+    autoCoral: NumericComparison;
+    teleopCoral: NumericComparison;
+  };
+  endgame: EndgameComparison[];
+  hasError: boolean;
+}
+
+interface MatchAllianceInput {
+  matchLevel: string;
+  matchNumber: number;
+  red: number[];
+  blue: number[];
+}
+
+type AllianceSummaryMap = Map<AllianceKey, AllianceSummary>;
+
+const buildAllianceKey = (
+  matchLevel: string | null | undefined,
+  matchNumber: number,
+  alliance: AllianceColor
+): AllianceKey => `${(matchLevel ?? '').toLowerCase()}-${matchNumber}-${alliance}`;
+
+const sumScoutFields = (
+  teamData: Array<Partial<TeamMatchData> | undefined>,
+  fields: readonly AllianceMetricField[]
+) => {
+  let hasValue = false;
+  let total = 0;
+
+  teamData.forEach((data) => {
+    if (!data) {
+      return;
+    }
+
+    fields.forEach((field) => {
+      const value = data[field];
+
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        total += value;
+        hasValue = true;
+      }
+    });
+  });
+
+  return hasValue ? total : null;
+};
+
+const sumTbaFields = (
+  entries: TbaTeamEntry[],
+  totalsRecord: Record<string, unknown> | undefined,
+  fields: readonly AllianceMetricField[]
+) => {
+  if (totalsRecord) {
+    let totalsSum = 0;
+    let hasValue = false;
+
+    fields.forEach((field) => {
+      const value = getAllianceNumericValue(totalsRecord, field);
+
+      if (value !== undefined) {
+        totalsSum += value;
+        hasValue = true;
+      }
+    });
+
+    if (hasValue) {
+      return totalsSum;
+    }
+  }
+
+  let entrySum = 0;
+  let hasEntryValue = false;
+
+  entries.forEach((entry) => {
+    fields.forEach((field) => {
+      const value = parseNumericValue(entry.data[field]);
+
+      if (value !== undefined) {
+        entrySum += value;
+        hasEntryValue = true;
+      }
+    });
+  });
+
+  return hasEntryValue ? entrySum : null;
+};
+
+const computeNumericComparison = (
+  teamData: Array<Partial<TeamMatchData> | undefined>,
+  tbaEntries: TbaTeamEntry[],
+  tbaTotalsRecord: Record<string, unknown> | undefined,
+  fields: readonly AllianceMetricField[]
+): NumericComparison => {
+  const total = sumScoutFields(teamData, fields);
+  const tbaTotal = sumTbaFields(tbaEntries, tbaTotalsRecord, fields);
+  const difference =
+    total !== null && tbaTotal !== null ? Math.round((total - tbaTotal) * 100) / 100 : null;
+
+  return { total, tbaTotal, difference };
+};
+
+const computeEndgameStatuses = (
+  teamNumbers: number[],
+  teamData: Array<Partial<TeamMatchData> | undefined>,
+  tbaEndgameMap: Map<number, string>
+): EndgameComparison[] =>
+  teamNumbers.map((teamNumber, index) => {
+    if (!isValidTeamNumber(teamNumber)) {
+      return 'UNKNOWN';
+    }
+
+    const data = teamData[index];
+    const scoutLabel = data?.endgame ? ENDGAME_LABELS[data.endgame] : undefined;
+    const tbaLabel = tbaEndgameMap.get(teamNumber);
+
+    if (!scoutLabel && !tbaLabel) {
+      return 'UNKNOWN';
+    }
+
+    if (!scoutLabel || !tbaLabel) {
+      return 'UNKNOWN';
+    }
+
+    return scoutLabel === tbaLabel ? 'MATCH' : 'MISMATCH';
+  });
+
+const fetchAllianceSummary = async ({
+  matchLevel,
+  matchNumber,
+  alliance,
+  teamNumbers,
+}: {
+  matchLevel: string;
+  matchNumber: number;
+  alliance: AllianceColor;
+  teamNumbers: number[];
+}): Promise<AllianceSummary> => {
+  const scoutResults = await Promise.allSettled(
+    teamNumbers.map((teamNumber) => {
+      if (!isValidTeamNumber(teamNumber)) {
+        return Promise.resolve<Partial<TeamMatchData> | undefined>(undefined);
+      }
+
+      return fetchScoutMatch({ matchLevel, matchNumber, teamNumber })
+        .then((response) => getTeamMatchData(response) ?? undefined);
+    })
+  );
+
+  const teamData = scoutResults.map((result) =>
+    result.status === 'fulfilled' ? result.value : undefined
+  );
+  const scoutError = scoutResults.some((result) => result.status === 'rejected');
+
+  let tbaData: unknown;
+  let tbaError = false;
+  const firstValidTeam = teamNumbers.find((teamNumber) => isValidTeamNumber(teamNumber));
+
+  if (firstValidTeam !== undefined) {
+    try {
+      tbaData = await fetchEventTbaMatchData({
+        matchLevel,
+        matchNumber,
+        teamNumber: firstValidTeam,
+        alliance,
+      });
+    } catch (error) {
+      tbaError = true;
+    }
+  }
+
+  const tbaTotalsRecord = getAllianceTotalsRecord(tbaData);
+  const validTeamNumbers = teamNumbers.filter((teamNumber) => isValidTeamNumber(teamNumber));
+  const teamSet = new Set(validTeamNumbers);
+  const tbaEntries = tbaData
+    ? extractTbaTeamEntries(tbaData).filter((entry) => teamSet.has(entry.teamNumber))
+    : [];
+  const tbaEndgameMap = new Map<number, string>();
+
+  tbaEntries.forEach((entry) => {
+    const label = formatEndgameValue(entry.data.endgame);
+
+    if (label) {
+      tbaEndgameMap.set(entry.teamNumber, label);
+    }
+  });
+
+  const autoCoral = computeNumericComparison(teamData, tbaEntries, tbaTotalsRecord, AUTO_CORAL_FIELDS);
+  const teleopCoral = computeNumericComparison(
+    teamData,
+    tbaEntries,
+    tbaTotalsRecord,
+    TELEOP_CORAL_FIELDS
+  );
+  const endgame = computeEndgameStatuses(teamNumbers, teamData, tbaEndgameMap);
+
+  return {
+    metrics: { autoCoral, teleopCoral },
+    endgame,
+    hasError: scoutError || tbaError,
+  };
+};
+
+const fetchAllianceSummaries = async (
+  matches: MatchAllianceInput[]
+): Promise<AllianceSummaryMap> => {
+  const summaries: AllianceSummaryMap = new Map();
+
+  await Promise.all(
+    matches.map(async (match) => {
+      const [redSummary, blueSummary] = await Promise.all([
+        fetchAllianceSummary({
+          matchLevel: match.matchLevel,
+          matchNumber: match.matchNumber,
+          alliance: 'RED',
+          teamNumbers: match.red,
+        }),
+        fetchAllianceSummary({
+          matchLevel: match.matchLevel,
+          matchNumber: match.matchNumber,
+          alliance: 'BLUE',
+          teamNumbers: match.blue,
+        }),
+      ]);
+
+      summaries.set(buildAllianceKey(match.matchLevel, match.matchNumber, 'RED'), redSummary);
+      summaries.set(buildAllianceKey(match.matchLevel, match.matchNumber, 'BLUE'), blueSummary);
+    })
+  );
+
+  return summaries;
+};
+
+const allianceSummariesQueryKey = (matches: MatchAllianceInput[]) => [
+  'data-validation',
+  'alliance-summary',
+  matches.map((match) => ({
+    matchLevel: match.matchLevel,
+    matchNumber: match.matchNumber,
+    red: match.red,
+    blue: match.blue,
+  })),
+];
 
 interface ThProps {
   children: ReactNode;
@@ -119,6 +400,7 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
       activeMatches.map((match) => ({
         matchNumber: match.match_number,
         matchLevel: match.match_level,
+        season: match.season,
         red1: match.red1_id,
         red2: match.red2_id,
         red3: match.red3_id,
@@ -128,6 +410,139 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
       })),
     [activeMatches]
   );
+
+  const allianceQueryInputs = useMemo<MatchAllianceInput[]>(
+    () =>
+      scheduleData.map((match) => ({
+        matchLevel: match.match_level,
+        matchNumber: match.match_number,
+        red: [match.red1_id, match.red2_id, match.red3_id],
+        blue: [match.blue1_id, match.blue2_id, match.blue3_id],
+      })),
+    [scheduleData]
+  );
+
+  const {
+    data: allianceSummaries,
+    isLoading: isAllianceSummaryLoading,
+  } = useQuery({
+    queryKey: allianceSummariesQueryKey(allianceQueryInputs),
+    queryFn: () => fetchAllianceSummaries(allianceQueryInputs),
+    enabled: allianceQueryInputs.length > 0,
+  });
+
+  const allianceSummaryMap = allianceSummaries ?? new Map<AllianceKey, AllianceSummary>();
+  const isInitialSummaryLoading =
+    isAllianceSummaryLoading && allianceSummaryMap.size === 0;
+
+  const shouldShow2025Columns = (season?: number) => season === undefined || season === 2025;
+
+  const renderAllianceMetricCell = (
+    summary: AllianceSummary | undefined,
+    metric: keyof AllianceSummary['metrics'],
+    season?: number
+  ) => {
+    if (!shouldShow2025Columns(season)) {
+      return <Table.Td>—</Table.Td>;
+    }
+
+    if (isInitialSummaryLoading) {
+      return (
+        <Table.Td>
+          <Center>
+            <Loader size="sm" />
+          </Center>
+        </Table.Td>
+      );
+    }
+
+    if (!summary) {
+      return <Table.Td>—</Table.Td>;
+    }
+
+    const { total, tbaTotal, difference } = summary.metrics[metric];
+
+    if (total === null && tbaTotal === null) {
+      return <Table.Td>—</Table.Td>;
+    }
+
+    const diffText = difference !== null ? `${difference > 0 ? '+' : ''}${difference}` : null;
+    const diffColor = difference === null ? 'dimmed' : difference === 0 ? 'green.6' : 'red.6';
+    const cellClass =
+      difference !== null && difference !== 0
+        ? `${classes.numericCell} ${classes.numericMismatch}`
+        : classes.numericCell;
+
+    const title = summary.hasError
+      ? 'Some alliance metrics could not be retrieved. Values may be incomplete.'
+      : undefined;
+
+    return (
+      <Table.Td className={cellClass} title={title}>
+        <Text fw={500}>{total ?? '—'}</Text>
+        {difference !== null ? (
+          <Text size="sm" c={diffColor}>
+            Δ {diffText}
+          </Text>
+        ) : tbaTotal !== null ? (
+          <Text size="sm" c="dimmed">
+            TBA {tbaTotal}
+          </Text>
+        ) : null}
+      </Table.Td>
+    );
+  };
+
+  const renderAllianceEndgameCell = (
+    summary: AllianceSummary | undefined,
+    index: number,
+    season?: number
+  ) => {
+    if (!shouldShow2025Columns(season)) {
+      return <Table.Td>—</Table.Td>;
+    }
+
+    if (isInitialSummaryLoading) {
+      return (
+        <Table.Td>
+          <Center>
+            <Loader size="sm" />
+          </Center>
+        </Table.Td>
+      );
+    }
+
+    if (!summary) {
+      return <Table.Td>—</Table.Td>;
+    }
+
+    const status = summary.endgame[index] ?? 'UNKNOWN';
+    const title = summary.hasError
+      ? 'Some alliance metrics could not be retrieved. Values may be incomplete.'
+      : undefined;
+
+    if (status === 'MATCH') {
+      return (
+        <Table.Td className={classes.endgameMatch} title={title}>
+          ✓
+        </Table.Td>
+      );
+    }
+
+    if (status === 'MISMATCH') {
+      return (
+        <Table.Td className={classes.endgameMismatch} title={title}>
+          ✗
+        </Table.Td>
+      );
+    }
+
+    return (
+      <Table.Td title={title}>
+        —
+      </Table.Td>
+    );
+  };
 
   const validationLookup = useMemo(() => {
     const entries = new Map<string, TeamMatchValidationStatus>();
@@ -229,6 +644,13 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
   };
 
   const rows = sortedData.flatMap((row) => {
+    const redSummary = allianceSummaryMap.get(
+      buildAllianceKey(row.matchLevel, row.matchNumber, 'RED')
+    );
+    const blueSummary = allianceSummaryMap.get(
+      buildAllianceKey(row.matchLevel, row.matchNumber, 'BLUE')
+    );
+
     const redRow = (
       <Table.Tr key={`red-${row.matchNumber}`}>
         <Table.Td rowSpan={2}>
@@ -238,6 +660,11 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
         {renderTeamCell(row.matchNumber, row.matchLevel, row.red1)}
         {renderTeamCell(row.matchNumber, row.matchLevel, row.red2)}
         {renderTeamCell(row.matchNumber, row.matchLevel, row.red3)}
+        {renderAllianceMetricCell(redSummary, 'autoCoral', row.season)}
+        {renderAllianceMetricCell(redSummary, 'teleopCoral', row.season)}
+        {renderAllianceEndgameCell(redSummary, 0, row.season)}
+        {renderAllianceEndgameCell(redSummary, 1, row.season)}
+        {renderAllianceEndgameCell(redSummary, 2, row.season)}
         {renderAllianceButton(
           row.matchNumber,
           row.matchLevel,
@@ -254,6 +681,11 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
         {renderTeamCell(row.matchNumber, row.matchLevel, row.blue1)}
         {renderTeamCell(row.matchNumber, row.matchLevel, row.blue2)}
         {renderTeamCell(row.matchNumber, row.matchLevel, row.blue3)}
+        {renderAllianceMetricCell(blueSummary, 'autoCoral', row.season)}
+        {renderAllianceMetricCell(blueSummary, 'teleopCoral', row.season)}
+        {renderAllianceEndgameCell(blueSummary, 0, row.season)}
+        {renderAllianceEndgameCell(blueSummary, 1, row.season)}
+        {renderAllianceEndgameCell(blueSummary, 2, row.season)}
         {renderAllianceButton(
           row.matchNumber,
           row.matchLevel,
@@ -267,7 +699,7 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
     return [redRow, blueRow];
   });
 
-  const totalColumns = 6;
+  const totalColumns = 11;
 
   let tableBody: ReactNode;
   if (isLoading) {
@@ -346,7 +778,7 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
             <Table
               horizontalSpacing="md"
               verticalSpacing="xs"
-              miw={700}
+              miw={1000}
               layout="fixed"
               className={classes.table}
             >
@@ -359,6 +791,11 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
                   <Table.Th>Team 1</Table.Th>
                   <Table.Th>Team 2</Table.Th>
                   <Table.Th>Team 3</Table.Th>
+                  <Table.Th>Auto Coral</Table.Th>
+                  <Table.Th>Teleop Coral</Table.Th>
+                  <Table.Th>Robot 1 Endgame</Table.Th>
+                  <Table.Th>Robot 2 Endgame</Table.Th>
+                  <Table.Th>Robot 3 Endgame</Table.Th>
                   <Table.Th>Validate</Table.Th>
                 </Table.Tr>
               </Table.Thead>

@@ -36,7 +36,7 @@
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  min-width: 700px;
+  min-width: 1000px;
   padding-bottom: var(--mantine-spacing-md);
   gap: var(--mantine-spacing-md);
 }
@@ -91,4 +91,27 @@
 .table :global(th),
 .table :global(td) {
   text-align: center;
+}
+
+.numericCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+}
+
+.numericMismatch {
+  background-color: light-dark(var(--mantine-color-red-0), rgb(255 86 86 / 0.2));
+}
+
+.endgameMatch {
+  font-size: var(--mantine-font-size-lg);
+  color: light-dark(var(--mantine-color-green-7), var(--mantine-color-green-3));
+  font-weight: 600;
+}
+
+.endgameMismatch {
+  font-size: var(--mantine-font-size-lg);
+  color: light-dark(var(--mantine-color-red-7), var(--mantine-color-red-3));
+  font-weight: 600;
 }
