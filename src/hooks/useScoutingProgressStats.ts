@@ -89,9 +89,11 @@ export function useScoutingProgressStats() {
         return set;
       }, new Set<number>()).size;
 
-      const photoTeams = teamImages.reduce((set, image) => {
-        if (eventTeamNumbers.has(image.team_number)) {
-          set.add(image.team_number);
+      const photoTeams = teamImages.reduce((set, teamImage) => {
+        const teamNumber = teamImage.teamNumber;
+
+        if (eventTeamNumbers.has(teamNumber)) {
+          set.add(teamNumber);
         }
 
         return set;

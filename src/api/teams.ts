@@ -23,6 +23,11 @@ export interface TeamImage {
   uploaded_at: string;
 }
 
+export interface EventTeamImages {
+  teamNumber: number;
+  images: string[];
+}
+
 export type Endgame2025 = 'NONE' | 'PARK' | 'SHALLOW' | 'DEEP';
 
 export interface BaseTeamMatchData {
@@ -69,9 +74,9 @@ export const useEventTeams = ({ enabled }: { enabled?: boolean } = {}) => {
   });
 };
 
-export const eventTeamImagesQueryKey = () => ['team-images'] as const;
+export const eventTeamImagesQueryKey = () => ['event-images'] as const;
 
-export const fetchEventTeamImages = () => apiFetch<TeamImage[]>('teams/images');
+export const fetchEventTeamImages = () => apiFetch<EventTeamImages[]>('event/images');
 
 export const useEventTeamImages = ({ enabled }: { enabled?: boolean } = {}) => {
   const shouldEnable = enabled ?? true;
