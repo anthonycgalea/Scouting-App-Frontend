@@ -572,32 +572,49 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
       return <Table.Td>—</Table.Td>;
     }
 
-    const title = summary.hasError
-      ? 'Some alliance metrics could not be retrieved. Values may be incomplete.'
-      : undefined;
+    const tooltipMessages: string[] = [];
 
-    if (difference === null) {
-      return (
-        <Table.Td className={classes.numericCell} title={title}>
-          <Text fw={500} c="dimmed">
-            —
-          </Text>
-        </Table.Td>
+    if (summary.hasError) {
+      tooltipMessages.push(
+        'Some alliance metrics could not be retrieved. Values may be incomplete.'
       );
     }
 
-    const diffText = `${difference > 0 ? '+' : ''}${difference}`;
-    const diffColor = difference === 0 ? 'green.6' : 'red.6';
-    const cellClass =
-      difference !== 0
-        ? `${classes.numericCell} ${classes.numericMismatch}`
-        : classes.numericCell;
+    if (total !== null) {
+      tooltipMessages.push(`Scouting total: ${total}`);
+    }
+
+    if (tbaTotal !== null) {
+      tooltipMessages.push(`TBA total: ${tbaTotal}`);
+    }
+
+    let diffText: string | undefined;
+    if (difference !== null) {
+      diffText = `${difference > 0 ? '+' : ''}${difference}`;
+      tooltipMessages.push(`Δ ${diffText}`);
+    }
+
+    const title = tooltipMessages.length > 0 ? tooltipMessages.join('\n') : undefined;
+
+    const hasMismatch = difference !== null && difference !== 0;
+    const cellClass = hasMismatch
+      ? `${classes.numericCell} ${classes.numericMismatch}`
+      : classes.numericCell;
+
+    const primaryColor = hasMismatch ? 'red.6' : total === null ? 'dimmed' : undefined;
+    const secondaryColor =
+      difference === null ? undefined : difference === 0 ? 'green.6' : 'red.6';
 
     return (
       <Table.Td className={cellClass} title={title}>
-        <Text fw={500} c={diffColor}>
-          Δ {diffText}
+        <Text fw={600} c={primaryColor}>
+          {total !== null ? total : tbaTotal !== null ? tbaTotal : '—'}
         </Text>
+        {diffText !== undefined && (
+          <Text fz="xs" c={secondaryColor}>
+            Δ {diffText}
+          </Text>
+        )}
       </Table.Td>
     );
   };
