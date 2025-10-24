@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { findScoutMatchRecord } from '@/components/MatchValidation/matchDataUtils';
 import { apiFetch, apiFetchResponse } from './httpClient';
 import type { EventTeamImages, TeamMatchData } from './teams';
 
@@ -163,19 +164,22 @@ export interface ScoutMatchRequest {
 }
 
 export type ScoutMatchResponse = Record<string, unknown>;
+export type ScoutMatchesResponse = unknown;
 
-export const scoutMatchQueryKey = ({ matchNumber, matchLevel, teamNumber }: ScoutMatchRequest) =>
-  ['scout-match', matchLevel, matchNumber, teamNumber] as const;
+export const scoutMatchQueryKey = () => ['scout-matches'] as const;
 
-export const fetchScoutMatch = ({ matchNumber, matchLevel, teamNumber }: ScoutMatchRequest) =>
-  apiFetch<ScoutMatchResponse>('scout/matches', {
-    method: 'POST',
-    json: {
-      matchNumber,
-      matchLevel,
-      teamNumber,
-    },
+export const fetchScoutMatches = () =>
+  apiFetch<ScoutMatchesResponse>('scout/matches', { method: 'POST' });
+
+export const useScoutMatchesData = ({ enabled }: { enabled?: boolean } = {}) => {
+  const shouldEnable = enabled ?? true;
+
+  return useQuery({
+    queryKey: scoutMatchQueryKey(),
+    queryFn: fetchScoutMatches,
+    enabled: shouldEnable,
   });
+};
 
 export type MatchExportType = 'csv' | 'json' | 'xls';
 
@@ -245,15 +249,24 @@ export const useTeamMatchValidation = () =>
     queryFn: fetchTeamMatchValidation,
   });
 
-export const useScoutMatch = (params: ScoutMatchRequest) =>
-  useQuery({
-    queryKey: scoutMatchQueryKey(params),
-    queryFn: () => fetchScoutMatch(params),
-    enabled:
-      Number.isFinite(params.matchNumber) &&
-      Number.isFinite(params.teamNumber) &&
-      Boolean(params.matchLevel),
+export const useScoutMatch = (params: ScoutMatchRequest) => {
+  const isEnabled =
+    Number.isFinite(params.matchNumber) &&
+    Number.isFinite(params.teamNumber) &&
+    Boolean(params.matchLevel);
+
+  return useQuery<ScoutMatchesResponse, unknown, ScoutMatchResponse | undefined>({
+    queryKey: scoutMatchQueryKey(),
+    queryFn: fetchScoutMatches,
+    enabled: isEnabled,
+    select: (data) =>
+      findScoutMatchRecord(data, {
+        matchLevel: params.matchLevel,
+        matchNumber: params.matchNumber,
+        teamNumber: params.teamNumber,
+      }) as ScoutMatchResponse | undefined,
   });
+};
 
 export const syncEventMatches = () =>
   apiFetch<void>('organization/event/matches/sync', { method: 'POST' });

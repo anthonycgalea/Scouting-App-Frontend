@@ -6,6 +6,7 @@ import {
   type QueryKey,
 } from '@tanstack/react-query';
 import { apiFetch, type JsonBody } from './httpClient';
+import { findTbaAllianceRecord } from '@/components/MatchValidation/matchDataUtils';
 import { matchScheduleQueryKey, teamMatchValidationQueryKey } from './matches';
 import {
   pickListGeneratorsQueryKey,
@@ -241,37 +242,40 @@ export interface EventTbaMatchDataRequest {
   alliance: 'RED' | 'BLUE';
 }
 
-export type EventTbaMatchDataResponse = Record<string, unknown>;
+export type EventTbaMatchDataResponse = unknown;
 
-export const eventTbaMatchDataQueryKey = ({
-  matchNumber,
-  matchLevel,
-  teamNumber,
-  alliance,
-}: EventTbaMatchDataRequest) =>
-  ['event-tbaMatchData', matchLevel, matchNumber, teamNumber, alliance] as const;
+export const eventTbaMatchDataQueryKey = () => ['event-tbaMatchData'] as const;
 
-export const fetchEventTbaMatchData = (body: EventTbaMatchDataRequest) =>
-  apiFetch<EventTbaMatchDataResponse>('event/tbaMatchData', {
-    method: 'POST',
-    json: body as unknown as JsonBody,
+export const fetchEventTbaMatchData = () =>
+  apiFetch<EventTbaMatchDataResponse>('event/tbaMatchData');
+
+export const useEventTbaMatchDataset = ({ enabled }: { enabled?: boolean } = {}) => {
+  const shouldEnable = enabled ?? true;
+
+  return useQuery({
+    queryKey: eventTbaMatchDataQueryKey(),
+    queryFn: fetchEventTbaMatchData,
+    enabled: shouldEnable,
   });
+};
 
 export const useEventTbaMatchData = (
   body: EventTbaMatchDataRequest | undefined,
   { enabled }: { enabled?: boolean } = {}
 ) => {
-  const isEnabled = Boolean(body) && (enabled ?? true);
+  const shouldEnable = Boolean(body) && (enabled ?? true);
 
-  return useQuery({
-    queryKey: body ? eventTbaMatchDataQueryKey(body) : ['event-tbaMatchData'],
-    queryFn: () => {
-      if (!body) {
-        throw new Error('Missing request body for event/tbaMatchData');
-      }
-
-      return fetchEventTbaMatchData(body);
-    },
-    enabled: isEnabled,
+  return useQuery<EventTbaMatchDataResponse, unknown, EventTbaMatchDataResponse | undefined>({
+    queryKey: eventTbaMatchDataQueryKey(),
+    queryFn: fetchEventTbaMatchData,
+    enabled: shouldEnable,
+    select: (data) =>
+      body
+        ? (findTbaAllianceRecord(data, {
+            matchLevel: body.matchLevel,
+            matchNumber: body.matchNumber,
+            alliance: body.alliance,
+          }) as EventTbaMatchDataResponse | undefined)
+        : undefined,
   });
 };
