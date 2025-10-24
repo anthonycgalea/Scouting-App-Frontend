@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ActionIcon,
   Box,
@@ -21,31 +21,14 @@ import {
   IconChevronUp,
   IconPhoto,
 } from '@tabler/icons-react';
-import type {
-  MatchPreviewResponse,
-  MatchScheduleEntry,
-  MetricStatistics,
-  TeamMatchPreview,
+import {
+  useMatchImages,
+  type MatchPreviewResponse,
+  type MatchScheduleEntry,
+  type MetricStatistics,
+  type TeamMatchPreview,
 } from '@/api';
-import { TeamImage, useTeamImages } from '@/api/teams';
 import classes from '@/pages/MatchPreview.module.css';
-
-type TeamImageQueryResult = ReturnType<typeof useTeamImages>;
-type AllianceImageQueries = readonly [
-  TeamImageQueryResult,
-  TeamImageQueryResult,
-  TeamImageQueryResult,
-];
-
-const useAllianceTeamImages = (
-  teamNumbers: [number, number, number]
-): AllianceImageQueries => {
-  const first = useTeamImages(teamNumbers[0]);
-  const second = useTeamImages(teamNumbers[1]);
-  const third = useTeamImages(teamNumbers[2]);
-
-  return [first, second, third];
-};
 
 interface MatchPreview2025Props {
   match: MatchScheduleEntry;
@@ -169,8 +152,32 @@ export const MatchPreview2025 = ({
     match.blue2_id,
     match.blue3_id,
   ]);
-  const redAllianceImageQueries = useAllianceTeamImages(redTeamNumbers);
-  const blueAllianceImageQueries = useAllianceTeamImages(blueTeamNumbers);
+  const normalizedMatchLevel = match.match_level?.toLowerCase() ?? '';
+  const shouldFetchMatchImages =
+    normalizedMatchLevel.length > 0 &&
+    Number.isFinite(match.match_number) &&
+    (match.match_number ?? 0) > 0;
+  const matchImagesParams = shouldFetchMatchImages
+    ? { matchLevel: normalizedMatchLevel, matchNumber: match.match_number }
+    : undefined;
+  const {
+    data: matchImages = [],
+    isLoading: isMatchImagesLoading,
+    isError: isMatchImagesError,
+  } = useMatchImages(matchImagesParams);
+  const matchImagesByTeam = useMemo(() => {
+    const imageMap = new Map<number, string[]>();
+
+    matchImages.forEach((entry) => {
+      const teamNumber = entry.teamNumber;
+
+      if (Number.isFinite(teamNumber)) {
+        imageMap.set(teamNumber, entry.images ?? []);
+      }
+    });
+
+    return imageMap;
+  }, [matchImages]);
 
   const hasValidTeam = (teamNumber: number) => Number.isFinite(teamNumber) && teamNumber > 0;
 
@@ -290,7 +297,9 @@ export const MatchPreview2025 = ({
                 <Center>
                   <AllianceTeamImageDisplay
                     teamNumber={teamNumber}
-                    imageQuery={redAllianceImageQueries[index]}
+                    images={matchImagesByTeam.get(teamNumber)}
+                    isLoading={isMatchImagesLoading}
+                    isError={isMatchImagesError}
                   />
                 </Center>
               </Table.Td>
@@ -306,7 +315,9 @@ export const MatchPreview2025 = ({
                 <Center>
                   <AllianceTeamImageDisplay
                     teamNumber={teamNumber}
-                    imageQuery={blueAllianceImageQueries[index]}
+                    images={matchImagesByTeam.get(teamNumber)}
+                    isLoading={isMatchImagesLoading}
+                    isError={isMatchImagesError}
                   />
                 </Center>
               </Table.Td>
@@ -526,11 +537,22 @@ export const MatchPreview2025 = ({
 
 interface AllianceTeamImageDisplayProps {
   teamNumber: number;
-  imageQuery: TeamImageQueryResult;
+  images?: string[];
+  isLoading: boolean;
+  isError: boolean;
 }
 
-const AllianceTeamImageDisplay = ({ teamNumber, imageQuery }: AllianceTeamImageDisplayProps) => {
-  const { data: images = [], isLoading, isError } = imageQuery;
+type DisplayImage = {
+  image_url: string;
+  description?: string;
+};
+
+const AllianceTeamImageDisplay = ({
+  teamNumber,
+  images,
+  isLoading,
+  isError,
+}: AllianceTeamImageDisplayProps) => {
   const hasValidTeam = Number.isFinite(teamNumber) && teamNumber > 0;
 
   if (!hasValidTeam) {
@@ -546,16 +568,24 @@ const AllianceTeamImageDisplay = ({ teamNumber, imageQuery }: AllianceTeamImageD
     );
   }
 
-  if (isError || images.length === 0) {
-    return <MissingTeamImage />;
+  if (isError) {
+    return <MissingTeamImage teamNumber={teamNumber} />;
   }
 
-  return <TeamImageCarousel teamNumber={teamNumber} images={images} />;
+  const formattedImages: DisplayImage[] = (images ?? [])
+    .filter((url): url is string => typeof url === 'string' && url.trim().length > 0)
+    .map((url) => ({ image_url: url }));
+
+  if (formattedImages.length === 0) {
+    return <MissingTeamImage teamNumber={teamNumber} />;
+  }
+
+  return <TeamImageCarousel teamNumber={teamNumber} images={formattedImages} />;
 };
 
 interface TeamImageCarouselProps {
   teamNumber: number;
-  images: TeamImage[];
+  images: DisplayImage[];
 }
 
 const TeamImageCarousel = ({ teamNumber, images }: TeamImageCarouselProps) => {
@@ -568,7 +598,7 @@ const TeamImageCarousel = ({ teamNumber, images }: TeamImageCarouselProps) => {
   }, [images]);
 
   if (!images.length) {
-    return <MissingTeamImage />;
+    return <MissingTeamImage teamNumber={teamNumber} />;
   }
 
   const showControls = images.length > 1;
@@ -684,7 +714,7 @@ const TeamImageCarousel = ({ teamNumber, images }: TeamImageCarouselProps) => {
   );
 };
 
-const MissingTeamImage = () => (
+const MissingTeamImage = ({ teamNumber }: { teamNumber: number }) => (
   <Stack align="center" gap="xs" w={180}>
     <Stack
       align="center"
@@ -702,6 +732,9 @@ const MissingTeamImage = () => (
         No images
       </Text>
     </Stack>
+    <Text size="sm" fw={500}>
+      Team {teamNumber}
+    </Text>
   </Stack>
 );
 
