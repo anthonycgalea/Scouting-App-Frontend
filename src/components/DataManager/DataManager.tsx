@@ -597,21 +597,35 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
     const title = tooltipMessages.length > 0 ? tooltipMessages.join('\n') : undefined;
 
     const hasMismatch = difference !== null && difference !== 0;
-    const cellClass = hasMismatch
-      ? `${classes.numericCell} ${classes.numericMismatch}`
-      : classes.numericCell;
+    const hasMatch = difference === 0;
 
-    //const primaryColor = hasMismatch ? 'red.6' : total === null ? 'dimmed' : undefined;
-    const secondaryColor =
-      difference === null ? undefined : difference === 0 ? 'green.6' : 'red.6';
+    const classNames = [classes.numericCell];
+    if (hasMismatch) {
+      classNames.push(classes.numericMismatch);
+    } else if (hasMatch) {
+      classNames.push(classes.numericMatch);
+    }
 
-    return (
-      <Table.Td className={cellClass} title={title}>
-        {diffText !== undefined && (
-          <Text fz="xs" c={secondaryColor}>
+    let cellContent: ReactNode = null;
+    if (difference !== null) {
+      if (hasMatch) {
+        cellContent = (
+          <Text fz="lg">
+            ✅
+          </Text>
+        );
+      } else {
+        cellContent = (
+          <Text fz="xs" c="red.6">
             Δ {diffText}
           </Text>
-        )}
+        );
+      }
+    }
+
+    return (
+      <Table.Td className={classNames.join(' ')} title={title}>
+        {cellContent}
       </Table.Td>
     );
   };

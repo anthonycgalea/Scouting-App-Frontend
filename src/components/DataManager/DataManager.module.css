@@ -104,6 +104,12 @@
   background-color: light-dark(var(--mantine-color-red-0), rgb(255 86 86 / 0.2));
 }
 
+.numericMatch {
+  background-color: light-dark(var(--mantine-color-green-2), var(--mantine-color-green-9));
+  color: light-dark(var(--mantine-color-dark-9), var(--mantine-color-green-0));
+  font-weight: 600;
+}
+
 .endgameMatch {
   font-size: var(--mantine-font-size-lg);
   color: light-dark(var(--mantine-color-green-7), var(--mantine-color-green-3));
