@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
-import { IconChevronDown, IconChevronUp, IconSearch } from '@tabler/icons-react';
+import { IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 import {
   Box,
   Button,
@@ -7,10 +7,8 @@ import {
   Group,
   Loader,
   ScrollArea,
-  Stack,
   Table,
   Text,
-  TextInput,
   UnstyledButton,
 } from '@mantine/core';
 import { useNavigate } from '@tanstack/react-router';
@@ -47,11 +45,6 @@ interface ThProps {
   onSort: () => void;
 }
 
-const teamNumberKeys: (keyof RowData)[] = ['red1', 'red2', 'red3', 'blue1', 'blue2', 'blue3'];
-const TEAMS_PER_MATCH = 6;
-const isQualificationMatch = (matchLevel?: string | null) =>
-  (matchLevel ?? '').trim().toLowerCase() === 'qm';
-
 const buildValidationKey = (
   matchLevel: string | null | undefined,
   matchNumber: number,
@@ -79,38 +72,6 @@ function Th({ children, reversed, onSort }: ThProps) {
   );
 }
 
-function filterData(
-  data: RowData[],
-  { matchSearch, teamSearch }: { matchSearch: string; teamSearch: string }
-) {
-  const matchQuery = matchSearch.trim();
-  const matchNumberQuery = Number(matchQuery);
-  const teamQuery = teamSearch.toLowerCase().trim();
-
-  return data.filter((item) => {
-    const matchMatches = matchQuery
-      ? !Number.isNaN(matchNumberQuery) && item.matchNumber === matchNumberQuery
-      : true;
-
-    const teamMatches = teamQuery
-      ? teamNumberKeys.some((key) => item[key].toString().toLowerCase().includes(teamQuery))
-      : true;
-
-    return matchMatches && teamMatches;
-  });
-}
-
-function sortData(
-  data: RowData[],
-  payload: { reversed: boolean; matchSearch: string; teamSearch: string }
-) {
-  const sorted = [...data].sort((a, b) =>
-    payload.reversed ? b.matchNumber - a.matchNumber : a.matchNumber - b.matchNumber
-  );
-
-  return filterData(sorted, { matchSearch: payload.matchSearch, teamSearch: payload.teamSearch });
-}
-
 interface DataManagerProps {
   onSync?: () => Promise<void> | void;
   isSyncing?: boolean;
@@ -132,8 +93,6 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
     [matchesBySection]
   );
   const [activeSection, setActiveSection] = useState<MatchScheduleSection | undefined>();
-  const [matchSearch, setMatchSearch] = useState('');
-  const [teamSearch, setTeamSearch] = useState('');
   const [reverseSortDirection, setReverseSortDirection] = useState(false);
 
   useEffect(() => {
@@ -196,37 +155,6 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
     return entries;
   }, [validationData]);
 
-  const statsData = useMemo(() => {
-    const qualificationMatches = scheduleData.filter((match) =>
-      isQualificationMatch(match.match_level)
-    );
-    const totalQualificationMatches = qualificationMatches.length;
-    const totalPossibleRecords = totalQualificationMatches * TEAMS_PER_MATCH;
-
-    const qualificationValidation = validationData.filter((entry) =>
-      isQualificationMatch(entry.match_level)
-    );
-    const totalQualificationRecords = qualificationValidation.length;
-    const validatedQualificationRecords = qualificationValidation.filter(
-      (entry) => entry.validation_status === 'VALID'
-    ).length;
-
-    return [
-      {
-        label: 'Team Matches Scouted',
-        current: totalQualificationRecords,
-        total: totalPossibleRecords,
-        color: 'yellow.6',
-      },
-      {
-        label: 'Matches Validated',
-        current: validatedQualificationRecords,
-        total: totalPossibleRecords,
-        color: 'green.6',
-      },
-    ];
-  }, [scheduleData, validationData]);
-
   const renderTeamCell = (matchNumber: number, matchLevel: string, teamNumber: number) => {
     const matchKey = buildMatchKey(matchLevel, matchNumber);
     const teamsWithRecords = matchValidationLookup.get(matchKey);
@@ -247,23 +175,16 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
     );
   };
 
-  const sortedData = useMemo(
-    () => sortData(schedule, { reversed: reverseSortDirection, matchSearch, teamSearch }),
-    [schedule, reverseSortDirection, matchSearch, teamSearch]
-  );
+  const sortedData = useMemo(() => {
+    const matches = [...schedule];
+    matches.sort((a, b) =>
+      reverseSortDirection ? b.matchNumber - a.matchNumber : a.matchNumber - b.matchNumber
+    );
+    return matches;
+  }, [schedule, reverseSortDirection]);
 
   const setSorting = () => {
     setReverseSortDirection((current) => !current);
-  };
-
-  const handleMatchSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const { value } = event.currentTarget;
-    setMatchSearch(value);
-  };
-
-  const handleTeamSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const { value } = event.currentTarget;
-    setTeamSearch(value);
   };
 
   const renderAllianceButton = (
@@ -396,58 +317,50 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
   }
 
   return (
-    <>
-      <Box>
-        <ExportHeader onSync={onSync} isSyncing={isSyncing} statsData={statsData} />
+    <Box className={classes.container}>
+      <Box className={classes.header}>
+        <ExportHeader onSync={onSync} isSyncing={isSyncing} />
       </Box>
-      <ScrollArea>
-        <Stack gap="md">
-          {activeSection && availableSections.length > 0 ? (
-            <MatchScheduleToggle
-              value={activeSection}
-              options={availableSections.map(({ label, value }) => ({ label, value }))}
-              onChange={(section) => setActiveSection(section)}
-            />
-          ) : null}
-          <Group gap="md" grow>
-            <TextInput
-              placeholder="Filter by match number"
-              leftSection={<IconSearch size={16} stroke={1.5} />}
-              value={matchSearch}
-              onChange={handleMatchSearchChange}
-              disabled={isLoading || isError || schedule.length === 0}
-            />
-            <TextInput
-              placeholder="Filter by team number"
-              leftSection={<IconSearch size={16} stroke={1.5} />}
-              value={teamSearch}
-              onChange={handleTeamSearchChange}
-              disabled={isLoading || isError || schedule.length === 0}
-            />
-          </Group>
-          <Table
-            horizontalSpacing="md"
-            verticalSpacing="xs"
-            miw={700}
-            layout="fixed"
-            className={classes.table}
-          >
-            <Table.Thead>
-              <Table.Tr>
-                <Th sorted reversed={reverseSortDirection} onSort={setSorting}>
-                  Match #
-                </Th>
-                <Table.Th>Alliance</Table.Th>
-                <Table.Th>Team 1</Table.Th>
-                <Table.Th>Team 2</Table.Th>
-                <Table.Th>Team 3</Table.Th>
-                <Table.Th>Validate</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>{tableBody}</Table.Tbody>
-          </Table>
-        </Stack>
-      </ScrollArea>
-    </>
+      <Box className={classes.content}>
+        {activeSection && availableSections.length > 0 ? (
+          <MatchScheduleToggle
+            value={activeSection}
+            options={availableSections.map(({ label, value }) => ({ label, value }))}
+            onChange={(section) => setActiveSection(section)}
+          />
+        ) : null}
+        <ScrollArea
+          type="always"
+          offsetScrollbars
+          scrollbarSize={12}
+          className={classes.scheduleScrollArea}
+          classNames={{ viewport: classes.scrollViewport }}
+        >
+          <Box className={classes.scheduleContent}>
+            <Table
+              horizontalSpacing="md"
+              verticalSpacing="xs"
+              miw={700}
+              layout="fixed"
+              className={classes.table}
+            >
+              <Table.Thead>
+                <Table.Tr>
+                  <Th sorted reversed={reverseSortDirection} onSort={setSorting}>
+                    Match #
+                  </Th>
+                  <Table.Th>Alliance</Table.Th>
+                  <Table.Th>Team 1</Table.Th>
+                  <Table.Th>Team 2</Table.Th>
+                  <Table.Th>Team 3</Table.Th>
+                  <Table.Th>Validate</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>{tableBody}</Table.Tbody>
+            </Table>
+          </Box>
+        </ScrollArea>
+      </Box>
+    </Box>
   );
 }

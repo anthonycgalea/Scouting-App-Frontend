@@ -1,8 +1,7 @@
 import { lazy, Suspense } from 'react';
-import { ActionIcon, Box, Group, Loader, Skeleton } from '@mantine/core';
+import { ActionIcon, Group, Loader, Skeleton } from '@mantine/core';
 import { IconRefresh } from '@tabler/icons-react';
 import { DownloadAsButton } from './DownloadAsButton';
-import { StatsRing, type StatsRingDataItem } from '../StatsRing/StatsRing';
 import classes from './ExportHeader.module.css';
 
 const EventHeader = lazy(async () => ({
@@ -12,16 +11,10 @@ const EventHeader = lazy(async () => ({
 interface ExportHeaderProps {
   onSync?: () => Promise<void> | void;
   isSyncing?: boolean;
-  statsData?: StatsRingDataItem[];
 }
 
-export function ExportHeader({
-  onSync,
-  isSyncing = false,
-  statsData = [],
-}: ExportHeaderProps) {
+export function ExportHeader({ onSync, isSyncing = false }: ExportHeaderProps) {
   const isSyncEnabled = typeof onSync === 'function';
-  const hasStats = statsData.length > 0;
 
   return (
     <Group className={classes.container} align="center" justify="center" gap="md" wrap="wrap">
@@ -57,16 +50,6 @@ export function ExportHeader({
         </Suspense>
         <DownloadAsButton />
       </Group>
-      {hasStats ? (
-        <Box
-          w={{ base: '100%', md: 'auto' }}
-          maw={{ base: '100%', md: 320 }}
-          miw={{ md: 260 }}
-          style={{ flex: '1 1 0%' }}
-        >
-          <StatsRing data={statsData} />
-        </Box>
-      ) : null}
     </Group>
   );
 }

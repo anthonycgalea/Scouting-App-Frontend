@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, Stack } from '@mantine/core';
+import { Box } from '@mantine/core';
 import { syncScoutingData } from '@/api';
 import { DataManager } from '@/components/DataManager/DataManager';
 
@@ -19,10 +19,11 @@ export function DataValidationPage() {
   };
 
   return (
-    <Box p="sm">
-      <Stack gap="md">
-        <DataManager onSync={handleSyncData} isSyncing={isSyncing} />
-      </Stack>
+    <Box
+      p="sm"
+      style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+    >
+      <DataManager onSync={handleSyncData} isSyncing={isSyncing} />
     </Box>
   );
 }
