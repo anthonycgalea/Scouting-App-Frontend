@@ -580,10 +580,6 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
       );
     }
 
-    if (total !== null) {
-      tooltipMessages.push(`Scouting total: ${total}`);
-    }
-
     if (tbaTotal !== null) {
       tooltipMessages.push(`TBA total: ${tbaTotal}`);
     }
