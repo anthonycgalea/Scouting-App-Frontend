@@ -11,9 +11,14 @@ const EventHeader = lazy(async () => ({
 interface ExportHeaderProps {
   onSync?: () => Promise<void> | void;
   isSyncing?: boolean;
+  showDownloadButton?: boolean;
 }
 
-export function ExportHeader({ onSync, isSyncing = false }: ExportHeaderProps) {
+export function ExportHeader({
+  onSync,
+  isSyncing = false,
+  showDownloadButton = true,
+}: ExportHeaderProps) {
   const isSyncEnabled = typeof onSync === 'function';
 
   return (
@@ -48,7 +53,7 @@ export function ExportHeader({ onSync, isSyncing = false }: ExportHeaderProps) {
             ) : null}
           </Group>
         </Suspense>
-        <DownloadAsButton />
+        {showDownloadButton ? <DownloadAsButton /> : null}
       </Group>
     </Group>
   );

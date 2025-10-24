@@ -1,8 +1,9 @@
 import { useCallback, useState } from 'react';
-import { Box } from '@mantine/core';
+import { Box, Flex, Paper, Stack, Title } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useNavigate } from '@tanstack/react-router';
 import { DropzoneButton } from '@/components/DropzoneButton/DropzoneButton';
+import { DownloadAsButton } from '@/components/ExportHeader/DownloadAsButton';
 import { apiFetchResponse } from '@/api';
 
 export function DataImportPage() {
@@ -41,8 +42,32 @@ export function DataImportPage() {
   );
 
   return (
-    <Box p="md">
-      <DropzoneButton onDrop={handleDrop} loading={isUploading} />
+    <Box p="md" h="100%">
+      <Flex direction="column" gap="md" h="100%">
+        <Paper
+          withBorder
+          radius="md"
+          p="lg"
+          style={{ flex: 1, display: 'flex' }}
+        >
+          <Stack gap="lg" style={{ flex: 1 }}>
+            <Title order={3}>Data Export</Title>
+            <DownloadAsButton />
+          </Stack>
+        </Paper>
+
+        <Paper
+          withBorder
+          radius="md"
+          p="lg"
+          style={{ flex: 1, display: 'flex' }}
+        >
+          <Stack gap="lg" style={{ flex: 1 }}>
+            <Title order={3}>Data Import</Title>
+            <DropzoneButton onDrop={handleDrop} loading={isUploading} />
+          </Stack>
+        </Paper>
+      </Flex>
     </Box>
   );
 }

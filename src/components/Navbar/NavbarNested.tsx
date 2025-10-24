@@ -48,7 +48,7 @@ const NAV_LINKS_AFTER_PICKING = [
     icon: IconFileAnalytics,
     links: [
       { label: 'Data Validation', link: '/dataValidation' },
-      { label: 'Data Import', link: '/dataImport' },
+      { label: 'Data Import/Export', link: '/dataImport' },
     ],
   },
 ];
