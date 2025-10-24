@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch, apiFetchResponse } from './httpClient';
-import type { TeamMatchData } from './teams';
+import type { EventTeamImages, TeamMatchData } from './teams';
 
 export interface MatchScheduleEntry {
   event_key: string;
@@ -67,12 +67,25 @@ export interface MatchPreviewResponse {
   blue: AllianceMatchPreview;
 }
 
+export interface MatchImagesRequest {
+  matchLevel: string;
+  matchNumber: number;
+}
+
 export const matchPreviewQueryKey = (params?: MatchPreviewRequest) =>
   ['match-preview', params?.matchLevel, params?.matchNumber] as const;
 
 export const fetchMatchPreview = ({ matchLevel, matchNumber }: MatchPreviewRequest) =>
   apiFetch<MatchPreviewResponse>(
     `event/match/${encodeURIComponent(matchLevel.toLowerCase())}/${matchNumber}/preview`
+  );
+
+export const matchImagesQueryKey = (params?: MatchImagesRequest) =>
+  ['match-images', params?.matchLevel, params?.matchNumber] as const;
+
+export const fetchMatchImages = ({ matchLevel, matchNumber }: MatchImagesRequest) =>
+  apiFetch<EventTeamImages[]>(
+    `event/match/${encodeURIComponent(matchLevel.toLowerCase())}/${matchNumber}/images`
   );
 
 interface MatchSimulationBase {
@@ -187,6 +200,22 @@ export const useMatchPreview = (params?: MatchPreviewRequest) =>
       }
 
       return fetchMatchPreview(params);
+    },
+    enabled:
+      Boolean(params?.matchLevel) &&
+      Number.isFinite(params?.matchNumber) &&
+      (params?.matchNumber ?? 0) > 0,
+  });
+
+export const useMatchImages = (params?: MatchImagesRequest) =>
+  useQuery({
+    queryKey: matchImagesQueryKey(params),
+    queryFn: () => {
+      if (!params) {
+        throw new Error('Match images parameters are required');
+      }
+
+      return fetchMatchImages(params);
     },
     enabled:
       Boolean(params?.matchLevel) &&
