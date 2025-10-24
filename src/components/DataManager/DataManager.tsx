@@ -10,6 +10,7 @@ import {
   Table,
   Text,
   UnstyledButton,
+  useMantineColorScheme,
 } from '@mantine/core';
 import { useNavigate } from '@tanstack/react-router';
 import { DataManagerButtonMenu } from './DataManagerButtonMenu';
@@ -401,6 +402,7 @@ interface DataManagerProps {
 }
 
 export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
+  const { colorScheme } = useMantineColorScheme();
   const { data: scheduleData = [], isLoading, isError } = useMatchSchedule();
   const { data: validationData = [] } = useTeamMatchValidation();
   const {
@@ -635,7 +637,9 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
           </Text>
         );
       } else {
-        const textColor = hasMismatch ? 'red.6' : hasWarning ? 'yellow.8' : undefined;
+        const warningTextColor = colorScheme === 'dark' ? 'yellow.2' : 'yellow.8';
+        const dangerTextColor = colorScheme === 'dark' ? 'red.4' : 'red.6';
+        const textColor = hasMismatch ? dangerTextColor : hasWarning ? warningTextColor : undefined;
         cellContent = (
           <Text fz="xs" c={textColor}>
             Δ {diffText}
