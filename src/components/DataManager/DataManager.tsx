@@ -902,7 +902,7 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
               horizontalSpacing="md"
               verticalSpacing="xs"
               miw={1000}
-              layout="fixed"
+              //layout="fixed"
               className={classes.table}
             >
               <Table.Thead>
