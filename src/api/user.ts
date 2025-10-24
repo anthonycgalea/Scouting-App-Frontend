@@ -107,6 +107,8 @@ export const useUserRole = ({ enabled }: { enabled?: boolean } = {}) =>
 export interface UserOrganizationResponse {
   organization_id: number | null;
   organization_name: string | null;
+  team_number?: number | null;
+  teamNumber?: number | null;
 }
 
 export const fetchUserOrganization = () =>
