@@ -182,12 +182,88 @@ const computeNumericComparison = (
   return { total, tbaTotal, difference };
 };
 
+const buildAllianceEndgameKeys = (alliance: AllianceColor, index: number) => {
+  const slot = index + 1;
+  const lowerAlliance = alliance.toLowerCase();
+  const capitalizedAlliance = `${alliance.charAt(0)}${alliance.slice(1).toLowerCase()}`;
+
+  return [
+    `${lowerAlliance}_${slot}_endgame`,
+    `${lowerAlliance}_${slot}_Endgame`,
+    `${lowerAlliance}${slot}_endgame`,
+    `${lowerAlliance}${slot}Endgame`,
+    `${lowerAlliance}${slot}endgame`,
+    `${capitalizedAlliance}${slot}Endgame`,
+    `${capitalizedAlliance}${slot}endgame`,
+    `${capitalizedAlliance}_${slot}_endgame`,
+    `${capitalizedAlliance}_${slot}_Endgame`,
+  ];
+};
+
+const buildBotEndgameKeys = (index: number) => {
+  const slot = index + 1;
+
+  return [
+    `bot_${slot}_endgame`,
+    `bot_${slot}_Endgame`,
+    `bot${slot}_endgame`,
+    `bot${slot}_Endgame`,
+    `bot${slot}endgame`,
+    `bot${slot}Endgame`,
+  ];
+};
+
+const extractEndgameLabel = (
+  sources: Array<Record<string, unknown> | undefined>,
+  keys: string[]
+) => {
+  for (const source of sources) {
+    if (!source) {
+      continue;
+    }
+
+    for (const key of keys) {
+      if (!(key in source)) {
+        continue;
+      }
+
+      const label = formatEndgameValue(source[key]);
+
+      if (label) {
+        return label;
+      }
+    }
+  }
+
+  return undefined;
+};
+
 const computeEndgameStatuses = (
+  alliance: AllianceColor,
   teamNumbers: number[],
   teamData: Array<Partial<TeamMatchData> | undefined>,
-  tbaEndgameMap: Map<number, string>
+  tbaEndgameMap: Map<number, string>,
+  tbaTotalsRecord: Record<string, unknown> | undefined,
+  tbaRecord: Record<string, unknown> | undefined
 ): EndgameComparison[] =>
   teamNumbers.map((teamNumber, index) => {
+    const allianceLabel = extractEndgameLabel(
+      [tbaTotalsRecord, tbaRecord],
+      buildAllianceEndgameKeys(alliance, index)
+    );
+    const botLabel = extractEndgameLabel(
+      [tbaTotalsRecord, tbaRecord],
+      buildBotEndgameKeys(index)
+    );
+
+    if (allianceLabel || botLabel) {
+      if (!allianceLabel || !botLabel) {
+        return 'UNKNOWN';
+      }
+
+      return allianceLabel === botLabel ? 'MATCH' : 'MISMATCH';
+    }
+
     if (!isValidTeamNumber(teamNumber)) {
       return 'UNKNOWN';
     }
@@ -267,7 +343,14 @@ const buildAllianceSummary = (
     tbaTotalsRecord,
     TELEOP_CORAL_FIELDS
   );
-  const endgame = computeEndgameStatuses(teamNumbers, teamData, tbaEndgameMap);
+  const endgame = computeEndgameStatuses(
+    alliance,
+    teamNumbers,
+    teamData,
+    tbaEndgameMap,
+    tbaTotalsRecord,
+    tbaRecord
+  );
 
   return {
     metrics: { autoCoral, teleopCoral },
@@ -489,29 +572,32 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
       return <Table.Td>—</Table.Td>;
     }
 
-    const diffText = difference !== null ? `${difference > 0 ? '+' : ''}${difference}` : null;
-    const diffColor = difference === null ? 'dimmed' : difference === 0 ? 'green.6' : 'red.6';
-    const cellClass =
-      difference !== null && difference !== 0
-        ? `${classes.numericCell} ${classes.numericMismatch}`
-        : classes.numericCell;
-
     const title = summary.hasError
       ? 'Some alliance metrics could not be retrieved. Values may be incomplete.'
       : undefined;
 
+    if (difference === null) {
+      return (
+        <Table.Td className={classes.numericCell} title={title}>
+          <Text fw={500} c="dimmed">
+            —
+          </Text>
+        </Table.Td>
+      );
+    }
+
+    const diffText = `${difference > 0 ? '+' : ''}${difference}`;
+    const diffColor = difference === 0 ? 'green.6' : 'red.6';
+    const cellClass =
+      difference !== 0
+        ? `${classes.numericCell} ${classes.numericMismatch}`
+        : classes.numericCell;
+
     return (
       <Table.Td className={cellClass} title={title}>
-        <Text fw={500}>{total ?? '—'}</Text>
-        {difference !== null ? (
-          <Text size="sm" c={diffColor}>
-            Δ {diffText}
-          </Text>
-        ) : tbaTotal !== null ? (
-          <Text size="sm" c="dimmed">
-            TBA {tbaTotal}
-          </Text>
-        ) : null}
+        <Text fw={500} c={diffColor}>
+          Δ {diffText}
+        </Text>
       </Table.Td>
     );
   };
