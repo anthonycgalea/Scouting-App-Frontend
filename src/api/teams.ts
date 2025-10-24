@@ -69,6 +69,20 @@ export const useEventTeams = ({ enabled }: { enabled?: boolean } = {}) => {
   });
 };
 
+export const eventTeamImagesQueryKey = () => ['team-images'] as const;
+
+export const fetchEventTeamImages = () => apiFetch<TeamImage[]>('teams/images');
+
+export const useEventTeamImages = ({ enabled }: { enabled?: boolean } = {}) => {
+  const shouldEnable = enabled ?? true;
+
+  return useQuery({
+    queryKey: eventTeamImagesQueryKey(),
+    queryFn: fetchEventTeamImages,
+    enabled: shouldEnable,
+  });
+};
+
 export const teamInfoQueryKey = (teamNumber: number) =>
   ['team-info', teamNumber] as const;
 

@@ -58,8 +58,12 @@ const createPitScoutQuery = (teamNumber: number) => {
 
 export const pitScoutQueryKey = (teamNumber: number) => ['pit-scout', teamNumber] as const;
 
+export const eventPitScoutQueryKey = () => ['pit-scout', 'event'] as const;
+
 export const fetchPitScoutRecords = (teamNumber: number) =>
   apiFetch<PitScout[]>(createPitScoutQuery(teamNumber));
+
+export const fetchEventPitScoutRecords = () => apiFetch<PitScout[]>('scout/pit');
 
 export const usePitScoutRecords = (teamNumber: number) =>
   useQuery({
@@ -67,6 +71,16 @@ export const usePitScoutRecords = (teamNumber: number) =>
     queryFn: () => fetchPitScoutRecords(teamNumber),
     enabled: Number.isFinite(teamNumber),
   });
+
+export const useEventPitScoutRecords = ({ enabled }: { enabled?: boolean } = {}) => {
+  const shouldEnable = enabled ?? true;
+
+  return useQuery({
+    queryKey: eventPitScoutQueryKey(),
+    queryFn: fetchEventPitScoutRecords,
+    enabled: shouldEnable,
+  });
+};
 
 export const createPitScoutRecord = (record: PitScoutUpsertPayload) =>
   apiFetch<PitScout>('scout/pit', {
