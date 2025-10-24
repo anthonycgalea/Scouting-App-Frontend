@@ -29,6 +29,22 @@
   color: light-dark(var(--mantine-color-blue-9), var(--mantine-color-blue-1));
 }
 
+.teamCell {
+  background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+  color: light-dark(var(--mantine-color-dark-7), var(--mantine-color-gray-0));
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.teamCellValidated {
+  background-color: light-dark(var(--mantine-color-green-1), var(--mantine-color-green-9));
+  color: light-dark(var(--mantine-color-green-9), var(--mantine-color-green-0));
+}
+
+.teamCellMissing {
+  background-color: light-dark(var(--mantine-color-red-1), var(--mantine-color-red-9));
+  color: light-dark(var(--mantine-color-red-9), var(--mantine-color-red-1));
+}
+
 .table :global(th),
 .table :global(td) {
   text-align: center;

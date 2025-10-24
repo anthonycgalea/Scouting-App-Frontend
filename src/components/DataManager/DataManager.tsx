@@ -59,6 +59,9 @@ const buildValidationKey = (
   teamNumber: number
 ) => `${(matchLevel ?? '').toLowerCase()}-${matchNumber}-${teamNumber}`;
 
+const buildMatchKey = (matchLevel: string | null | undefined, matchNumber: number) =>
+  `${(matchLevel ?? '').toLowerCase()}-${matchNumber}`;
+
 function Th({ children, reversed, onSort }: ThProps) {
   const Icon = reversed ? IconChevronDown : IconChevronUp;
   return (
@@ -185,6 +188,19 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
     return entries;
   }, [validationData]);
 
+  const matchValidationLookup = useMemo(() => {
+    const entries = new Map<string, Set<number>>();
+
+    validationData.forEach((entry) => {
+      const matchKey = buildMatchKey(entry.match_level, entry.match_number);
+      const teamsWithRecords = entries.get(matchKey) ?? new Set<number>();
+      teamsWithRecords.add(entry.team_number);
+      entries.set(matchKey, teamsWithRecords);
+    });
+
+    return entries;
+  }, [validationData]);
+
   const statsData = useMemo(() => {
     const qualificationMatches = scheduleData.filter((match) =>
       isQualificationMatch(match.match_level)
@@ -216,16 +232,22 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
     ];
   }, [scheduleData, validationData]);
 
-  const renderTeamCell = (
-    matchNumber: number,
-    matchLevel: string,
-    teamNumber: number,
-    className: string
-  ) => {
+  const renderTeamCell = (matchNumber: number, matchLevel: string, teamNumber: number) => {
     const status = validationLookup.get(buildValidationKey(matchLevel, matchNumber, teamNumber));
+    const matchKey = buildMatchKey(matchLevel, matchNumber);
+    const teamsWithRecords = matchValidationLookup.get(matchKey);
+    const hasRecord = teamsWithRecords?.has(teamNumber) ?? false;
+    const hasAnyRecord = (teamsWithRecords?.size ?? 0) > 0;
+    const classNames = [classes.teamCell];
+
+    if (hasRecord) {
+      classNames.push(classes.teamCellValidated);
+    } else if (hasAnyRecord) {
+      classNames.push(classes.teamCellMissing);
+    }
 
     return (
-      <Table.Td className={className}>
+      <Table.Td className={classNames.join(' ')}>
         <Group justify="center" align="center" gap="xs" wrap="nowrap">
           <Text>{teamNumber}</Text>
           <ValidationStatusIcon
@@ -305,9 +327,9 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
           <DataManagerButtonMenu matchNumber={row.matchNumber} />
         </Table.Td>
         <Table.Td className={classes.redCell}>Red</Table.Td>
-        {renderTeamCell(row.matchNumber, row.matchLevel, row.red1, classes.redCell)}
-        {renderTeamCell(row.matchNumber, row.matchLevel, row.red2, classes.redCell)}
-        {renderTeamCell(row.matchNumber, row.matchLevel, row.red3, classes.redCell)}
+        {renderTeamCell(row.matchNumber, row.matchLevel, row.red1)}
+        {renderTeamCell(row.matchNumber, row.matchLevel, row.red2)}
+        {renderTeamCell(row.matchNumber, row.matchLevel, row.red3)}
         {renderAllianceButton(
           row.matchNumber,
           row.matchLevel,
@@ -321,9 +343,9 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
     const blueRow = (
       <Table.Tr key={`blue-${row.matchNumber}`}>
         <Table.Td className={classes.blueCell}>Blue</Table.Td>
-        {renderTeamCell(row.matchNumber, row.matchLevel, row.blue1, classes.blueCell)}
-        {renderTeamCell(row.matchNumber, row.matchLevel, row.blue2, classes.blueCell)}
-        {renderTeamCell(row.matchNumber, row.matchLevel, row.blue3, classes.blueCell)}
+        {renderTeamCell(row.matchNumber, row.matchLevel, row.blue1)}
+        {renderTeamCell(row.matchNumber, row.matchLevel, row.blue2)}
+        {renderTeamCell(row.matchNumber, row.matchLevel, row.blue3)}
         {renderAllianceButton(
           row.matchNumber,
           row.matchLevel,
