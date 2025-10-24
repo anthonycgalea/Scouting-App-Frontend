@@ -319,7 +319,11 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
   return (
     <Box className={classes.container}>
       <Box className={classes.header}>
-        <ExportHeader onSync={onSync} isSyncing={isSyncing} />
+        <ExportHeader
+          onSync={onSync}
+          isSyncing={isSyncing}
+          showDownloadButton={false}
+        />
       </Box>
       <Box className={classes.content}>
         {activeSection && availableSections.length > 0 ? (
