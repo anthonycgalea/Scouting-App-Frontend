@@ -11,16 +11,15 @@ import {
   Text,
   UnstyledButton,
 } from '@mantine/core';
-import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { DataManagerButtonMenu } from './DataManagerButtonMenu';
 import { ExportHeader } from '../ExportHeader/ExportHeader';
 import classes from './DataManager.module.css';
 import {
-  fetchEventTbaMatchData,
-  fetchScoutMatch,
   useMatchSchedule,
+  useScoutMatchesData,
   useTeamMatchValidation,
+  useEventTbaMatchDataset,
   type MatchScheduleEntry,
   type TeamMatchData,
   type TeamMatchValidationStatus,
@@ -34,13 +33,19 @@ import type { MatchValidationNumericField } from '../MatchValidation/matchValida
 import {
   ENDGAME_LABELS,
   extractTbaTeamEntries,
+  createScoutMatchLookup,
+  createTbaAllianceLookup,
   formatEndgameValue,
   getAllianceNumericValue,
   getAllianceTotalsRecord,
   getTeamMatchData,
+  findScoutMatchRecordInLookup,
+  findTbaAllianceRecordInLookup,
   isValidTeamNumber,
   parseNumericValue,
   type TbaTeamEntry,
+  type ScoutMatchLookup,
+  type TbaAllianceLookup,
 } from '../MatchValidation/matchDataUtils';
 
 interface RowData {
@@ -202,55 +207,48 @@ const computeEndgameStatuses = (
     return scoutLabel === tbaLabel ? 'MATCH' : 'MISMATCH';
   });
 
-const fetchAllianceSummary = async ({
-  matchLevel,
-  matchNumber,
-  alliance,
-  teamNumbers,
-}: {
-  matchLevel: string;
-  matchNumber: number;
-  alliance: AllianceColor;
-  teamNumbers: number[];
-}): Promise<AllianceSummary> => {
-  const scoutResults = await Promise.allSettled(
-    teamNumbers.map((teamNumber) => {
-      if (!isValidTeamNumber(teamNumber)) {
-        return Promise.resolve<Partial<TeamMatchData> | undefined>(undefined);
-      }
-
-      return fetchScoutMatch({ matchLevel, matchNumber, teamNumber })
-        .then((response) => getTeamMatchData(response) ?? undefined);
-    })
-  );
-
-  const teamData = scoutResults.map((result) =>
-    result.status === 'fulfilled' ? result.value : undefined
-  );
-  const scoutError = scoutResults.some((result) => result.status === 'rejected');
-
-  let tbaData: unknown;
-  let tbaError = false;
-  const firstValidTeam = teamNumbers.find((teamNumber) => isValidTeamNumber(teamNumber));
-
-  if (firstValidTeam !== undefined) {
-    try {
-      tbaData = await fetchEventTbaMatchData({
-        matchLevel,
-        matchNumber,
-        teamNumber: firstValidTeam,
-        alliance,
-      });
-    } catch (error) {
-      tbaError = true;
+const buildAllianceSummary = (
+  {
+    matchLevel,
+    matchNumber,
+    alliance,
+    teamNumbers,
+  }: {
+    matchLevel: string;
+    matchNumber: number;
+    alliance: AllianceColor;
+    teamNumbers: number[];
+  },
+  scoutLookup: ScoutMatchLookup,
+  tbaLookup: TbaAllianceLookup,
+  scoutError: boolean,
+  tbaError: boolean
+): AllianceSummary => {
+  const teamData = teamNumbers.map((teamNumber) => {
+    if (!isValidTeamNumber(teamNumber)) {
+      return undefined;
     }
-  }
 
-  const tbaTotalsRecord = getAllianceTotalsRecord(tbaData);
+    const record = findScoutMatchRecordInLookup(scoutLookup, {
+      matchLevel,
+      matchNumber,
+      teamNumber,
+    });
+
+    return record ? getTeamMatchData(record) ?? undefined : undefined;
+  });
+
+  const tbaRecord = findTbaAllianceRecordInLookup(tbaLookup, {
+    matchLevel,
+    matchNumber,
+    alliance,
+  });
+
+  const tbaTotalsRecord = getAllianceTotalsRecord(tbaRecord);
   const validTeamNumbers = teamNumbers.filter((teamNumber) => isValidTeamNumber(teamNumber));
   const teamSet = new Set(validTeamNumbers);
-  const tbaEntries = tbaData
-    ? extractTbaTeamEntries(tbaData).filter((entry) => teamSet.has(entry.teamNumber))
+  const tbaEntries = tbaRecord
+    ? extractTbaTeamEntries(tbaRecord).filter((entry) => teamSet.has(entry.teamNumber))
     : [];
   const tbaEndgameMap = new Map<number, string>();
 
@@ -277,47 +275,6 @@ const fetchAllianceSummary = async ({
     hasError: scoutError || tbaError,
   };
 };
-
-const fetchAllianceSummaries = async (
-  matches: MatchAllianceInput[]
-): Promise<AllianceSummaryMap> => {
-  const summaries: AllianceSummaryMap = new Map();
-
-  await Promise.all(
-    matches.map(async (match) => {
-      const [redSummary, blueSummary] = await Promise.all([
-        fetchAllianceSummary({
-          matchLevel: match.matchLevel,
-          matchNumber: match.matchNumber,
-          alliance: 'RED',
-          teamNumbers: match.red,
-        }),
-        fetchAllianceSummary({
-          matchLevel: match.matchLevel,
-          matchNumber: match.matchNumber,
-          alliance: 'BLUE',
-          teamNumbers: match.blue,
-        }),
-      ]);
-
-      summaries.set(buildAllianceKey(match.matchLevel, match.matchNumber, 'RED'), redSummary);
-      summaries.set(buildAllianceKey(match.matchLevel, match.matchNumber, 'BLUE'), blueSummary);
-    })
-  );
-
-  return summaries;
-};
-
-const allianceSummariesQueryKey = (matches: MatchAllianceInput[]) => [
-  'data-validation',
-  'alliance-summary',
-  matches.map((match) => ({
-    matchLevel: match.matchLevel,
-    matchNumber: match.matchNumber,
-    red: match.red,
-    blue: match.blue,
-  })),
-];
 
 interface ThProps {
   children: ReactNode;
@@ -361,6 +318,16 @@ interface DataManagerProps {
 export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
   const { data: scheduleData = [], isLoading, isError } = useMatchSchedule();
   const { data: validationData = [] } = useTeamMatchValidation();
+  const {
+    data: scoutMatchesResponse,
+    isLoading: isScoutMatchesLoading,
+    isError: isScoutMatchesError,
+  } = useScoutMatchesData();
+  const {
+    data: tbaMatchDataResponse,
+    isLoading: isTbaMatchDataLoading,
+    isError: isTbaMatchDataError,
+  } = useEventTbaMatchDataset();
   const navigate = useNavigate();
   const matchesBySection = useMemo(
     () => groupMatchesBySection(scheduleData),
@@ -422,16 +389,72 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
     [scheduleData]
   );
 
-  const {
-    data: allianceSummaries,
-    isLoading: isAllianceSummaryLoading,
-  } = useQuery({
-    queryKey: allianceSummariesQueryKey(allianceQueryInputs),
-    queryFn: () => fetchAllianceSummaries(allianceQueryInputs),
-    enabled: allianceQueryInputs.length > 0,
-  });
+  const scoutLookup = useMemo(
+    () => createScoutMatchLookup(scoutMatchesResponse),
+    [scoutMatchesResponse]
+  );
 
-  const allianceSummaryMap = allianceSummaries ?? new Map<AllianceKey, AllianceSummary>();
+  const tbaLookup = useMemo(
+    () => createTbaAllianceLookup(tbaMatchDataResponse),
+    [tbaMatchDataResponse]
+  );
+
+  const isAllianceSummaryLoading =
+    isScoutMatchesLoading || isTbaMatchDataLoading;
+
+  const allianceSummaryMap = useMemo<AllianceSummaryMap>(() => {
+    if (allianceQueryInputs.length === 0) {
+      return new Map();
+    }
+
+    const summaries: AllianceSummaryMap = new Map();
+
+    allianceQueryInputs.forEach((match) => {
+      const redSummary = buildAllianceSummary(
+        {
+          matchLevel: match.matchLevel,
+          matchNumber: match.matchNumber,
+          alliance: 'RED',
+          teamNumbers: match.red,
+        },
+        scoutLookup,
+        tbaLookup,
+        Boolean(isScoutMatchesError),
+        Boolean(isTbaMatchDataError)
+      );
+
+      const blueSummary = buildAllianceSummary(
+        {
+          matchLevel: match.matchLevel,
+          matchNumber: match.matchNumber,
+          alliance: 'BLUE',
+          teamNumbers: match.blue,
+        },
+        scoutLookup,
+        tbaLookup,
+        Boolean(isScoutMatchesError),
+        Boolean(isTbaMatchDataError)
+      );
+
+      summaries.set(
+        buildAllianceKey(match.matchLevel, match.matchNumber, 'RED'),
+        redSummary
+      );
+      summaries.set(
+        buildAllianceKey(match.matchLevel, match.matchNumber, 'BLUE'),
+        blueSummary
+      );
+    });
+
+    return summaries;
+  }, [
+    allianceQueryInputs,
+    scoutLookup,
+    tbaLookup,
+    isScoutMatchesError,
+    isTbaMatchDataError,
+  ]);
+
   const isInitialSummaryLoading =
     isAllianceSummaryLoading && allianceSummaryMap.size === 0;
 

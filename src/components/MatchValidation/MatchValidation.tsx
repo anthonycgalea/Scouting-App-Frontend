@@ -756,15 +756,7 @@ export function MatchValidation() {
 
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: teamMatchValidationQueryKey() }),
-      ...updates.map((update) =>
-        queryClient.invalidateQueries({
-          queryKey: scoutMatchQueryKey({
-            matchNumber: update.matchNumber,
-            matchLevel: update.matchLevel,
-            teamNumber: update.teamNumber,
-          }),
-        })
-      ),
+      queryClient.invalidateQueries({ queryKey: scoutMatchQueryKey() }),
     ]);
 
     navigate({ to: '/dataValidation' });
