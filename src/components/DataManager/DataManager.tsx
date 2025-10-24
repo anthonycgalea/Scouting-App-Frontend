@@ -292,41 +292,52 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
           color={alliance === 'RED' ? 'red' : undefined}
           disabled={isDisabled}
         >
-          {alliance === 'RED' ? 'Validate Red' : 'Validate Blue'}
+          Validate
         </Button>
       </Table.Td>
     );
   };
 
-  const rows = sortedData.map((row) => (
-    <Table.Tr key={row.matchNumber}>
-      <Table.Td>
-        <DataManagerButtonMenu matchNumber={row.matchNumber} />
-      </Table.Td>
-      {renderTeamCell(row.matchNumber, row.matchLevel, row.red1, classes.redCell)}
-      {renderTeamCell(row.matchNumber, row.matchLevel, row.red2, classes.redCell)}
-      {renderTeamCell(row.matchNumber, row.matchLevel, row.red3, classes.redCell)}
-      {renderAllianceButton(
-        row.matchNumber,
-        row.matchLevel,
-        'RED',
-        [row.red1, row.red2, row.red3],
-        classes.redCell
-      )}
-      {renderTeamCell(row.matchNumber, row.matchLevel, row.blue1, classes.blueCell)}
-      {renderTeamCell(row.matchNumber, row.matchLevel, row.blue2, classes.blueCell)}
-      {renderTeamCell(row.matchNumber, row.matchLevel, row.blue3, classes.blueCell)}
-      {renderAllianceButton(
-        row.matchNumber,
-        row.matchLevel,
-        'BLUE',
-        [row.blue1, row.blue2, row.blue3],
-        classes.blueCell
-      )}
-    </Table.Tr>
-  ));
+  const rows = sortedData.flatMap((row) => {
+    const redRow = (
+      <Table.Tr key={`red-${row.matchNumber}`}>
+        <Table.Td rowSpan={2}>
+          <DataManagerButtonMenu matchNumber={row.matchNumber} />
+        </Table.Td>
+        <Table.Td className={classes.redCell}>Red</Table.Td>
+        {renderTeamCell(row.matchNumber, row.matchLevel, row.red1, classes.redCell)}
+        {renderTeamCell(row.matchNumber, row.matchLevel, row.red2, classes.redCell)}
+        {renderTeamCell(row.matchNumber, row.matchLevel, row.red3, classes.redCell)}
+        {renderAllianceButton(
+          row.matchNumber,
+          row.matchLevel,
+          'RED',
+          [row.red1, row.red2, row.red3],
+          classes.redCell
+        )}
+      </Table.Tr>
+    );
 
-  const totalColumns = 1 + teamNumberKeys.length + 2;
+    const blueRow = (
+      <Table.Tr key={`blue-${row.matchNumber}`}>
+        <Table.Td className={classes.blueCell}>Blue</Table.Td>
+        {renderTeamCell(row.matchNumber, row.matchLevel, row.blue1, classes.blueCell)}
+        {renderTeamCell(row.matchNumber, row.matchLevel, row.blue2, classes.blueCell)}
+        {renderTeamCell(row.matchNumber, row.matchLevel, row.blue3, classes.blueCell)}
+        {renderAllianceButton(
+          row.matchNumber,
+          row.matchLevel,
+          'BLUE',
+          [row.blue1, row.blue2, row.blue3],
+          classes.blueCell
+        )}
+      </Table.Tr>
+    );
+
+    return [redRow, blueRow];
+  });
+
+  const totalColumns = 6;
 
   let tableBody: ReactNode;
   if (isLoading) {
@@ -417,14 +428,11 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
                 <Th sorted reversed={reverseSortDirection} onSort={setSorting}>
                   Match #
                 </Th>
-                <Table.Th>Red 1</Table.Th>
-                <Table.Th>Red 2</Table.Th>
-                <Table.Th>Red 3</Table.Th>
-                <Table.Th>Validate Red</Table.Th>
-                <Table.Th>Blue 1</Table.Th>
-                <Table.Th>Blue 2</Table.Th>
-                <Table.Th>Blue 3</Table.Th>
-                <Table.Th>Validate Blue</Table.Th>
+                <Table.Th>Alliance</Table.Th>
+                <Table.Th>Team 1</Table.Th>
+                <Table.Th>Team 2</Table.Th>
+                <Table.Th>Team 3</Table.Th>
+                <Table.Th>Validate</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>{tableBody}</Table.Tbody>
