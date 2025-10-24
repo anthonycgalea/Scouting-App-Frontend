@@ -277,7 +277,7 @@ export const syncScoutingData = () =>
 export const updateMatchDataBatch = (matchData: TeamMatchData[]) =>
   apiFetch<void>('scout/edit/batch', {
     method: 'PUT',
-    json: { matchData },
+    json: matchData,
   });
 
 export interface ValidationStatusUpdate {
