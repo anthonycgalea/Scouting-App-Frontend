@@ -323,11 +323,13 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
       </Box>
       <Box className={classes.content}>
         {activeSection && availableSections.length > 0 ? (
-          <MatchScheduleToggle
-            value={activeSection}
-            options={availableSections.map(({ label, value }) => ({ label, value }))}
-            onChange={(section) => setActiveSection(section)}
-          />
+          <Box className={classes.scheduleControls}>
+            <MatchScheduleToggle
+              value={activeSection}
+              options={availableSections.map(({ label, value }) => ({ label, value }))}
+              onChange={(section) => setActiveSection(section)}
+            />
+          </Box>
         ) : null}
         <ScrollArea
           type="always"
