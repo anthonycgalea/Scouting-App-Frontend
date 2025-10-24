@@ -18,7 +18,8 @@ import {
   teamMatchHistoryQueryKey,
   teamZScoresQueryKey,
 } from './analytics';
-import { eventTeamsQueryKey } from './teams';
+import { eventPitScoutQueryKey } from './pitScouting';
+import { eventTeamImagesQueryKey, eventTeamsQueryKey } from './teams';
 
 export interface EventSummary {
   event_key: string;
@@ -121,6 +122,8 @@ const eventQueryKeys: QueryKey[] = [
   eventRankingsQueryKey(),
   eventInfoQueryKey(),
   eventTeamsQueryKey(),
+  eventTeamImagesQueryKey(),
+  eventPitScoutQueryKey(),
   matchScheduleQueryKey(),
   teamMatchValidationQueryKey(),
   pickListsQueryKey(),
@@ -136,6 +139,7 @@ const eventQueryPrefixes = new Set<string>([
   'event-tbaMatchData',
   'scout-match',
   'pit-scout',
+  'team-images',
   'team-match-data',
 ]);
 
