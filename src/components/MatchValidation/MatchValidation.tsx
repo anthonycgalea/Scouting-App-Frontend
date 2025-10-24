@@ -1237,12 +1237,12 @@ export function MatchValidation() {
         <ActionIcon
           variant="transparent"
           size="sm"
-          aria-label="Increase value"
-          onClick={handleIncrement}
-          disabled={numericValue >= MAX_NUMERIC_FIELD_VALUE}
+          aria-label="Decrease value"
+          onClick={handleDecrement}
+          disabled={numericValue <= 0}
           className={classes.numericControlButton}
         >
-          +
+          −
         </ActionIcon>
         <Text fz="sm" fw={500} className={classes.numericControlValue}>
           {numericValue}
@@ -1250,12 +1250,12 @@ export function MatchValidation() {
         <ActionIcon
           variant="transparent"
           size="sm"
-          aria-label="Decrease value"
-          onClick={handleDecrement}
-          disabled={numericValue <= 0}
+          aria-label="Increase value"
+          onClick={handleIncrement}
+          disabled={numericValue >= MAX_NUMERIC_FIELD_VALUE}
           className={classes.numericControlButton}
         >
-          −
+          +
         </ActionIcon>
       </Group>
     );
