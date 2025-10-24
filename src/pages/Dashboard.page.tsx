@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { Card, Center, Group, Loader, Stack, Text, Title } from '@mantine/core';
+import { Anchor, Card, Center, Group, Loader, Stack, Text, Title } from '@mantine/core';
+import { Link } from '@tanstack/react-router';
 import { useMatchSchedule, useTeamMatchValidation, useUserOrganization } from '@/api';
 import { StatsRing } from '@/components/StatsRing/StatsRing';
 import { useScoutingProgressStats } from '@/hooks/useScoutingProgressStats';
@@ -14,6 +15,12 @@ interface UpcomingMatch {
 }
 
 const MATCH_MIN_HEIGHT = 180;
+
+const MATCH_LEVEL_PRIORITY: Record<string, number> = {
+  qm: 0,
+  sf: 1,
+  f: 2,
+};
 
 type TeamPositionKey =
   | 'red1_id'
@@ -68,7 +75,7 @@ export function DashboardPage() {
 
     const normalizeLevel = (value: string) => value.trim().toLowerCase();
 
-    return matchSchedule.reduce<UpcomingMatch[]>((accumulator, match) => {
+    const matches = matchSchedule.reduce<UpcomingMatch[]>((accumulator, match) => {
       const allianceSlot = TEAM_POSITIONS.find(
         (position) => match[position.key] === teamNumber
       );
@@ -78,10 +85,6 @@ export function DashboardPage() {
       }
 
       const hasValidationRecord = validationEntries.some((entry) => {
-        if (entry.team_number !== teamNumber) {
-          return false;
-        }
-
         const sameMatchNumber = entry.match_number === match.match_number;
         const sameMatchLevel =
           normalizeLevel(entry.match_level) === normalizeLevel(match.match_level);
@@ -103,6 +106,20 @@ export function DashboardPage() {
 
       return accumulator;
     }, []);
+
+    return matches.sort((matchA, matchB) => {
+      const matchALevel = normalizeLevel(matchA.matchLevel);
+      const matchBLevel = normalizeLevel(matchB.matchLevel);
+      const levelDifference =
+        (MATCH_LEVEL_PRIORITY[matchALevel] ?? Number.POSITIVE_INFINITY) -
+        (MATCH_LEVEL_PRIORITY[matchBLevel] ?? Number.POSITIVE_INFINITY);
+
+      if (levelDifference !== 0) {
+        return levelDifference;
+      }
+
+      return matchA.matchNumber - matchB.matchNumber;
+    });
   }, [matchSchedule, validationEntries, teamNumber]);
 
   const isUpcomingLoading =
@@ -115,6 +132,29 @@ export function DashboardPage() {
   return (
     <Stack p="xl" gap="md">
       <Title order={2}>Dashboard</Title>
+      <Card shadow="sm" padding="lg" withBorder>
+        <Stack gap="md">
+          <Title order={3} size="h4">
+            Scouting Progress
+          </Title>
+          {isLoading ? (
+            <Center mih={180}>
+              <Loader />
+            </Center>
+          ) : isError ? (
+            <Text c="red.6" fw={500}>
+              Unable to load scouting progress.
+            </Text>
+          ) : hasStats ? (
+            <StatsRing data={stats} />
+          ) : (
+            <Text c="dimmed">
+              Scouting progress will appear once qualification matches are
+              scheduled.
+            </Text>
+          )}
+        </Stack>
+      </Card>
       <Card shadow="sm" padding="lg" withBorder>
         <Stack gap="md">
           <Title order={3} size="h4">
@@ -140,9 +180,13 @@ export function DashboardPage() {
 
                 return (
                   <Group key={key} justify="space-between" gap="sm">
-                    <Text fw={600}>
+                    <Anchor
+                      component={Link}
+                      to={`/matches/preview/${match.matchLevel}/${match.matchNumber}`}
+                      fw={600}
+                    >
                       {formatMatchLevel(match.matchLevel)} {match.matchNumber}
-                    </Text>
+                    </Anchor>
                     <Text fw={600} c={allianceInfo.color}>
                       {allianceInfo.label} {match.position}
                     </Text>
@@ -157,29 +201,6 @@ export function DashboardPage() {
           ) : (
             <Text c="dimmed">
               All scheduled matches for your team have scouting data.
-            </Text>
-          )}
-        </Stack>
-      </Card>
-      <Card shadow="sm" padding="lg" withBorder>
-        <Stack gap="md">
-          <Title order={3} size="h4">
-            Scouting Progress
-          </Title>
-          {isLoading ? (
-            <Center mih={180}>
-              <Loader />
-            </Center>
-          ) : isError ? (
-            <Text c="red.6" fw={500}>
-              Unable to load scouting progress.
-            </Text>
-          ) : hasStats ? (
-            <StatsRing data={stats} />
-          ) : (
-            <Text c="dimmed">
-              Scouting progress will appear once qualification matches are
-              scheduled.
             </Text>
           )}
         </Stack>
