@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 import {
   Box,
@@ -6,12 +6,16 @@ import {
   Center,
   Group,
   Loader,
+  Menu,
   ScrollArea,
   Table,
   Text,
   UnstyledButton,
+  useMantineColorScheme,
 } from '@mantine/core';
+import { notifications } from '@mantine/notifications';
 import { useNavigate } from '@tanstack/react-router';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { DataManagerButtonMenu } from './DataManagerButtonMenu';
 import { ExportHeader } from '../ExportHeader/ExportHeader';
 import classes from './DataManager.module.css';
@@ -21,15 +25,21 @@ import {
   useTeamMatchValidation,
   useEventTbaMatchDataset,
   type MatchScheduleEntry,
+  type Endgame2025,
   type TeamMatchData,
   type TeamMatchValidationStatus,
+  updateMatchDataBatch,
+  scoutMatchQueryKey,
 } from '@/api';
 import {
   MatchScheduleToggle,
   type MatchScheduleSection,
 } from '../MatchSchedule/MatchScheduleToggle';
 import { SECTION_DEFINITIONS, groupMatchesBySection } from '../MatchSchedule/matchSections';
-import type { MatchValidationNumericField } from '../MatchValidation/matchValidation.config';
+import {
+  MATCH_VALIDATION_NUMERIC_FIELDS,
+  type MatchValidationNumericField,
+} from '../MatchValidation/matchValidation.config';
 import {
   ENDGAME_LABELS,
   extractTbaTeamEntries,
@@ -42,6 +52,7 @@ import {
   findScoutMatchRecordInLookup,
   findTbaAllianceRecordInLookup,
   isValidTeamNumber,
+  parseEndgameKey,
   parseNumericValue,
   type TbaTeamEntry,
   type ScoutMatchLookup,
@@ -79,12 +90,23 @@ interface NumericComparison {
 
 type EndgameComparison = 'MATCH' | 'MISMATCH' | 'UNKNOWN';
 
+interface AllianceEndgameDetail {
+  teamNumber: number;
+  status: EndgameComparison;
+  scoutLabel?: string;
+  scoutValue?: Endgame2025;
+  tbaLabel?: string;
+  tbaValue?: Endgame2025;
+  scoutRecord?: Record<string, unknown>;
+}
+
 interface AllianceSummary {
   metrics: {
     autoCoral: NumericComparison;
     teleopCoral: NumericComparison;
   };
   endgame: EndgameComparison[];
+  endgameDetails: AllianceEndgameDetail[];
   hasError: boolean;
 }
 
@@ -213,10 +235,10 @@ const buildBotEndgameKeys = (index: number) => {
   ];
 };
 
-const extractEndgameLabel = (
+const extractEndgameInfo = (
   sources: Array<Record<string, unknown> | undefined>,
   keys: string[]
-) => {
+): { label?: string; value?: Endgame2025 } => {
   for (const source of sources) {
     if (!source) {
       continue;
@@ -227,61 +249,203 @@ const extractEndgameLabel = (
         continue;
       }
 
-      const label = formatEndgameValue(source[key]);
+      const rawValue = source[key];
+      const value = parseEndgameKey(rawValue);
+      const label = formatEndgameValue(rawValue);
 
-      if (label) {
-        return label;
+      if (label || value) {
+        return { label, value };
       }
+    }
+  }
+
+  return {};
+};
+
+const computeAllianceEndgameDetails = (
+  alliance: AllianceColor,
+  teamNumbers: number[],
+  teamRecords: Array<Record<string, unknown> | undefined>,
+  teamData: Array<Partial<TeamMatchData> | undefined>,
+  tbaEndgameMap: Map<number, { label?: string; value?: Endgame2025 }>,
+  tbaTotalsRecord: Record<string, unknown> | undefined,
+  tbaRecord: Record<string, unknown> | undefined
+): AllianceEndgameDetail[] =>
+  teamNumbers.map((teamNumber, index) => {
+    const allianceInfo = extractEndgameInfo(
+      [tbaTotalsRecord, tbaRecord],
+      buildAllianceEndgameKeys(alliance, index)
+    );
+    const botInfo = extractEndgameInfo(
+      [tbaTotalsRecord, tbaRecord],
+      buildBotEndgameKeys(index)
+    );
+    const totalsLabel = allianceInfo.label ?? botInfo.label;
+    const totalsValue = allianceInfo.value ?? botInfo.value;
+    const data = teamData[index];
+    const scoutValue = data?.endgame;
+    const scoutLabel = scoutValue ? ENDGAME_LABELS[scoutValue] : undefined;
+    const tbaEntry = tbaEndgameMap.get(teamNumber);
+    const tbaLabel = tbaEntry?.label ?? totalsLabel;
+    const tbaValue = tbaEntry?.value ?? totalsValue;
+
+    const detail: AllianceEndgameDetail = {
+      teamNumber,
+      status: 'UNKNOWN',
+      scoutLabel,
+      scoutValue,
+      tbaLabel,
+      tbaValue,
+      scoutRecord: teamRecords[index],
+    };
+
+    if (allianceInfo.label && botInfo.label && allianceInfo.label !== botInfo.label) {
+      detail.status = 'MISMATCH';
+      return detail;
+    }
+
+    if (!isValidTeamNumber(teamNumber)) {
+      return detail;
+    }
+
+    if (tbaEntry?.label && totalsLabel && tbaEntry.label !== totalsLabel) {
+      detail.status = 'MISMATCH';
+      return detail;
+    }
+
+    if (!scoutLabel && !tbaLabel) {
+      return detail;
+    }
+
+    if (!scoutLabel || !tbaLabel) {
+      return detail;
+    }
+
+    detail.status = scoutLabel === tbaLabel ? 'MATCH' : 'MISMATCH';
+
+    return detail;
+  });
+
+const parseNumberField = (value: unknown): number | undefined => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+
+    if (trimmed.length === 0) {
+      return undefined;
+    }
+
+    const parsed = Number(trimmed);
+
+    if (Number.isFinite(parsed)) {
+      return parsed;
     }
   }
 
   return undefined;
 };
 
-const computeEndgameStatuses = (
-  alliance: AllianceColor,
-  teamNumbers: number[],
-  teamData: Array<Partial<TeamMatchData> | undefined>,
-  tbaEndgameMap: Map<number, string>,
-  tbaTotalsRecord: Record<string, unknown> | undefined,
-  tbaRecord: Record<string, unknown> | undefined
-): EndgameComparison[] =>
-  teamNumbers.map((teamNumber, index) => {
-    const allianceLabel = extractEndgameLabel(
-      [tbaTotalsRecord, tbaRecord],
-      buildAllianceEndgameKeys(alliance, index)
-    );
-    const botLabel = extractEndgameLabel(
-      [tbaTotalsRecord, tbaRecord],
-      buildBotEndgameKeys(index)
-    );
+const parseStringField = (value: unknown): string | undefined => {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
 
-    if (allianceLabel || botLabel) {
-      if (!allianceLabel || !botLabel) {
-        return 'UNKNOWN';
-      }
+    return trimmed.length > 0 ? trimmed : undefined;
+  }
 
-      return allianceLabel === botLabel ? 'MATCH' : 'MISMATCH';
+  return undefined;
+};
+
+const parseNotesField = (value: unknown): string | null | undefined => {
+  if (value === null || typeof value === 'string') {
+    return value;
+  }
+
+  return undefined;
+};
+
+const getRecordValue = (
+  record: Record<string, unknown>,
+  ...keys: string[]
+) => {
+  for (const key of keys) {
+    if (record[key] !== undefined) {
+      return record[key];
     }
+  }
 
-    if (!isValidTeamNumber(teamNumber)) {
-      return 'UNKNOWN';
-    }
+  return undefined;
+};
 
-    const data = teamData[index];
-    const scoutLabel = data?.endgame ? ENDGAME_LABELS[data.endgame] : undefined;
-    const tbaLabel = tbaEndgameMap.get(teamNumber);
+const buildMatchDataFromRecord = (
+  record: Record<string, unknown>,
+  endgame: Endgame2025
+): TeamMatchData | undefined => {
+  const season = parseNumberField(getRecordValue(record, 'season'));
+  const eventKey = parseStringField(getRecordValue(record, 'event_key', 'eventKey'));
+  const matchNumber = parseNumberField(
+    getRecordValue(record, 'match_number', 'matchNumber')
+  );
+  const matchLevel = parseStringField(
+    getRecordValue(record, 'match_level', 'matchLevel')
+  );
+  const teamNumber = parseNumberField(
+    getRecordValue(record, 'team_number', 'teamNumber')
+  );
 
-    if (!scoutLabel && !tbaLabel) {
-      return 'UNKNOWN';
-    }
+  if (
+    season === undefined ||
+    !eventKey ||
+    matchNumber === undefined ||
+    !matchLevel ||
+    teamNumber === undefined
+  ) {
+    return undefined;
+  }
 
-    if (!scoutLabel || !tbaLabel) {
-      return 'UNKNOWN';
-    }
+  const userId = parseStringField(getRecordValue(record, 'user_id', 'userId'));
+  const organizationId = parseNumberField(
+    getRecordValue(record, 'organization_id', 'organizationId')
+  );
+  const timestampCandidate = getRecordValue(record, 'timestamp');
+  const timestamp = typeof timestampCandidate === 'string' ? timestampCandidate : undefined;
+  const notes = parseNotesField(getRecordValue(record, 'notes'));
 
-    return scoutLabel === tbaLabel ? 'MATCH' : 'MISMATCH';
+  const numericData = getTeamMatchData(record) ?? {};
+  const payload: Partial<TeamMatchData> = {
+    season,
+    event_key: eventKey,
+    match_number: matchNumber,
+    match_level: matchLevel,
+    team_number: teamNumber,
+    endgame,
+  };
+
+  MATCH_VALIDATION_NUMERIC_FIELDS.forEach((field) => {
+    const value = numericData[field];
+    payload[field] = typeof value === 'number' && Number.isFinite(value) ? value : 0;
   });
+
+  if (userId) {
+    payload.user_id = userId;
+  }
+
+  if (organizationId !== undefined) {
+    payload.organization_id = organizationId;
+  }
+
+  if (timestamp) {
+    payload.timestamp = timestamp;
+  }
+
+  if (notes !== undefined) {
+    payload.notes = notes;
+  }
+
+  return payload as TeamMatchData;
+};
 
 const buildAllianceSummary = (
   {
@@ -300,7 +464,7 @@ const buildAllianceSummary = (
   scoutError: boolean,
   tbaError: boolean
 ): AllianceSummary => {
-  const teamData = teamNumbers.map((teamNumber) => {
+  const teamRecords = teamNumbers.map((teamNumber) => {
     if (!isValidTeamNumber(teamNumber)) {
       return undefined;
     }
@@ -311,9 +475,12 @@ const buildAllianceSummary = (
       teamNumber,
     });
 
-    return record ? getTeamMatchData(record) ?? undefined : undefined;
+    return record;
   });
 
+  const teamData = teamRecords.map((record) =>
+    record ? getTeamMatchData(record) ?? undefined : undefined
+  );
   const tbaRecord = findTbaAllianceRecordInLookup(tbaLookup, {
     matchLevel,
     matchNumber,
@@ -326,13 +493,14 @@ const buildAllianceSummary = (
   const tbaEntries = tbaRecord
     ? extractTbaTeamEntries(tbaRecord).filter((entry) => teamSet.has(entry.teamNumber))
     : [];
-  const tbaEndgameMap = new Map<number, string>();
+  const tbaEndgameMap = new Map<number, { label?: string; value?: Endgame2025 }>();
 
   tbaEntries.forEach((entry) => {
     const label = formatEndgameValue(entry.data.endgame);
+    const value = parseEndgameKey(entry.data.endgame);
 
-    if (label) {
-      tbaEndgameMap.set(entry.teamNumber, label);
+    if (label || value) {
+      tbaEndgameMap.set(entry.teamNumber, { label, value });
     }
   });
 
@@ -343,18 +511,21 @@ const buildAllianceSummary = (
     tbaTotalsRecord,
     TELEOP_CORAL_FIELDS
   );
-  const endgame = computeEndgameStatuses(
+  const endgameDetails = computeAllianceEndgameDetails(
     alliance,
     teamNumbers,
+    teamRecords,
     teamData,
     tbaEndgameMap,
     tbaTotalsRecord,
     tbaRecord
   );
+  const endgame = endgameDetails.map((detail) => detail.status);
 
   return {
     metrics: { autoCoral, teleopCoral },
     endgame,
+    endgameDetails,
     hasError: scoutError || tbaError,
   };
 };
@@ -399,6 +570,7 @@ interface DataManagerProps {
 }
 
 export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
+  const { colorScheme } = useMantineColorScheme();
   const { data: scheduleData = [], isLoading, isError } = useMatchSchedule();
   const { data: validationData = [] } = useTeamMatchValidation();
   const {
@@ -411,6 +583,10 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
     isLoading: isTbaMatchDataLoading,
     isError: isTbaMatchDataError,
   } = useEventTbaMatchDataset();
+  const queryClient = useQueryClient();
+  const { mutateAsync: submitEndgameBatch, isPending: isSubmittingEndgame } = useMutation({
+    mutationFn: updateMatchDataBatch,
+  });
   const navigate = useNavigate();
   const matchesBySection = useMemo(
     () => groupMatchesBySection(scheduleData),
@@ -596,30 +772,126 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
 
     const title = tooltipMessages.length > 0 ? tooltipMessages.join('\n') : undefined;
 
-    const hasMismatch = difference !== null && difference !== 0;
-    const cellClass = hasMismatch
-      ? `${classes.numericCell} ${classes.numericMismatch}`
-      : classes.numericCell;
+    const isWarningDifference = (metricKey: keyof AllianceSummary['metrics'], diff: number) => {
+      const absoluteDifference = Math.abs(diff);
 
-    //const primaryColor = hasMismatch ? 'red.6' : total === null ? 'dimmed' : undefined;
-    const secondaryColor =
-      difference === null ? undefined : difference === 0 ? 'green.6' : 'red.6';
+      if (metricKey === 'autoCoral') {
+        return absoluteDifference === 1;
+      }
 
-    return (
-      <Table.Td className={cellClass} title={title}>
-        {diffText !== undefined && (
-          <Text fz="xs" c={secondaryColor}>
+      if (metricKey === 'teleopCoral') {
+        return absoluteDifference <= 3;
+      }
+
+      return false;
+    };
+
+    const hasMatch = difference === 0;
+    const hasWarning =
+      difference !== null && difference !== 0 && isWarningDifference(metric, difference);
+    const hasMismatch = difference !== null && difference !== 0 && !hasWarning;
+
+    const classNames = [classes.numericCell];
+    if (hasMismatch) {
+      classNames.push(classes.numericMismatch);
+    } else if (hasWarning) {
+      classNames.push(classes.numericWarning);
+    } else if (hasMatch) {
+      classNames.push(classes.numericMatch);
+    }
+
+    let cellContent: ReactNode = null;
+    if (difference !== null) {
+      if (hasMatch) {
+        cellContent = (
+          <Text fz="lg">
+            ✅
+          </Text>
+        );
+      } else {
+        const warningTextColor = colorScheme === 'dark' ? 'yellow.2' : 'yellow.8';
+        const dangerTextColor = colorScheme === 'dark' ? 'red.4' : 'red.6';
+        const textColor = hasMismatch ? dangerTextColor : hasWarning ? warningTextColor : undefined;
+        cellContent = (
+          <Text fz="xs" c={textColor}>
             Δ {diffText}
           </Text>
-        )}
+        );
+      }
+    }
+
+    return (
+      <Table.Td className={classNames.join(' ')} title={title}>
+        {cellContent}
       </Table.Td>
     );
   };
 
+  const handleApplyTbaEndgame = useCallback(
+    async (
+      detail: AllianceEndgameDetail,
+      matchLevel: string,
+      matchNumber: number
+    ) => {
+      if (!detail.tbaValue) {
+        notifications.show({
+          color: 'red',
+          title: 'Update failed',
+          message: 'TBA endgame data is unavailable for this team.',
+        });
+        return;
+      }
+
+      if (!detail.scoutRecord) {
+        notifications.show({
+          color: 'red',
+          title: 'Update failed',
+          message: 'No scouting record is available for this team.',
+        });
+        return;
+      }
+
+      const matchData = buildMatchDataFromRecord(detail.scoutRecord, detail.tbaValue);
+
+      if (!matchData) {
+        notifications.show({
+          color: 'red',
+          title: 'Update failed',
+          message: 'Unable to prepare scouting data for this team.',
+        });
+        return;
+      }
+
+      try {
+        await submitEndgameBatch([matchData]);
+        await queryClient.invalidateQueries({ queryKey: scoutMatchQueryKey() });
+        notifications.show({
+          color: 'green',
+          title: 'Endgame updated',
+          message: `Set team ${detail.teamNumber} to ${detail.tbaLabel ?? detail.tbaValue} for match ${matchLevel} ${matchNumber}.`,
+        });
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : 'Unable to update match data. Please try again.';
+        notifications.show({
+          color: 'red',
+          title: 'Update failed',
+          message,
+        });
+      }
+    },
+    [queryClient, submitEndgameBatch]
+  );
+
   const renderAllianceEndgameCell = (
     summary: AllianceSummary | undefined,
     index: number,
-    season?: number
+    season: number | undefined,
+    matchLevel: string,
+    matchNumber: number,
+    alliance: AllianceColor
   ) => {
     if (!shouldShow2025Columns(season)) {
       return <Table.Td>—</Table.Td>;
@@ -639,30 +911,77 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
       return <Table.Td>—</Table.Td>;
     }
 
+    const detail = summary.endgameDetails[index];
     const status = summary.endgame[index] ?? 'UNKNOWN';
-    const title = summary.hasError
-      ? 'Some alliance metrics could not be retrieved. Values may be incomplete.'
-      : undefined;
+    const tooltipMessages: string[] = [];
 
-    if (status === 'MATCH') {
+    if (summary.hasError) {
+      tooltipMessages.push(
+        'Some alliance metrics could not be retrieved. Values may be incomplete.'
+      );
+    }
+
+    if (detail?.scoutLabel) {
+      tooltipMessages.push(`Scouting: ${detail.scoutLabel}`);
+    }
+
+    if (detail?.tbaLabel) {
+      tooltipMessages.push(`TBA: ${detail.tbaLabel}`);
+    }
+
+    const title = tooltipMessages.length > 0 ? tooltipMessages.join('\n') : undefined;
+
+    if (status === 'UNKNOWN') {
       return (
-        <Table.Td className={classes.endgameMatch} title={title}>
-          ✓
+        <Table.Td title={title}>
+          —
         </Table.Td>
       );
     }
 
-    if (status === 'MISMATCH') {
-      return (
-        <Table.Td className={classes.endgameMismatch} title={title}>
-          ✗
-        </Table.Td>
+    const classNames = [classes.numericCell];
+
+    let cellContent: ReactNode = null;
+    if (status === 'MATCH') {
+      classNames.push(classes.numericMatch);
+      cellContent = (
+        <Text fz="lg">
+          ✅
+        </Text>
+      );
+    } else if (status === 'MISMATCH') {
+      classNames.push(classes.numericMismatch);
+      cellContent = (
+        <Menu shadow="md" position="bottom-start" withinPortal={false}>
+          <Menu.Target>
+            <UnstyledButton
+              type="button"
+              className={classes.endgameButton}
+              aria-label={`Resolve endgame mismatch for the ${alliance.toLowerCase()} alliance in match ${matchLevel} ${matchNumber}`}
+            >
+              <Text fz="lg" c="red.6">
+                ❌
+              </Text>
+            </UnstyledButton>
+          </Menu.Target>
+          <Menu.Dropdown>
+            <Menu.Label>{`Scouted: ${detail.scoutLabel ?? '—'}`}</Menu.Label>
+            <Menu.Item
+              disabled={!detail.tbaValue || !detail.scoutRecord || isSubmittingEndgame}
+              onClick={() => {
+                void handleApplyTbaEndgame(detail, matchLevel, matchNumber);
+              }}
+            >
+              {`Set to: ${detail.tbaLabel ?? '—'}`}
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
       );
     }
 
     return (
-      <Table.Td title={title}>
-        —
+      <Table.Td className={classNames.join(' ')} title={title}>
+        {cellContent}
       </Table.Td>
     );
   };
@@ -785,9 +1104,9 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
         {renderTeamCell(row.matchNumber, row.matchLevel, row.red3)}
         {renderAllianceMetricCell(redSummary, 'autoCoral', row.season)}
         {renderAllianceMetricCell(redSummary, 'teleopCoral', row.season)}
-        {renderAllianceEndgameCell(redSummary, 0, row.season)}
-        {renderAllianceEndgameCell(redSummary, 1, row.season)}
-        {renderAllianceEndgameCell(redSummary, 2, row.season)}
+        {renderAllianceEndgameCell(redSummary, 0, row.season, row.matchLevel, row.matchNumber, 'RED')}
+        {renderAllianceEndgameCell(redSummary, 1, row.season, row.matchLevel, row.matchNumber, 'RED')}
+        {renderAllianceEndgameCell(redSummary, 2, row.season, row.matchLevel, row.matchNumber, 'RED')}
         {renderAllianceButton(
           row.matchNumber,
           row.matchLevel,
@@ -806,9 +1125,9 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
         {renderTeamCell(row.matchNumber, row.matchLevel, row.blue3)}
         {renderAllianceMetricCell(blueSummary, 'autoCoral', row.season)}
         {renderAllianceMetricCell(blueSummary, 'teleopCoral', row.season)}
-        {renderAllianceEndgameCell(blueSummary, 0, row.season)}
-        {renderAllianceEndgameCell(blueSummary, 1, row.season)}
-        {renderAllianceEndgameCell(blueSummary, 2, row.season)}
+        {renderAllianceEndgameCell(blueSummary, 0, row.season, row.matchLevel, row.matchNumber, 'BLUE')}
+        {renderAllianceEndgameCell(blueSummary, 1, row.season, row.matchLevel, row.matchNumber, 'BLUE')}
+        {renderAllianceEndgameCell(blueSummary, 2, row.season, row.matchLevel, row.matchNumber, 'BLUE')}
         {renderAllianceButton(
           row.matchNumber,
           row.matchLevel,
@@ -872,19 +1191,20 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
   }
 
   return (
-    <Box className={classes.container}>
-      <Box className={classes.header}>
-        <ExportHeader
-          onSync={onSync}
-          isSyncing={isSyncing}
-          showDownloadButton={false}
-        />
-      </Box>
-      <Box className={classes.content}>
-        {activeSection && availableSections.length > 0 ? (
-          <Box className={classes.scheduleControls}>
-            <MatchScheduleToggle
-              value={activeSection}
+    <>
+      <Box className={classes.container}>
+        <Box className={classes.header}>
+          <ExportHeader
+            onSync={onSync}
+            isSyncing={isSyncing}
+            showDownloadButton={false}
+          />
+        </Box>
+        <Box className={classes.content}>
+          {activeSection && availableSections.length > 0 ? (
+            <Box className={classes.scheduleControls}>
+              <MatchScheduleToggle
+                value={activeSection}
               options={availableSections.map(({ label, value }) => ({ label, value }))}
               onChange={(section) => setActiveSection(section)}
             />
@@ -927,6 +1247,7 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
           </Box>
         </ScrollArea>
       </Box>
-    </Box>
+      </Box>
+    </>
   );
 }

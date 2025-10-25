@@ -101,17 +101,34 @@
 }
 
 .numericMismatch {
-  background-color: light-dark(var(--mantine-color-red-0), rgb(255 86 86 / 0.2));
+  background-color: light-dark(var(--mantine-color-red-2), rgb(255 86 86 / 0.2));
 }
 
-.endgameMatch {
-  font-size: var(--mantine-font-size-lg);
-  color: light-dark(var(--mantine-color-green-7), var(--mantine-color-green-3));
+.numericWarning {
+  background-color: light-dark(var(--mantine-color-yellow-0), var(--mantine-color-yellow-9));
+  color: light-dark(var(--mantine-color-dark-9), var(--mantine-color-yellow-0));
+}
+
+.numericMatch {
+  background-color: light-dark(var(--mantine-color-green-2), var(--mantine-color-green-9));
+  color: light-dark(var(--mantine-color-dark-9), var(--mantine-color-green-0));
   font-weight: 600;
 }
 
-.endgameMismatch {
-  font-size: var(--mantine-font-size-lg);
-  color: light-dark(var(--mantine-color-red-7), var(--mantine-color-red-3));
-  font-weight: 600;
+.endgameButton {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  padding: var(--mantine-spacing-xs);
+  border-radius: var(--mantine-radius-sm);
+  cursor: pointer;
+  color: inherit;
 }
+
+.endgameButton:focus-visible {
+  outline: 2px solid var(--mantine-color-blue-5);
+  outline-offset: 2px;
+}
+
