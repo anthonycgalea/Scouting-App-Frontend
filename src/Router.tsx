@@ -34,12 +34,36 @@ import { AllianceSelectionPage } from './pages/AllianceSelection.page';
 import { ListGeneratorPage } from './pages/ListGenerator.page';
 import { SuperScoutMatchPage } from './pages/SuperScoutMatch.page';
 import { SiteAdminOrganizationsPage } from './pages/SiteAdminOrganizations.page';
+import { useUserOrganization, type UserOrganizationResponse } from './api';
+
+const ORGANIZATION_SELECTION_ROUTES = ['/userSettings', '/organizations/apply'];
+
+const getOrganizationId = (
+  organization: UserOrganizationResponse | null | undefined,
+) => {
+  if (!organization) {
+    return null;
+  }
+
+  if (typeof organization.organization_id === 'number') {
+    return organization.organization_id;
+  }
+
+  const { organizationId } = organization as { organizationId?: number | null };
+
+  return typeof organizationId === 'number' ? organizationId : null;
+};
 
 const rootRoute = createRootRoute({
   component: function RootLayout() {
     const { user, loading } = useAuth();
     const navigate = useNavigate();
     const location = useRouterState({ select: (state) => state.location });
+    const {
+      data: userOrganization,
+      isLoading: isUserOrganizationLoading,
+      isError: isUserOrganizationError,
+    } = useUserOrganization({ enabled: !!user });
     const [hasRedirectedToHome, setHasRedirectedToHome] = useState(true);
 
     useEffect(() => {
@@ -50,6 +74,19 @@ const rootRoute = createRootRoute({
       if (user) {
         if (hasRedirectedToHome) {
           setHasRedirectedToHome(false);
+        }
+
+        if (!isUserOrganizationLoading && !isUserOrganizationError) {
+          const organizationId = getOrganizationId(userOrganization);
+          const isOrganizationMissing = organizationId === null;
+          const isOnOrganizationSelectionRoute = ORGANIZATION_SELECTION_ROUTES.some((path) =>
+            location.pathname.startsWith(path)
+          );
+
+          if (isOrganizationMissing && !isOnOrganizationSelectionRoute) {
+            navigate({ to: '/userSettings', replace: true });
+            return;
+          }
         }
 
         if (location.pathname === '/') {
@@ -73,6 +110,9 @@ const rootRoute = createRootRoute({
       location.pathname,
       navigate,
       hasRedirectedToHome,
+      isUserOrganizationLoading,
+      isUserOrganizationError,
+      userOrganization,
     ]);
 
     return (
