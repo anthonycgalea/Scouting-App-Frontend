@@ -6,15 +6,14 @@ import {
   Center,
   Group,
   Loader,
-  Modal,
+  Menu,
   ScrollArea,
-  Select,
-  Stack,
   Table,
   Text,
   UnstyledButton,
   useMantineColorScheme,
 } from '@mantine/core';
+import { notifications } from '@mantine/notifications';
 import { useNavigate } from '@tanstack/react-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { DataManagerButtonMenu } from './DataManagerButtonMenu';
@@ -53,6 +52,7 @@ import {
   findScoutMatchRecordInLookup,
   findTbaAllianceRecordInLookup,
   isValidTeamNumber,
+  parseEndgameKey,
   parseNumericValue,
   type TbaTeamEntry,
   type ScoutMatchLookup,
@@ -96,6 +96,7 @@ interface AllianceEndgameDetail {
   scoutLabel?: string;
   scoutValue?: Endgame2025;
   tbaLabel?: string;
+  tbaValue?: Endgame2025;
   scoutRecord?: Record<string, unknown>;
 }
 
@@ -234,10 +235,10 @@ const buildBotEndgameKeys = (index: number) => {
   ];
 };
 
-const extractEndgameLabel = (
+const extractEndgameInfo = (
   sources: Array<Record<string, unknown> | undefined>,
   keys: string[]
-) => {
+): { label?: string; value?: Endgame2025 } => {
   for (const source of sources) {
     if (!source) {
       continue;
@@ -248,15 +249,17 @@ const extractEndgameLabel = (
         continue;
       }
 
-      const label = formatEndgameValue(source[key]);
+      const rawValue = source[key];
+      const value = parseEndgameKey(rawValue);
+      const label = formatEndgameValue(rawValue);
 
-      if (label) {
-        return label;
+      if (label || value) {
+        return { label, value };
       }
     }
   }
 
-  return undefined;
+  return {};
 };
 
 const computeAllianceEndgameDetails = (
@@ -264,24 +267,27 @@ const computeAllianceEndgameDetails = (
   teamNumbers: number[],
   teamRecords: Array<Record<string, unknown> | undefined>,
   teamData: Array<Partial<TeamMatchData> | undefined>,
-  tbaEndgameMap: Map<number, string>,
+  tbaEndgameMap: Map<number, { label?: string; value?: Endgame2025 }>,
   tbaTotalsRecord: Record<string, unknown> | undefined,
   tbaRecord: Record<string, unknown> | undefined
 ): AllianceEndgameDetail[] =>
   teamNumbers.map((teamNumber, index) => {
-    const allianceLabel = extractEndgameLabel(
+    const allianceInfo = extractEndgameInfo(
       [tbaTotalsRecord, tbaRecord],
       buildAllianceEndgameKeys(alliance, index)
     );
-    const botLabel = extractEndgameLabel(
+    const botInfo = extractEndgameInfo(
       [tbaTotalsRecord, tbaRecord],
       buildBotEndgameKeys(index)
     );
-    const totalsLabel = allianceLabel ?? botLabel;
+    const totalsLabel = allianceInfo.label ?? botInfo.label;
+    const totalsValue = allianceInfo.value ?? botInfo.value;
     const data = teamData[index];
     const scoutValue = data?.endgame;
     const scoutLabel = scoutValue ? ENDGAME_LABELS[scoutValue] : undefined;
-    const tbaLabel = tbaEndgameMap.get(teamNumber) ?? totalsLabel;
+    const tbaEntry = tbaEndgameMap.get(teamNumber);
+    const tbaLabel = tbaEntry?.label ?? totalsLabel;
+    const tbaValue = tbaEntry?.value ?? totalsValue;
 
     const detail: AllianceEndgameDetail = {
       teamNumber,
@@ -289,10 +295,11 @@ const computeAllianceEndgameDetails = (
       scoutLabel,
       scoutValue,
       tbaLabel,
+      tbaValue,
       scoutRecord: teamRecords[index],
     };
 
-    if (allianceLabel && botLabel && allianceLabel !== botLabel) {
+    if (allianceInfo.label && botInfo.label && allianceInfo.label !== botInfo.label) {
       detail.status = 'MISMATCH';
       return detail;
     }
@@ -301,7 +308,7 @@ const computeAllianceEndgameDetails = (
       return detail;
     }
 
-    if (tbaLabel && totalsLabel && tbaLabel !== totalsLabel) {
+    if (tbaEntry?.label && totalsLabel && tbaEntry.label !== totalsLabel) {
       detail.status = 'MISMATCH';
       return detail;
     }
@@ -486,13 +493,14 @@ const buildAllianceSummary = (
   const tbaEntries = tbaRecord
     ? extractTbaTeamEntries(tbaRecord).filter((entry) => teamSet.has(entry.teamNumber))
     : [];
-  const tbaEndgameMap = new Map<number, string>();
+  const tbaEndgameMap = new Map<number, { label?: string; value?: Endgame2025 }>();
 
   tbaEntries.forEach((entry) => {
     const label = formatEndgameValue(entry.data.endgame);
+    const value = parseEndgameKey(entry.data.endgame);
 
-    if (label) {
-      tbaEndgameMap.set(entry.teamNumber, label);
+    if (label || value) {
+      tbaEndgameMap.set(entry.teamNumber, { label, value });
     }
   });
 
@@ -652,25 +660,6 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
 
   const isAllianceSummaryLoading =
     isScoutMatchesLoading || isTbaMatchDataLoading;
-
-  const [endgameModalContext, setEndgameModalContext] =
-    useState<{
-      matchNumber: number;
-      matchLevel: string;
-      alliance: AllianceColor;
-      details: AllianceEndgameDetail[];
-    } | null>(null);
-  const [endgameSelections, setEndgameSelections] = useState<Record<number, Endgame2025>>({});
-  const [endgameModalError, setEndgameModalError] = useState<string | null>(null);
-
-  const endgameSelectOptions = useMemo(
-    () =>
-      Object.entries(ENDGAME_LABELS).map(([value, label]) => ({
-        value,
-        label,
-      })),
-    []
-  );
 
   const allianceSummaryMap = useMemo<AllianceSummaryMap>(() => {
     if (allianceQueryInputs.length === 0) {
@@ -838,111 +827,63 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
     );
   };
 
-  const closeEndgameModal = useCallback(() => {
-    setEndgameModalContext(null);
-    setEndgameSelections({});
-    setEndgameModalError(null);
-  }, []);
-
-  const openEndgameModal = useCallback(
-    (
+  const handleApplyTbaEndgame = useCallback(
+    async (
+      detail: AllianceEndgameDetail,
       matchLevel: string,
-      matchNumber: number,
-      alliance: AllianceColor,
-      summary: AllianceSummary | undefined
+      matchNumber: number
     ) => {
-      if (!summary) {
-        return;
-      }
-
-      const details = summary.endgameDetails.filter((detail) =>
-        isValidTeamNumber(detail.teamNumber)
-      );
-
-      if (details.length === 0) {
-        return;
-      }
-
-      setEndgameSelections({});
-      setEndgameModalError(null);
-      setEndgameModalContext({
-        matchLevel,
-        matchNumber,
-        alliance,
-        details,
-      });
-    },
-    []
-  );
-
-  const handleSubmitEndgameModal = useCallback(async () => {
-    if (!endgameModalContext) {
-      return;
-    }
-
-    setEndgameModalError(null);
-
-    const updates: TeamMatchData[] = [];
-    const failedTeams: number[] = [];
-
-    endgameModalContext.details.forEach((detail) => {
-      const hasCustomValue = Object.prototype.hasOwnProperty.call(
-        endgameSelections,
-        detail.teamNumber
-      );
-      const nextValue = hasCustomValue
-        ? endgameSelections[detail.teamNumber]
-        : detail.scoutValue;
-
-      if (!nextValue || nextValue === detail.scoutValue) {
+      if (!detail.tbaValue) {
+        notifications.show({
+          color: 'red',
+          title: 'Update failed',
+          message: 'TBA endgame data is unavailable for this team.',
+        });
         return;
       }
 
       if (!detail.scoutRecord) {
-        failedTeams.push(detail.teamNumber);
+        notifications.show({
+          color: 'red',
+          title: 'Update failed',
+          message: 'No scouting record is available for this team.',
+        });
         return;
       }
 
-      const matchData = buildMatchDataFromRecord(detail.scoutRecord, nextValue);
+      const matchData = buildMatchDataFromRecord(detail.scoutRecord, detail.tbaValue);
 
       if (!matchData) {
-        failedTeams.push(detail.teamNumber);
+        notifications.show({
+          color: 'red',
+          title: 'Update failed',
+          message: 'Unable to prepare scouting data for this team.',
+        });
         return;
       }
 
-      updates.push(matchData);
-    });
-
-    if (failedTeams.length > 0) {
-      setEndgameModalError(
-        `Unable to prepare updates for teams ${failedTeams.join(', ')}. Verify scouting data is available for each team.`
-      );
-      return;
-    }
-
-    if (updates.length === 0) {
-      closeEndgameModal();
-      return;
-    }
-
-    try {
-      await submitEndgameBatch(updates);
-      await queryClient.invalidateQueries({ queryKey: scoutMatchQueryKey() });
-      closeEndgameModal();
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : 'Unable to update match data. Please try again.';
-      setEndgameModalError(message);
-    }
-  }, [
-    closeEndgameModal,
-    endgameModalContext,
-    endgameSelections,
-    queryClient,
-    submitEndgameBatch,
-  ]);
+      try {
+        await submitEndgameBatch([matchData]);
+        await queryClient.invalidateQueries({ queryKey: scoutMatchQueryKey() });
+        notifications.show({
+          color: 'green',
+          title: 'Endgame updated',
+          message: `Set team ${detail.teamNumber} to ${detail.tbaLabel ?? detail.tbaValue} for match ${matchLevel} ${matchNumber}.`,
+        });
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : 'Unable to update match data. Please try again.';
+        notifications.show({
+          color: 'red',
+          title: 'Update failed',
+          message,
+        });
+      }
+    },
+    [queryClient, submitEndgameBatch]
+  );
 
   const renderAllianceEndgameCell = (
     summary: AllianceSummary | undefined,
@@ -1011,16 +952,30 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
     } else if (status === 'MISMATCH') {
       classNames.push(classes.numericMismatch);
       cellContent = (
-        <UnstyledButton
-          type="button"
-          className={classes.endgameButton}
-          onClick={() => openEndgameModal(matchLevel, matchNumber, alliance, summary)}
-          aria-label={`Review endgame mismatch for the ${alliance.toLowerCase()} alliance in match ${matchLevel} ${matchNumber}`}
-        >
-          <Text fz="lg" c="red.6">
-            ❌
-          </Text>
-        </UnstyledButton>
+        <Menu shadow="md" position="bottom-start" withinPortal={false}>
+          <Menu.Target>
+            <UnstyledButton
+              type="button"
+              className={classes.endgameButton}
+              aria-label={`Resolve endgame mismatch for the ${alliance.toLowerCase()} alliance in match ${matchLevel} ${matchNumber}`}
+            >
+              <Text fz="lg" c="red.6">
+                ❌
+              </Text>
+            </UnstyledButton>
+          </Menu.Target>
+          <Menu.Dropdown>
+            <Menu.Label>{`Scouted: ${detail.scoutLabel ?? '—'}`}</Menu.Label>
+            <Menu.Item
+              disabled={!detail.tbaValue || !detail.scoutRecord || isSubmittingEndgame}
+              onClick={() => {
+                void handleApplyTbaEndgame(detail, matchLevel, matchNumber);
+              }}
+            >
+              {`Set to: ${detail.tbaLabel ?? '—'}`}
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
       );
     }
 
@@ -1235,95 +1190,8 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
     tableBody = rows;
   }
 
-  const endgameModalDetails = endgameModalContext?.details ?? [];
-  const endgameModalTitle = endgameModalContext
-    ? `Match ${endgameModalContext.matchLevel} ${endgameModalContext.matchNumber} – ${endgameModalContext.alliance} Alliance`
-    : undefined;
-
   return (
     <>
-      <Modal
-        opened={Boolean(endgameModalContext)}
-        onClose={closeEndgameModal}
-        title="Endgame mismatch"
-        centered
-        size="lg"
-      >
-        {endgameModalTitle ? (
-          <Text fw={600} mb="sm">
-            {endgameModalTitle}
-          </Text>
-        ) : null}
-        <Stack gap="md">
-          {endgameModalDetails.map((detail) => {
-            const hasCustomValue = Object.prototype.hasOwnProperty.call(
-              endgameSelections,
-              detail.teamNumber
-            );
-            const currentValue = hasCustomValue
-              ? endgameSelections[detail.teamNumber]
-              : detail.scoutValue;
-
-            return (
-              <Box key={detail.teamNumber}>
-                <Group justify="space-between" mb="xs">
-                  <Text fw={600}>Team {detail.teamNumber}</Text>
-                  <Text size="sm" c="dimmed">
-                    TBA: {detail.tbaLabel ?? '—'}
-                  </Text>
-                </Group>
-                <Select
-                  data={endgameSelectOptions}
-                  placeholder="Select endgame result"
-                  value={currentValue ?? null}
-                  onChange={(value) => {
-                    if (!value) {
-                      setEndgameSelections((current) => {
-                        const next = { ...current };
-                        delete next[detail.teamNumber];
-                        return next;
-                      });
-                      return;
-                    }
-
-                    setEndgameSelections((current) => {
-                      const next = { ...current };
-
-                      if (value === detail.scoutValue) {
-                        delete next[detail.teamNumber];
-                      } else {
-                        next[detail.teamNumber] = value as Endgame2025;
-                      }
-
-                      return next;
-                    });
-                  }}
-                  disabled={!detail.scoutRecord || isSubmittingEndgame}
-                  comboboxProps={{ withinPortal: false }}
-                />
-                {!detail.scoutRecord ? (
-                  <Text size="xs" c="dimmed" mt={4}>
-                    No scouting record is available for this team.
-                  </Text>
-                ) : null}
-              </Box>
-            );
-          })}
-        </Stack>
-        {endgameModalError ? (
-          <Text c="red.6" mt="md" size="sm">
-            {endgameModalError}
-          </Text>
-        ) : null}
-        <Group justify="flex-end" mt="xl">
-          <Button variant="subtle" onClick={closeEndgameModal} disabled={isSubmittingEndgame}>
-            Cancel
-          </Button>
-          <Button onClick={handleSubmitEndgameModal} loading={isSubmittingEndgame}>
-            Save changes
-          </Button>
-        </Group>
-      </Modal>
       <Box className={classes.container}>
         <Box className={classes.header}>
           <ExportHeader
