@@ -1,6 +1,10 @@
-import { Image, type ImageProps } from '@mantine/core';
+import { Image, type ImageProps, useMantineColorScheme } from '@mantine/core';
 import CodyStatsTitle from '@/assets/CodyStatsTitle.png';
+import CodyStatsTitleWhite from '@/assets/CodyStatsTitleWhite.png';
 
 export function Logo(props: ImageProps) {
-  return <Image src={CodyStatsTitle} alt="CodyStats title" fit="contain" {...props} />;
+  const { colorScheme } = useMantineColorScheme();
+  const logoSrc = colorScheme === 'dark' ? CodyStatsTitleWhite : CodyStatsTitle;
+
+  return <Image src={logoSrc} alt="CodyStats title" fit="contain" {...props} />;
 }
