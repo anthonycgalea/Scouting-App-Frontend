@@ -792,10 +792,13 @@ export function MatchValidation() {
       queryClient.invalidateQueries({ queryKey: teamMatchValidationQueryKey() }),
       queryClient.invalidateQueries({ queryKey: scoutMatchQueryKey() }),
     ]);
+
+    navigate({ to: '/dataValidation' });
   }, [
     buildMatchUpdates,
     isSavingChanges,
     isSubmitting,
+    navigate,
     queryClient,
     saveMatchDataBatch,
   ]);
