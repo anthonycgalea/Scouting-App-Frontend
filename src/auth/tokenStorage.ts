@@ -186,9 +186,15 @@ const refreshSupabaseTokens = async (tokens: StoredTokens): Promise<StoredTokens
     return null;
   }
 
-  persistStoredTokens(refreshedTokens);
+  const nextTokens: StoredTokens = {
+    ...tokens,
+    ...refreshedTokens,
+    refreshToken: refreshedTokens.refreshToken ?? tokens.refreshToken,
+  } satisfies StoredTokens;
 
-  return refreshedTokens;
+  persistStoredTokens(nextTokens);
+
+  return nextTokens;
 };
 
 type StoredAuthUser = {
