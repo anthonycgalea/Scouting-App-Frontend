@@ -726,11 +726,13 @@ export function MatchValidation() {
         return undefined;
       }
 
+      const normalizedMatchLevel = metadata.matchLevel.toLowerCase();
+
       const baseMatchData = {
         season: metadata.season,
         event_key: metadata.eventKey,
         match_number: metadata.matchNumber,
-        match_level: metadata.matchLevel,
+        match_level: normalizedMatchLevel,
         team_number: metadata.teamNumber,
         user_id: metadata.userId,
         organization_id: metadata.organizationId,
@@ -746,7 +748,7 @@ export function MatchValidation() {
         season: metadata.season,
         eventKey: metadata.eventKey,
         matchNumber: metadata.matchNumber,
-        matchLevel: metadata.matchLevel,
+        matchLevel: normalizedMatchLevel,
         teamNumber: metadata.teamNumber,
         userId: metadata.userId,
         organizationId: metadata.organizationId,
