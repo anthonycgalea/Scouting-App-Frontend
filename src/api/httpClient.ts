@@ -12,6 +12,10 @@ export interface RequestOptions extends Omit<RequestInit, 'body'> {
    * Use this when you need to supply a pre-built body instead of the helper `json` option.
    */
   body?: BodyInit | null;
+  /**
+   * Whether the request should include the current user's access token. Defaults to `true`.
+   */
+  authRequired?: boolean;
 }
 
 export interface ApiErrorMetadata {
@@ -29,11 +33,21 @@ export class ApiError extends Error {
   }
 }
 
-const buildRequestInit = async ({ json, headers, body, ...rest }: RequestOptions = {}): Promise<RequestInit> => {
+const buildRequestInit = async ({ json, headers, body, authRequired = true, ...rest }: RequestOptions = {}): Promise<RequestInit> => {
   const requestHeaders = new Headers(headers);
-  const accessToken = await ensureValidAccessToken();
+  const shouldAttachAuth = authRequired && !requestHeaders.has('Authorization');
 
-  if (accessToken && !requestHeaders.has('Authorization')) {
+  if (shouldAttachAuth) {
+    const accessToken = await ensureValidAccessToken();
+
+    if (!accessToken) {
+      throw new ApiError('Authentication required', {
+        status: 401,
+        statusText: 'Unauthorized',
+        body: { message: 'Authentication required' },
+      });
+    }
+
     requestHeaders.set('Authorization', `Bearer ${accessToken}`);
   }
 
