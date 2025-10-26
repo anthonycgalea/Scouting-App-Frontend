@@ -24,6 +24,7 @@ import {
   scoutMatchQueryKey,
   submitMatchValidationData,
   teamMatchValidationQueryKey,
+  updateMatchDataBatch,
   useEventTbaMatchData,
   useMatchSchedule,
   useScoutMatch,
@@ -677,22 +678,28 @@ export function MatchValidation() {
   );
 
   const queryClient = useQueryClient();
+  const { mutateAsync: saveMatchDataBatch, isPending: isSavingChanges } = useMutation({
+    mutationFn: updateMatchDataBatch,
+  });
   const { mutateAsync: submitMatchData, isPending: isSubmitting } = useMutation({
     mutationFn: submitMatchValidationData,
   });
 
-  const handleSubmit = useCallback(async () => {
-    if (isSubmitting) {
-      return;
-    }
+  interface MatchUpdatesPayload {
+    validationUpdates: MatchValidationDataUpdate[];
+    batchUpdates: TeamMatchData[];
+    notesForSubmission: string | null | undefined;
+  }
 
+  const buildMatchUpdates = useCallback((): MatchUpdatesPayload | undefined => {
     const requiredUpdates = teamQueryStates.filter((state) => isValidNumber(state.teamNumber)).length;
 
     if (requiredUpdates === 0) {
-      return;
+      return undefined;
     }
 
     const updates: MatchValidationDataUpdate[] = [];
+    const batchUpdates: TeamMatchData[] = [];
     const initialNotes = initialNotesRef.current;
     const notesForSubmission = (() => {
       if (initialNotes === undefined) {
@@ -716,10 +723,10 @@ export function MatchValidation() {
       const metadata = extractMatchMetadata(state.query.data);
 
       if (!isCompleteMetadata(metadata)) {
-        return;
+        return undefined;
       }
 
-      const updatedMatchData = {
+      const baseMatchData = {
         season: metadata.season,
         event_key: metadata.eventKey,
         match_number: metadata.matchNumber,
@@ -732,7 +739,7 @@ export function MatchValidation() {
 
       MATCH_VALIDATION_NUMERIC_FIELDS.forEach((field) => {
         const numericValue = getCurrentNumericValue(state, field);
-        updatedMatchData[field] = numericValue ?? 0;
+        baseMatchData[field] = numericValue ?? 0;
       });
 
       updates.push({
@@ -743,16 +750,66 @@ export function MatchValidation() {
         teamNumber: metadata.teamNumber,
         userId: metadata.userId,
         organizationId: metadata.organizationId,
-        matchData: updatedMatchData,
+        matchData: baseMatchData,
         ...(notesForSubmission !== undefined ? { notes: notesForSubmission } : {}),
       });
+
+      const batchMatchData =
+        notesForSubmission !== undefined
+          ? ({ ...baseMatchData, notes: notesForSubmission } as TeamMatchData)
+          : ({ ...baseMatchData } as TeamMatchData);
+
+      batchUpdates.push(batchMatchData);
     }
 
-    if (updates.length !== requiredUpdates) {
+    if (updates.length !== requiredUpdates || batchUpdates.length !== requiredUpdates) {
+      return undefined;
+    }
+
+    return { validationUpdates: updates, batchUpdates, notesForSubmission };
+  }, [getCurrentEndgameValue, getCurrentNumericValue, notes, teamQueryStates]);
+
+  const handleSaveChanges = useCallback(async () => {
+    if (isSavingChanges || isSubmitting) {
       return;
     }
 
-    await submitMatchData(updates);
+    const updates = buildMatchUpdates();
+
+    if (!updates) {
+      return;
+    }
+
+    await saveMatchDataBatch(updates.batchUpdates);
+
+    if (updates.notesForSubmission !== undefined) {
+      initialNotesRef.current = updates.notesForSubmission ?? null;
+    }
+
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: teamMatchValidationQueryKey() }),
+      queryClient.invalidateQueries({ queryKey: scoutMatchQueryKey() }),
+    ]);
+  }, [
+    buildMatchUpdates,
+    isSavingChanges,
+    isSubmitting,
+    queryClient,
+    saveMatchDataBatch,
+  ]);
+
+  const handleSubmit = useCallback(async () => {
+    if (isSubmitting || isSavingChanges) {
+      return;
+    }
+
+    const updates = buildMatchUpdates();
+
+    if (!updates) {
+      return;
+    }
+
+    await submitMatchData(updates.validationUpdates);
 
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: teamMatchValidationQueryKey() }),
@@ -761,14 +818,12 @@ export function MatchValidation() {
 
     navigate({ to: '/dataValidation' });
   }, [
-    getCurrentEndgameValue,
-    getCurrentNumericValue,
+    buildMatchUpdates,
+    isSavingChanges,
     isSubmitting,
-    notes,
     navigate,
     queryClient,
     submitMatchData,
-    teamQueryStates,
   ]);
 
   const aggregateTeamFieldValues = (
@@ -1390,14 +1445,25 @@ export function MatchValidation() {
           onChange={(event) => setNotes(event.currentTarget.value)}
         />
 
-        <Button
-          leftSection={<IconDeviceFloppy size={16} />}
-          onClick={handleSubmit}
-          disabled={!isPageValid || isSubmitting}
-          loading={isSubmitting}
-        >
-          Save Changes and Submit
-        </Button>
+        <Group gap="sm">
+          <Button
+            variant="default"
+            leftSection={<IconDeviceFloppy size={16} />}
+            onClick={handleSaveChanges}
+            disabled={!meetsNonMismatchRequirements || isSavingChanges || isSubmitting}
+            loading={isSavingChanges}
+          >
+            Save Changes
+          </Button>
+          <Button
+            leftSection={<IconDeviceFloppy size={16} />}
+            onClick={handleSubmit}
+            disabled={!isPageValid || isSubmitting || isSavingChanges}
+            loading={isSubmitting}
+          >
+            Save Changes and Submit
+          </Button>
+        </Group>
       </Stack>
     </Box>
   );
