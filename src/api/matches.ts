@@ -138,6 +138,12 @@ export const matchScheduleQueryKey = () => ['match-schedule'] as const;
 
 export const fetchMatchSchedule = () => apiFetch<MatchScheduleEntry[]>('event/matches');
 
+export const matchScheduleSimulationQueryKey = () =>
+  ['match-schedule-simulation'] as const;
+
+export const fetchMatchScheduleSimulation = () =>
+  apiFetch<MatchSimulationResponse[]>('event/matches/simulation');
+
 export type TeamMatchValidationStatus = 'PENDING' | 'NEEDS REVIEW' | 'VALID';
 
 export interface TeamMatchValidationEntry {
@@ -193,6 +199,12 @@ export const useMatchSchedule = () =>
   useQuery({
     queryKey: matchScheduleQueryKey(),
     queryFn: fetchMatchSchedule,
+  });
+
+export const useMatchScheduleSimulation = () =>
+  useQuery({
+    queryKey: matchScheduleSimulationQueryKey(),
+    queryFn: fetchMatchScheduleSimulation,
   });
 
 export const useMatchPreview = (params?: MatchPreviewRequest) =>

@@ -29,6 +29,26 @@
   color: light-dark(var(--mantine-color-blue-9), var(--mantine-color-blue-1));
 }
 
+.predictionCell {
+  background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+  color: light-dark(var(--mantine-color-dark-9), var(--mantine-color-gray-1));
+}
+
+.predictionRed {
+  background-color: light-dark(var(--mantine-color-red-0), var(--mantine-color-red-9));
+  color: light-dark(var(--mantine-color-red-7), var(--mantine-color-red-0));
+}
+
+.predictionBlue {
+  background-color: light-dark(var(--mantine-color-blue-0), var(--mantine-color-blue-9));
+  color: light-dark(var(--mantine-color-blue-7), var(--mantine-color-blue-0));
+}
+
+.predictionNeutral {
+  background-color: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6));
+  color: light-dark(var(--mantine-color-dark-9), var(--mantine-color-gray-2));
+}
+
 .table :global(th),
 .table :global(td) {
   text-align: center;
