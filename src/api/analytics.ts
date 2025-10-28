@@ -83,6 +83,7 @@ export interface RankingPredictionResponse {
   organization_id: number;
   timestamp: string;
   team_number: number;
+  team_name?: string;
   rank_5: number;
   rank_95: number;
   median_rank: number;
