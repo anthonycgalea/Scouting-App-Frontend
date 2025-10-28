@@ -411,7 +411,7 @@ export function MatchSchedule({ matches }: MatchScheduleProps) {
             component="sup"
             className={classes.rpSuperscript}
           >
-            ({`${formatRpValue(line.rp)} RP`})
+            ({`${formatRpValue(line.rp)}`})
           </Text>
         </Text>
       );
