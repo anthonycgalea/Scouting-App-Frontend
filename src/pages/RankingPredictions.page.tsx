@@ -98,7 +98,6 @@ export function RankingPredictionsPage() {
           style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}
         >
           <Flex direction="column" gap="md" style={{ flex: 1, minHeight: 0 }}>
-            <Text c="dimmed">Sorted by predicted mean rank from lowest to highest.</Text>
             {renderContent()}
           </Flex>
         </Card>
