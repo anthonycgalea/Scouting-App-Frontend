@@ -11,6 +11,7 @@ import {
   useUserInfo,
   useUserOrganization,
 } from '../api';
+import { getEventWeekLabel } from '@/utils/eventWeek';
 import { useRequireOrganizationAccess } from '@/hooks/useRequireOrganizationAccess';
 
 const ALLOWED_EVENT_YEARS = [2026, 2025] as const;
@@ -147,7 +148,10 @@ export function AddEventPage() {
 
     return [
       { value: 'all', label: 'All Weeks' },
-      ...weeks.map((week) => ({ value: week.toString(), label: `Week ${week}` })),
+      ...weeks.map((week) => ({
+        value: week.toString(),
+        label: getEventWeekLabel(week, { placeholder: '' }),
+      })),
     ];
   }, [eventList]);
 
@@ -213,7 +217,7 @@ export function AddEventPage() {
           </Text>
         </Table.Td>
         <Table.Td>
-          <Text size="sm">Week {event.week}</Text>
+          <Text size="sm">{getEventWeekLabel(event.week)}</Text>
         </Table.Td>
         <Table.Td>
           <Button
