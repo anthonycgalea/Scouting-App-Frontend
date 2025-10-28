@@ -1,14 +1,19 @@
 import { useMemo, useState } from 'react';
-import { IconCheck, IconChevronDown, IconChevronUp, IconCircleX, IconSearch } from '@tabler/icons-react';
+import { IconChevronDown, IconChevronUp, IconSearch } from '@tabler/icons-react';
 import { Center, Group, ScrollArea, Stack, Table, Text, TextInput, UnstyledButton } from '@mantine/core';
 import clsx from 'clsx';
 import {
   useMatchScheduleSimulation,
-  useTeamMatchValidation,
+  useEventTbaMatchDataset,
   type MatchScheduleEntry,
   type MatchSimulation2025,
   type MatchSimulationResponse,
 } from '@/api';
+import {
+  buildTbaAllianceKey,
+  createTbaAllianceLookup,
+  type TbaAllianceLookup,
+} from '@/components/MatchValidation/matchDataUtils';
 import { MatchNumberButtonMenu } from './MatchNumberButtonMenu';
 import classes from './MatchSchedule.module.css';
 
@@ -22,7 +27,7 @@ interface RowData {
   blue2?: number | null;
   blue3?: number | null;
   prediction?: MatchPrediction;
-  played?: boolean;
+  result?: MatchResult;
 }
 
 interface ThProps {
@@ -39,6 +44,17 @@ type MatchPredictionWinner = 'red' | 'blue' | 'even';
 interface MatchPrediction {
   winner: MatchPredictionWinner;
   percentage: number | null;
+}
+
+interface MatchResultAllianceDetails {
+  score?: number;
+  rp?: number;
+}
+
+interface MatchResult {
+  winner?: MatchPredictionWinner;
+  red: MatchResultAllianceDetails;
+  blue: MatchResultAllianceDetails;
 }
 
 const totalTableColumns = 1 + teamNumberKeys.length + 2;
@@ -89,11 +105,88 @@ const createPredictionLookup = (simulations?: MatchSimulationResponse[]) => {
   return lookup;
 };
 
+const SCORE_KEYS = ['score', 'Score', 'total_points', 'totalPoints'];
+const RP_KEYS = ['rp', 'RP', 'ranking_points', 'rankingPoints'];
+
+const parseNumberLike = (value: unknown): number | undefined => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return undefined;
+};
+
+const getRecordNumber = (record: Record<string, unknown> | undefined, keys: string[]) => {
+  if (!record) {
+    return undefined;
+  }
+
+  for (const key of keys) {
+    if (key in record) {
+      const value = record[key];
+      const parsed = parseNumberLike(value);
+
+      if (parsed !== undefined) {
+        return parsed;
+      }
+    }
+  }
+
+  return undefined;
+};
+
+const buildMatchResult = (
+  matchLevel: string,
+  matchNumber: number,
+  lookup?: TbaAllianceLookup
+): MatchResult | undefined => {
+  if (!lookup) {
+    return undefined;
+  }
+
+  const redRecord = lookup.get(buildTbaAllianceKey(matchLevel, matchNumber, 'RED'));
+  const blueRecord = lookup.get(buildTbaAllianceKey(matchLevel, matchNumber, 'BLUE'));
+
+  if (!redRecord && !blueRecord) {
+    return undefined;
+  }
+
+  const redScore = getRecordNumber(redRecord, SCORE_KEYS);
+  const blueScore = getRecordNumber(blueRecord, SCORE_KEYS);
+  const redRp = getRecordNumber(redRecord, RP_KEYS);
+  const blueRp = getRecordNumber(blueRecord, RP_KEYS);
+
+  let winner: MatchPredictionWinner | undefined;
+
+  if (redScore !== undefined && blueScore !== undefined) {
+    if (redScore > blueScore) {
+      winner = 'red';
+    } else if (blueScore > redScore) {
+      winner = 'blue';
+    } else {
+      winner = 'even';
+    }
+  }
+
+  return {
+    winner,
+    red: { score: redScore, rp: redRp },
+    blue: { score: blueScore, rp: blueRp },
+  };
+};
+
 const createRowData = (
   matches: MatchScheduleEntry[],
   predictions: Map<string, MatchPrediction>,
-  playedMatches?: Set<string>,
-  isValidationReady?: boolean
+  tbaLookup?: TbaAllianceLookup
 ): RowData[] =>
   matches.map((match) => {
     const matchKey = createMatchKey(match.match_level, match.match_number);
@@ -108,7 +201,7 @@ const createRowData = (
       blue2: match.blue2_id,
       blue3: match.blue3_id,
       prediction: predictions.get(matchKey) ?? undefined,
-      played: isValidationReady ? playedMatches?.has(matchKey) ?? false : undefined,
+      result: buildMatchResult(match.match_level, match.match_number, tbaLookup),
     };
   });
 
@@ -193,26 +286,12 @@ export function MatchSchedule({ matches }: MatchScheduleProps) {
 
   const { data: simulationResults } = useMatchScheduleSimulation();
 
-  const {
-    data: validationEntries,
-    isLoading: isValidationLoading,
-    isError: isValidationError,
-  } = useTeamMatchValidation();
+  const { data: tbaMatchData } = useEventTbaMatchDataset();
 
-  const playedMatches = useMemo(() => {
-    if (!validationEntries || isValidationError) {
-      return undefined;
-    }
-
-    const played = new Set<string>();
-    validationEntries.forEach((entry) => {
-      played.add(createMatchKey(entry.match_level, entry.match_number));
-    });
-
-    return played;
-  }, [validationEntries, isValidationError]);
-
-  const isValidationReady = !isValidationLoading && !isValidationError && validationEntries !== undefined;
+  const tbaAllianceLookup = useMemo(
+    () => createTbaAllianceLookup(tbaMatchData),
+    [tbaMatchData]
+  );
 
   const predictionLookup = useMemo(
     () => createPredictionLookup(simulationResults),
@@ -220,8 +299,8 @@ export function MatchSchedule({ matches }: MatchScheduleProps) {
   );
 
   const schedule = useMemo(
-    () => createRowData(matches, predictionLookup, playedMatches, isValidationReady),
-    [matches, predictionLookup, playedMatches, isValidationReady]
+    () => createRowData(matches, predictionLookup, tbaAllianceLookup),
+    [matches, predictionLookup, tbaAllianceLookup]
   );
 
   const sortedData = useMemo(
@@ -267,6 +346,51 @@ export function MatchSchedule({ matches }: MatchScheduleProps) {
       </Text>
     );
 
+    const formatScoreValue = (value: number | undefined) =>
+      value === undefined ? '—' : value.toLocaleString();
+
+    const formatRpValue = (value: number | undefined) =>
+      value === undefined ? '—' : value.toLocaleString();
+
+    const resultContent = (() => {
+      const { result } = row;
+
+      if (!result || result.red.score === undefined || result.blue.score === undefined || !result.winner) {
+        return (
+          <Text c="dimmed" fz="sm">
+            N/A
+          </Text>
+        );
+      }
+
+      if (result.winner === 'even') {
+        return (
+          <Stack gap={0} align="center" justify="center">
+            <Text fw={600}>Winner: Tie</Text>
+            <Text fw={600}>{`${formatScoreValue(result.red.score)} - ${formatScoreValue(result.blue.score)}`}</Text>
+            <Text fw={500}>{`Red RP: ${formatRpValue(result.red.rp)}`}</Text>
+            <Text fw={500}>{`Blue RP: ${formatRpValue(result.blue.rp)}`}</Text>
+          </Stack>
+        );
+      }
+
+      const winningAlliance = result.winner === 'red' ? 'Red' : 'Blue';
+      const losingAlliance = result.winner === 'red' ? 'Blue' : 'Red';
+      const winningScore = result.winner === 'red' ? result.red.score : result.blue.score;
+      const losingScore = result.winner === 'red' ? result.blue.score : result.red.score;
+      const winningRp = result.winner === 'red' ? result.red.rp : result.blue.rp;
+      const losingRp = result.winner === 'red' ? result.blue.rp : result.red.rp;
+
+      return (
+        <Stack gap={0} align="center" justify="center">
+          <Text fw={600}>{`Winner: ${winningAlliance}`}</Text>
+          <Text fw={600}>{`${formatScoreValue(winningScore)} - ${formatScoreValue(losingScore)}`}</Text>
+          <Text fw={500}>{`${winningAlliance} RP: ${formatRpValue(winningRp)}`}</Text>
+          <Text fw={500}>{`${losingAlliance} RP: ${formatRpValue(losingRp)}`}</Text>
+        </Stack>
+      );
+    })();
+
     return (
       <Table.Tr key={row.matchNumber}>
         <Table.Td>
@@ -279,20 +403,10 @@ export function MatchSchedule({ matches }: MatchScheduleProps) {
         <Table.Td className={classes.redCell}>{row.red2 ?? '-'}</Table.Td>
         <Table.Td className={classes.redCell}>{row.red3 ?? '-'}</Table.Td>
         <Table.Td className={predictionClassName}>{predictionContent}</Table.Td>
+        <Table.Td>{resultContent}</Table.Td>
         <Table.Td className={classes.blueCell}>{row.blue1 ?? '-'}</Table.Td>
         <Table.Td className={classes.blueCell}>{row.blue2 ?? '-'}</Table.Td>
         <Table.Td className={classes.blueCell}>{row.blue3 ?? '-'}</Table.Td>
-        <Table.Td>
-          {row.played === undefined ? (
-            <Text c="dimmed" fz="sm">
-              N/A
-            </Text>
-          ) : row.played ? (
-            <IconCheck size={30} />
-          ) : (
-            <IconCircleX size={30} />
-          )}
-        </Table.Td>
       </Table.Tr>
     );
   });
@@ -330,10 +444,10 @@ export function MatchSchedule({ matches }: MatchScheduleProps) {
               <Table.Th>Red 2</Table.Th>
               <Table.Th>Red 3</Table.Th>
               <Table.Th>Prediction</Table.Th>
+              <Table.Th>Result</Table.Th>
               <Table.Th>Blue 1</Table.Th>
               <Table.Th>Blue 2</Table.Th>
               <Table.Th>Blue 3</Table.Th>
-              <Table.Th>Played</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
