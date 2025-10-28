@@ -78,6 +78,18 @@ export interface TeamMatchHistoryResponse {
   matches: TeamMatchPerformanceResponse[];
 }
 
+export interface RankingPredictionResponse {
+  event_key: string;
+  organization_id: number;
+  timestamp: string;
+  team_number: number;
+  rank_5: number;
+  rank_95: number;
+  median_rank: number;
+  mean_rank: number;
+  mean_rp: number;
+}
+
 export interface TeamZScoreExtreme {
   min: number;
   max: number;
@@ -152,4 +164,16 @@ export const useTeamZScores = () =>
   useQuery({
     queryKey: teamZScoresQueryKey(),
     queryFn: fetchTeamZScores,
+  });
+
+export const rankingPredictionsQueryKey = () =>
+  ['analytics', 'event', 'rankings', 'predictions'] as const;
+
+export const fetchRankingPredictions = () =>
+  apiFetch<RankingPredictionResponse[]>('analytics/event/rankings/prediction');
+
+export const useRankingPredictions = () =>
+  useQuery({
+    queryKey: rankingPredictionsQueryKey(),
+    queryFn: fetchRankingPredictions,
   });
