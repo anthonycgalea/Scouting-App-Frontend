@@ -81,7 +81,9 @@ export function RankingPredictionsPage() {
                     to={`/teams/${prediction.team_number}`}
                     underline="hover"
                   >
-                    {prediction.team_number}
+                    {prediction.team_name
+                      ? `${prediction.team_number} - ${prediction.team_name}`
+                      : prediction.team_number}
                   </Anchor>
                 </Table.Td>
                 <Table.Td ta="center">{prediction.mean_rank.toFixed(2)}</Table.Td>
