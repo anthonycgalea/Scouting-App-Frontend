@@ -59,6 +59,7 @@ const ORGANIZATION_LINKS_DATA = {
   links: [
     { label: 'Team Members', link: '/teamMembers' },
     { label: 'Events', link: '/eventSelect' },
+    { label: 'Photo Manager', link: '/photoManager' },
   ],
 };
 

@@ -36,6 +36,7 @@ import { ListGeneratorPage } from './pages/ListGenerator.page';
 import { SuperScoutMatchPage } from './pages/SuperScoutMatch.page';
 import { SiteAdminOrganizationsPage } from './pages/SiteAdminOrganizations.page';
 import { useUserOrganization, type UserOrganizationResponse } from './api';
+import { PhotoManagerPage } from './pages/PhotoManager.page';
 
 const ORGANIZATION_SELECTION_ROUTES = ['/userSettings', '/organizations/apply'];
 
@@ -239,6 +240,12 @@ const teamMembersRoute = createRoute({
   component: TeamMembersPage,
 });
 
+const photoManagerRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/photoManager',
+  component: PhotoManagerPage,
+});
+
 const applyToOrganizationRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/organizations/apply',
@@ -289,6 +296,7 @@ const routeTree = rootRoute.addChildren([
   listGeneratorRoute.addChildren([]),
   allianceSelectionRoute.addChildren([]),
   teamMembersRoute.addChildren([]),
+  photoManagerRoute.addChildren([]),
   organizationEventSelectRoute.addChildren([]),
   addEventRoute.addChildren([]),
   applyToOrganizationRoute.addChildren([]),
