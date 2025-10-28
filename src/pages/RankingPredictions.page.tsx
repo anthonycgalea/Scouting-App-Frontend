@@ -1,4 +1,5 @@
 import {
+  Anchor,
   Box,
   Card,
   Center,
@@ -9,6 +10,7 @@ import {
   Text,
   Title,
 } from '@mantine/core';
+import { Link } from '@tanstack/react-router';
 import { useMemo } from 'react';
 
 import { useRankingPredictions } from '@/api';
@@ -60,25 +62,33 @@ export function RankingPredictionsPage() {
         <Table highlightOnHover stickyHeader verticalSpacing="sm">
           <Table.Thead>
             <Table.Tr>
-              <Table.Th>Predicted Rank</Table.Th>
-              <Table.Th>Team</Table.Th>
-              <Table.Th>Mean Rank</Table.Th>
-              <Table.Th>5% Rank</Table.Th>
-              <Table.Th>Median Rank</Table.Th>
-              <Table.Th>95% Rank</Table.Th>
-              <Table.Th>Mean RP</Table.Th>
+              <Table.Th ta="center">Predicted Rank</Table.Th>
+              <Table.Th ta="center">Team</Table.Th>
+              <Table.Th ta="center">Mean Rank</Table.Th>
+              <Table.Th ta="center">5% Rank</Table.Th>
+              <Table.Th ta="center">Median Rank</Table.Th>
+              <Table.Th ta="center">95% Rank</Table.Th>
+              <Table.Th ta="center">Mean RP</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
             {sortedPredictions.map((prediction, index) => (
               <Table.Tr key={prediction.team_number}>
-                <Table.Td>{index + 1}</Table.Td>
-                <Table.Td>{prediction.team_number}</Table.Td>
-                <Table.Td>{prediction.mean_rank.toFixed(2)}</Table.Td>
-                <Table.Td>{prediction.rank_95}</Table.Td>
-                <Table.Td>{prediction.median_rank}</Table.Td>
-                <Table.Td>{prediction.rank_5}</Table.Td>
-                <Table.Td>{prediction.mean_rp.toFixed(2)}</Table.Td>
+                <Table.Td ta="center">{index + 1}</Table.Td>
+                <Table.Td ta="center">
+                  <Anchor
+                    component={Link}
+                    to={`/teams/${prediction.team_number}`}
+                    underline="hover"
+                  >
+                    {prediction.team_number}
+                  </Anchor>
+                </Table.Td>
+                <Table.Td ta="center">{prediction.mean_rank.toFixed(2)}</Table.Td>
+                <Table.Td ta="center">{prediction.rank_95}</Table.Td>
+                <Table.Td ta="center">{prediction.median_rank}</Table.Td>
+                <Table.Td ta="center">{prediction.rank_5}</Table.Td>
+                <Table.Td ta="center">{prediction.mean_rp.toFixed(2)}</Table.Td>
               </Table.Tr>
             ))}
           </Table.Tbody>
