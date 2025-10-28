@@ -111,7 +111,7 @@ export const useDeleteTeamImage = () => {
   return useMutation({
     mutationFn: deleteTeamImage,
     onSuccess: (_, variables) => {
-      queryClient.setQueryData(eventTeamImagesQueryKey(), (current) => {
+      queryClient.setQueryData<EventTeamImages[]>(eventTeamImagesQueryKey(), (current) => {
         if (!current) {
           return current;
         }
