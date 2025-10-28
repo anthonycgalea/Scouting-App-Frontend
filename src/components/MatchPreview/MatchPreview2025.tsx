@@ -27,6 +27,7 @@ import {
   type MatchScheduleEntry,
   type MetricStatistics,
   type TeamMatchPreview,
+  type EventTeamImageSummary,
 } from '@/api';
 import classes from '@/pages/MatchPreview.module.css';
 
@@ -166,7 +167,7 @@ export const MatchPreview2025 = ({
     isError: isMatchImagesError,
   } = useMatchImages(matchImagesParams);
   const matchImagesByTeam = useMemo(() => {
-    const imageMap = new Map<number, string[]>();
+    const imageMap = new Map<number, EventTeamImageSummary[]>();
 
     matchImages.forEach((entry) => {
       const teamNumber = entry.teamNumber;
@@ -537,7 +538,7 @@ export const MatchPreview2025 = ({
 
 interface AllianceTeamImageDisplayProps {
   teamNumber: number;
-  images?: string[];
+  images?: EventTeamImageSummary[];
   isLoading: boolean;
   isError: boolean;
 }
@@ -573,8 +574,17 @@ const AllianceTeamImageDisplay = ({
   }
 
   const formattedImages: DisplayImage[] = (images ?? [])
-    .filter((url): url is string => typeof url === 'string' && url.trim().length > 0)
-    .map((url) => ({ image_url: url }));
+    .filter((image): image is EventTeamImageSummary => {
+      if (!image) {
+        return false;
+      }
+
+      return typeof image.image_url === 'string' && image.image_url.trim().length > 0;
+    })
+    .map((image) => ({
+      image_url: image.image_url,
+      description: image.description ?? undefined,
+    }));
 
   if (formattedImages.length === 0) {
     return <MissingTeamImage teamNumber={teamNumber} />;
