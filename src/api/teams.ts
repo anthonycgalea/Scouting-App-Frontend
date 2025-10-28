@@ -23,9 +23,15 @@ export interface TeamImage {
   uploaded_at: string;
 }
 
+export interface EventTeamImageSummary {
+  id: string;
+  image_url: string;
+  description?: string | null;
+}
+
 export interface EventTeamImages {
   teamNumber: number;
-  images: string[];
+  images: EventTeamImageSummary[];
 }
 
 export type Endgame2025 = 'NONE' | 'PARK' | 'SHALLOW' | 'DEEP';
@@ -85,6 +91,60 @@ export const useEventTeamImages = ({ enabled }: { enabled?: boolean } = {}) => {
     queryKey: eventTeamImagesQueryKey(),
     queryFn: fetchEventTeamImages,
     enabled: shouldEnable,
+  });
+};
+
+export interface DeleteTeamImageInput {
+  id: string;
+  teamNumber?: number;
+}
+
+export const deleteTeamImage = ({ id }: DeleteTeamImageInput) =>
+  apiFetch<void>('teams/image', {
+    method: 'DELETE',
+    json: { id },
+  });
+
+export const useDeleteTeamImage = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteTeamImage,
+    onSuccess: (_, variables) => {
+      queryClient.setQueryData(eventTeamImagesQueryKey(), (current) => {
+        if (!current) {
+          return current;
+        }
+
+        return current.map((entry) => {
+          if (!variables) {
+            return entry;
+          }
+
+          if (
+            variables.teamNumber !== undefined &&
+            entry.teamNumber !== variables.teamNumber
+          ) {
+            return entry;
+          }
+
+          if (!entry.images.some((image) => image.id === variables.id)) {
+            return entry;
+          }
+
+          return {
+            ...entry,
+            images: entry.images.filter((image) => image.id !== variables.id),
+          };
+        });
+      });
+
+      if (variables?.teamNumber !== undefined) {
+        void queryClient.invalidateQueries({
+          queryKey: teamImagesQueryKey(variables.teamNumber),
+        });
+      }
+    },
   });
 };
 

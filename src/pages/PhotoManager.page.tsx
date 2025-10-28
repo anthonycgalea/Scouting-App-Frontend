@@ -1,6 +1,7 @@
 import {
   ActionIcon,
   Box,
+  Button,
   Center,
   Flex,
   Image,
@@ -16,7 +17,7 @@ import {
 import { IconTrash } from '@tabler/icons-react';
 import { Fragment, useMemo, useState } from 'react';
 
-import { useEventTeamImages } from '@/api';
+import { useDeleteTeamImage, useEventTeamImages } from '@/api';
 import { useRequireOrganizationAccess } from '@/hooks/useRequireOrganizationAccess';
 
 export function PhotoManagerPage() {
@@ -26,10 +27,34 @@ export function PhotoManagerPage() {
     enabled: canAccessOrganizationPages,
   });
   const [expandedTeams, setExpandedTeams] = useState<Set<number>>(() => new Set());
-  const [imagePendingDelete, setImagePendingDelete] = useState<string | null>(null);
+  const [imagePendingDelete, setImagePendingDelete] = useState<{
+    id: string;
+    teamNumber: number;
+    imageUrl: string;
+  } | null>(null);
+  const deleteTeamImageMutation = useDeleteTeamImage();
+  const isDeletingImage = deleteTeamImageMutation.isPending;
+  const isDeleteModalOpen = imagePendingDelete !== null;
 
   const closeDeleteModal = () => {
+    deleteTeamImageMutation.reset();
     setImagePendingDelete(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!imagePendingDelete) {
+      return;
+    }
+
+    try {
+      await deleteTeamImageMutation.mutateAsync({
+        id: imagePendingDelete.id,
+        teamNumber: imagePendingDelete.teamNumber,
+      });
+      closeDeleteModal();
+    } catch (error) {
+      // Handled by mutation state; keep modal open to show error message.
+    }
   };
 
   const sortedTeamImages = useMemo(
@@ -126,31 +151,39 @@ export function PhotoManagerPage() {
                         <Table.Td colSpan={2}>
                           <ScrollArea type="auto" offsetScrollbars>
                             <Flex gap="md" wrap="nowrap" py="sm">
-                              {images.map((imageUrl, index) => (
-                                <Box
-                                  key={`${teamNumber}-${index}`}
-                                  w={220}
-                                  style={{ position: 'relative' }}
-                                >
-                                  <ActionIcon
-                                    aria-label="Delete image"
-                                    variant="default"
-                                    size="lg"
-                                    style={{ position: 'absolute', top: 8, right: 8, zIndex: 1 }}
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-                                      setImagePendingDelete(imageUrl);
-                                    }}
+                              {images.map((image, index) => {
+                                const imageUrl = image.image_url;
+
+                                return (
+                                  <Box
+                                    key={`${teamNumber}-${image.id}`}
+                                    w={220}
+                                    style={{ position: 'relative' }}
                                   >
-                                    <IconTrash size={18} color={theme.colors.red[6]} />
-                                  </ActionIcon>
-                                  <Image
-                                    src={imageUrl}
-                                    alt={`Team ${teamNumber} photo ${index + 1}`}
-                                    radius="sm"
-                                  />
-                                </Box>
-                              ))}
+                                    <ActionIcon
+                                      aria-label="Delete image"
+                                      variant="default"
+                                      size="lg"
+                                      style={{ position: 'absolute', top: 8, right: 8, zIndex: 1 }}
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        setImagePendingDelete({
+                                          id: image.id,
+                                          teamNumber,
+                                          imageUrl,
+                                        });
+                                      }}
+                                    >
+                                      <IconTrash size={18} color={theme.colors.red[6]} />
+                                    </ActionIcon>
+                                    <Image
+                                      src={imageUrl}
+                                      alt={`Team ${teamNumber} photo ${index + 1}`}
+                                      radius="sm"
+                                    />
+                                  </Box>
+                                );
+                              })}
                             </Flex>
                           </ScrollArea>
                         </Table.Td>
@@ -163,8 +196,36 @@ export function PhotoManagerPage() {
           </Table>
         )}
       </Paper>
-      <Modal opened={imagePendingDelete !== null} onClose={closeDeleteModal} centered>
+      <Modal
+        opened={isDeleteModalOpen}
+        onClose={closeDeleteModal}
+        centered
+        withCloseButton={!isDeletingImage}
+        closeOnClickOutside={!isDeletingImage}
+        closeOnEscape={!isDeletingImage}
+      >
         <Text>Are you sure you'd like to delete this image?</Text>
+        {deleteTeamImageMutation.isError ? (
+          <Text c="red.6" mt="sm">
+            Unable to delete this image. Please try again.
+          </Text>
+        ) : null}
+        <Flex justify="flex-end" gap="sm" mt="lg">
+          <Button
+            variant="default"
+            onClick={closeDeleteModal}
+            disabled={isDeletingImage}
+          >
+            Cancel
+          </Button>
+          <Button
+            color="red"
+            onClick={handleConfirmDelete}
+            loading={isDeletingImage}
+          >
+            Delete
+          </Button>
+        </Flex>
       </Modal>
     </Box>
   );
