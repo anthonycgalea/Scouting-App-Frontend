@@ -5,7 +5,6 @@ import {
   IconFileAnalytics,
   IconGauge,
   IconLock,
-  IconNotes,
   IconPresentationAnalytics,
   IconUsersGroup,
   IconNumber123,
@@ -21,13 +20,14 @@ import classes from './NavbarNested.module.css';
 
 const NAV_LINKS_BEFORE_PICKING = [
   { label: 'Dashboard', icon: IconGauge, to: '/dashboard' },
-  { label: 'Matches', icon: IconNotes, to: '/matches' },
   { label: 'Teams', icon: IconUsersGroup, to: '/teams' },
   { label: 'SuperScout', icon: IconBulb, to: '/superScout' },
   { label: 'Analytics', icon: IconPresentationAnalytics,
     links: [
       { label: 'Summary', link: '/analytics'},
-      { label: 'Compare', link: '/analytics/compare' }
+      { label: 'Compare', link: '/analytics/compare' },
+      { label: 'Match Predictions', link: '/matches' },
+      { label: 'Ranking Predictions', link: '/analytics/ranking-predictions' }
     ]
   }
 ];
