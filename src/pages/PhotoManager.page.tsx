@@ -11,6 +11,7 @@ import {
   Table,
   Text,
   Title,
+  useMantineTheme,
 } from '@mantine/core';
 import { IconTrash } from '@tabler/icons-react';
 import { Fragment, useMemo, useState } from 'react';
@@ -19,6 +20,7 @@ import { useEventTeamImages } from '@/api';
 import { useRequireOrganizationAccess } from '@/hooks/useRequireOrganizationAccess';
 
 export function PhotoManagerPage() {
+  const theme = useMantineTheme();
   const { canAccessOrganizationPages, isCheckingAccess } = useRequireOrganizationAccess();
   const { data: teamImages = [], isLoading, isError } = useEventTeamImages({
     enabled: canAccessOrganizationPages,
@@ -132,8 +134,7 @@ export function PhotoManagerPage() {
                                 >
                                   <ActionIcon
                                     aria-label="Delete image"
-                                    variant="light"
-                                    color="red"
+                                    variant="default"
                                     size="lg"
                                     style={{ position: 'absolute', top: 8, right: 8, zIndex: 1 }}
                                     onClick={(event) => {
@@ -141,7 +142,7 @@ export function PhotoManagerPage() {
                                       setImagePendingDelete(imageUrl);
                                     }}
                                   >
-                                    <IconTrash size={18} />
+                                    <IconTrash size={18} color={theme.colors.red[6]} />
                                   </ActionIcon>
                                   <Image
                                     src={imageUrl}
