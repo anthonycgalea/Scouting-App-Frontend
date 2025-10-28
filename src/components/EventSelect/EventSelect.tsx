@@ -44,6 +44,7 @@ import {
   useUserOrganization,
 } from '@/api';
 import classes from './EventSelect.module.css';
+import { getEventWeekLabel } from '@/utils/eventWeek';
 
 const ALLOWED_EVENT_YEARS = [2026, 2025] as const;
 const ALLOWED_EVENT_YEAR_OPTIONS = ALLOWED_EVENT_YEARS.map((year) => ({
@@ -447,7 +448,7 @@ export function EventSelect() {
         </Table.Td>
         <Table.Td>
           <Text size="sm" ta="center">
-            {event.week ?? '—'}
+            {getEventWeekLabel(event.week)}
           </Text>
         </Table.Td>
         <Table.Td>
