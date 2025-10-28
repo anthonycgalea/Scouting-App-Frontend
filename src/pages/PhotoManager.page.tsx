@@ -1,15 +1,18 @@
 import {
+  ActionIcon,
   Box,
   Center,
   Flex,
   Image,
   Loader,
+  Modal,
   Paper,
   ScrollArea,
   Table,
   Text,
   Title,
 } from '@mantine/core';
+import { IconTrash } from '@tabler/icons-react';
 import { Fragment, useMemo, useState } from 'react';
 
 import { useEventTeamImages } from '@/api';
@@ -21,6 +24,11 @@ export function PhotoManagerPage() {
     enabled: canAccessOrganizationPages,
   });
   const [expandedTeams, setExpandedTeams] = useState<Set<number>>(() => new Set());
+  const [imagePendingDelete, setImagePendingDelete] = useState<string | null>(null);
+
+  const closeDeleteModal = () => {
+    setImagePendingDelete(null);
+  };
 
   const sortedTeamImages = useMemo(
     () =>
@@ -117,7 +125,24 @@ export function PhotoManagerPage() {
                           <ScrollArea type="auto" offsetScrollbars>
                             <Flex gap="md" wrap="nowrap" py="sm">
                               {images.map((imageUrl, index) => (
-                                <Box key={`${teamNumber}-${index}`} w={220}>
+                                <Box
+                                  key={`${teamNumber}-${index}`}
+                                  w={220}
+                                  style={{ position: 'relative' }}
+                                >
+                                  <ActionIcon
+                                    aria-label="Delete image"
+                                    variant="light"
+                                    color="red"
+                                    size="lg"
+                                    style={{ position: 'absolute', top: 8, right: 8, zIndex: 1 }}
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      setImagePendingDelete(imageUrl);
+                                    }}
+                                  >
+                                    <IconTrash size={18} />
+                                  </ActionIcon>
                                   <Image
                                     src={imageUrl}
                                     alt={`Team ${teamNumber} photo ${index + 1}`}
@@ -137,6 +162,9 @@ export function PhotoManagerPage() {
           </Table>
         )}
       </Paper>
+      <Modal opened={imagePendingDelete !== null} onClose={closeDeleteModal} centered>
+        <Text>Are you sure you'd like to delete this image?</Text>
+      </Modal>
     </Box>
   );
 }
