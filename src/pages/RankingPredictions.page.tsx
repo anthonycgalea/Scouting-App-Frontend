@@ -63,9 +63,9 @@ export function RankingPredictionsPage() {
               <Table.Th>Predicted Rank</Table.Th>
               <Table.Th>Team</Table.Th>
               <Table.Th>Mean Rank</Table.Th>
+              <Table.Th>5% Rank</Table.Th>
               <Table.Th>Median Rank</Table.Th>
-              <Table.Th>5th Percentile</Table.Th>
-              <Table.Th>95th Percentile</Table.Th>
+              <Table.Th>95% Rank</Table.Th>
               <Table.Th>Mean RP</Table.Th>
             </Table.Tr>
           </Table.Thead>
@@ -75,9 +75,9 @@ export function RankingPredictionsPage() {
                 <Table.Td>{index + 1}</Table.Td>
                 <Table.Td>{prediction.team_number}</Table.Td>
                 <Table.Td>{prediction.mean_rank.toFixed(2)}</Table.Td>
+                <Table.Td>{prediction.rank_95}</Table.Td>
                 <Table.Td>{prediction.median_rank}</Table.Td>
                 <Table.Td>{prediction.rank_5}</Table.Td>
-                <Table.Td>{prediction.rank_95}</Table.Td>
                 <Table.Td>{prediction.mean_rp.toFixed(2)}</Table.Td>
               </Table.Tr>
             ))}
