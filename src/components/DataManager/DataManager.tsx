@@ -722,7 +722,10 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
   const renderAllianceMetricCell = (
     summary: AllianceSummary | undefined,
     metric: keyof AllianceSummary['metrics'],
-    season?: number
+    season: number | undefined,
+    matchLevel: string,
+    matchNumber: number,
+    teamNumbers: [number, number, number]
   ) => {
     if (!shouldShow2025Columns(season)) {
       return <Table.Td>—</Table.Td>;
@@ -743,10 +746,11 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
     }
 
     const { total, tbaTotal, difference } = summary.metrics[metric];
-
-    if (total === null && tbaTotal === null) {
-      return <Table.Td>—</Table.Td>;
-    }
+    const shouldOverrideWithValidation = isAllianceValidated(
+      matchLevel,
+      matchNumber,
+      teamNumbers
+    );
 
     const tooltipMessages: string[] = [];
 
@@ -772,6 +776,10 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
 
     const title = tooltipMessages.length > 0 ? tooltipMessages.join('\n') : undefined;
 
+    if (total === null && tbaTotal === null && !shouldOverrideWithValidation) {
+      return <Table.Td>—</Table.Td>;
+    }
+
     const isWarningDifference = (metricKey: keyof AllianceSummary['metrics'], diff: number) => {
       const absoluteDifference = Math.abs(diff);
 
@@ -786,10 +794,14 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
       return false;
     };
 
-    const hasMatch = difference === 0;
+    const hasMatch = shouldOverrideWithValidation || difference === 0;
     const hasWarning =
-      difference !== null && difference !== 0 && isWarningDifference(metric, difference);
-    const hasMismatch = difference !== null && difference !== 0 && !hasWarning;
+      !shouldOverrideWithValidation &&
+      difference !== null &&
+      difference !== 0 &&
+      isWarningDifference(metric, difference);
+    const hasMismatch =
+      !shouldOverrideWithValidation && difference !== null && difference !== 0 && !hasWarning;
 
     const classNames = [classes.numericCell];
     if (hasMismatch) {
@@ -801,7 +813,7 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
     }
 
     let cellContent: ReactNode = null;
-    if (difference !== null) {
+    if (shouldOverrideWithValidation || difference !== null) {
       if (hasMatch) {
         cellContent = (
           <Text fz="lg">
@@ -891,7 +903,8 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
     season: number | undefined,
     matchLevel: string,
     matchNumber: number,
-    alliance: AllianceColor
+    alliance: AllianceColor,
+    teamNumbers: [number, number, number]
   ) => {
     if (!shouldShow2025Columns(season)) {
       return <Table.Td>—</Table.Td>;
@@ -913,6 +926,11 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
 
     const detail = summary.endgameDetails[index];
     const status = summary.endgame[index] ?? 'UNKNOWN';
+    const shouldOverrideWithValidation = isAllianceValidated(
+      matchLevel,
+      matchNumber,
+      teamNumbers
+    );
     const tooltipMessages: string[] = [];
 
     if (summary.hasError) {
@@ -931,7 +949,7 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
 
     const title = tooltipMessages.length > 0 ? tooltipMessages.join('\n') : undefined;
 
-    if (status === 'UNKNOWN') {
+    if (!shouldOverrideWithValidation && status === 'UNKNOWN') {
       return (
         <Table.Td title={title}>
           —
@@ -942,7 +960,7 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
     const classNames = [classes.numericCell];
 
     let cellContent: ReactNode = null;
-    if (status === 'MATCH') {
+    if (shouldOverrideWithValidation || status === 'MATCH') {
       classNames.push(classes.numericMatch);
       cellContent = (
         <Text fz="lg">
@@ -998,6 +1016,21 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
 
     return entries;
   }, [validationData]);
+
+  const isAllianceValidated = useCallback(
+    (matchLevel: string, matchNumber: number, teamNumbers: [number, number, number]) => {
+      return teamNumbers.every((teamNumber) => {
+        if (!Number.isFinite(teamNumber)) {
+          return false;
+        }
+
+        return (
+          validationLookup.get(buildValidationKey(matchLevel, matchNumber, teamNumber)) === 'VALID'
+        );
+      });
+    },
+    [validationLookup]
+  );
 
   const matchValidationLookup = useMemo(() => {
     const entries = new Map<string, Set<number>>();
@@ -1102,11 +1135,49 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
         {renderTeamCell(row.matchNumber, row.matchLevel, row.red1)}
         {renderTeamCell(row.matchNumber, row.matchLevel, row.red2)}
         {renderTeamCell(row.matchNumber, row.matchLevel, row.red3)}
-        {renderAllianceMetricCell(redSummary, 'autoCoral', row.season)}
-        {renderAllianceMetricCell(redSummary, 'teleopCoral', row.season)}
-        {renderAllianceEndgameCell(redSummary, 0, row.season, row.matchLevel, row.matchNumber, 'RED')}
-        {renderAllianceEndgameCell(redSummary, 1, row.season, row.matchLevel, row.matchNumber, 'RED')}
-        {renderAllianceEndgameCell(redSummary, 2, row.season, row.matchLevel, row.matchNumber, 'RED')}
+        {renderAllianceMetricCell(
+          redSummary,
+          'autoCoral',
+          row.season,
+          row.matchLevel,
+          row.matchNumber,
+          [row.red1, row.red2, row.red3]
+        )}
+        {renderAllianceMetricCell(
+          redSummary,
+          'teleopCoral',
+          row.season,
+          row.matchLevel,
+          row.matchNumber,
+          [row.red1, row.red2, row.red3]
+        )}
+        {renderAllianceEndgameCell(
+          redSummary,
+          0,
+          row.season,
+          row.matchLevel,
+          row.matchNumber,
+          'RED',
+          [row.red1, row.red2, row.red3]
+        )}
+        {renderAllianceEndgameCell(
+          redSummary,
+          1,
+          row.season,
+          row.matchLevel,
+          row.matchNumber,
+          'RED',
+          [row.red1, row.red2, row.red3]
+        )}
+        {renderAllianceEndgameCell(
+          redSummary,
+          2,
+          row.season,
+          row.matchLevel,
+          row.matchNumber,
+          'RED',
+          [row.red1, row.red2, row.red3]
+        )}
         {renderAllianceButton(
           row.matchNumber,
           row.matchLevel,
@@ -1123,11 +1194,49 @@ export function DataManager({ onSync, isSyncing = false }: DataManagerProps) {
         {renderTeamCell(row.matchNumber, row.matchLevel, row.blue1)}
         {renderTeamCell(row.matchNumber, row.matchLevel, row.blue2)}
         {renderTeamCell(row.matchNumber, row.matchLevel, row.blue3)}
-        {renderAllianceMetricCell(blueSummary, 'autoCoral', row.season)}
-        {renderAllianceMetricCell(blueSummary, 'teleopCoral', row.season)}
-        {renderAllianceEndgameCell(blueSummary, 0, row.season, row.matchLevel, row.matchNumber, 'BLUE')}
-        {renderAllianceEndgameCell(blueSummary, 1, row.season, row.matchLevel, row.matchNumber, 'BLUE')}
-        {renderAllianceEndgameCell(blueSummary, 2, row.season, row.matchLevel, row.matchNumber, 'BLUE')}
+        {renderAllianceMetricCell(
+          blueSummary,
+          'autoCoral',
+          row.season,
+          row.matchLevel,
+          row.matchNumber,
+          [row.blue1, row.blue2, row.blue3]
+        )}
+        {renderAllianceMetricCell(
+          blueSummary,
+          'teleopCoral',
+          row.season,
+          row.matchLevel,
+          row.matchNumber,
+          [row.blue1, row.blue2, row.blue3]
+        )}
+        {renderAllianceEndgameCell(
+          blueSummary,
+          0,
+          row.season,
+          row.matchLevel,
+          row.matchNumber,
+          'BLUE',
+          [row.blue1, row.blue2, row.blue3]
+        )}
+        {renderAllianceEndgameCell(
+          blueSummary,
+          1,
+          row.season,
+          row.matchLevel,
+          row.matchNumber,
+          'BLUE',
+          [row.blue1, row.blue2, row.blue3]
+        )}
+        {renderAllianceEndgameCell(
+          blueSummary,
+          2,
+          row.season,
+          row.matchLevel,
+          row.matchNumber,
+          'BLUE',
+          [row.blue1, row.blue2, row.blue3]
+        )}
         {renderAllianceButton(
           row.matchNumber,
           row.matchLevel,
