@@ -329,6 +329,13 @@ export function MatchSchedule({ matches }: MatchScheduleProps) {
       [classes.predictionNeutral]: !row.prediction || row.prediction.winner === 'even',
     });
 
+    const resultClassName = clsx(classes.resultCell, {
+      [classes.resultRed]: row.result?.winner === 'red',
+      [classes.resultBlue]: row.result?.winner === 'blue',
+      [classes.resultNeutral]:
+        !row.result || !row.result.winner || row.result.winner === 'even',
+    });
+
     const predictionContent = row.prediction ? (
       <Stack gap={0} align="center" justify="center">
         <Text fw={600}>{`${
@@ -363,30 +370,38 @@ export function MatchSchedule({ matches }: MatchScheduleProps) {
         );
       }
 
-      if (result.winner === 'even') {
-        return (
-          <Stack gap={0} align="center" justify="center">
-            <Text fw={600}>Winner: Tie</Text>
-            <Text fw={600}>{`${formatScoreValue(result.red.score)} - ${formatScoreValue(result.blue.score)}`}</Text>
-            <Text fw={500}>{`Red RP: ${formatRpValue(result.red.rp)}`}</Text>
-            <Text fw={500}>{`Blue RP: ${formatRpValue(result.blue.rp)}`}</Text>
-          </Stack>
-        );
-      }
+      const formatScoreLine = (
+        winner: MatchPredictionWinner,
+        redScore: number,
+        blueScore: number
+      ) => {
+        if (winner === 'blue') {
+          return `Blue ${formatScoreValue(blueScore)} - ${formatScoreValue(redScore)} Red`;
+        }
 
-      const winningAlliance = result.winner === 'red' ? 'Red' : 'Blue';
-      const losingAlliance = result.winner === 'red' ? 'Blue' : 'Red';
-      const winningScore = result.winner === 'red' ? result.red.score : result.blue.score;
-      const losingScore = result.winner === 'red' ? result.blue.score : result.red.score;
-      const winningRp = result.winner === 'red' ? result.red.rp : result.blue.rp;
-      const losingRp = result.winner === 'red' ? result.blue.rp : result.red.rp;
+        return `Red ${formatScoreValue(redScore)} - ${formatScoreValue(blueScore)} Blue`;
+      };
+
+      const formatRpLine = (
+        winner: MatchPredictionWinner,
+        redRp: number | undefined,
+        blueRp: number | undefined
+      ) => {
+        if (winner === 'blue') {
+          return `Blue: ${formatRpValue(blueRp)} Red: ${formatRpValue(redRp)}`;
+        }
+
+        if (winner === 'red') {
+          return `Red: ${formatRpValue(redRp)} Blue: ${formatRpValue(blueRp)}`;
+        }
+
+        return `Red: ${formatRpValue(redRp)} Blue: ${formatRpValue(blueRp)}`;
+      };
 
       return (
         <Stack gap={0} align="center" justify="center">
-          <Text fw={600}>{`Winner: ${winningAlliance}`}</Text>
-          <Text fw={600}>{`${formatScoreValue(winningScore)} - ${formatScoreValue(losingScore)}`}</Text>
-          <Text fw={500}>{`${winningAlliance} RP: ${formatRpValue(winningRp)}`}</Text>
-          <Text fw={500}>{`${losingAlliance} RP: ${formatRpValue(losingRp)}`}</Text>
+          <Text fw={600}>{formatScoreLine(result.winner, result.red.score, result.blue.score)}</Text>
+          <Text fw={500}>{formatRpLine(result.winner, result.red.rp, result.blue.rp)}</Text>
         </Stack>
       );
     })();
@@ -403,7 +418,7 @@ export function MatchSchedule({ matches }: MatchScheduleProps) {
         <Table.Td className={classes.redCell}>{row.red2 ?? '-'}</Table.Td>
         <Table.Td className={classes.redCell}>{row.red3 ?? '-'}</Table.Td>
         <Table.Td className={predictionClassName}>{predictionContent}</Table.Td>
-        <Table.Td>{resultContent}</Table.Td>
+        <Table.Td className={resultClassName}>{resultContent}</Table.Td>
         <Table.Td className={classes.blueCell}>{row.blue1 ?? '-'}</Table.Td>
         <Table.Td className={classes.blueCell}>{row.blue2 ?? '-'}</Table.Td>
         <Table.Td className={classes.blueCell}>{row.blue3 ?? '-'}</Table.Td>
