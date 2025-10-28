@@ -370,38 +370,55 @@ export function MatchSchedule({ matches }: MatchScheduleProps) {
         );
       }
 
-      const formatScoreLine = (
-        winner: MatchPredictionWinner,
-        redScore: number,
-        blueScore: number
-      ) => {
-        if (winner === 'blue') {
-          return `Blue ${formatScoreValue(blueScore)} - ${formatScoreValue(redScore)} Red`;
+      const allianceLines = (() => {
+        const lines: Array<{
+          label: 'Red' | 'Blue';
+          score: number;
+          rp: number | undefined;
+          highlighted: boolean;
+        }> = [
+          {
+            label: 'Red',
+            score: result.red.score,
+            rp: result.red.rp,
+            highlighted: result.winner === 'red',
+          },
+          {
+            label: 'Blue',
+            score: result.blue.score,
+            rp: result.blue.rp,
+            highlighted: result.winner === 'blue',
+          },
+        ];
+
+        if (result.winner === 'red') {
+          return lines;
         }
 
-        return `Red ${formatScoreValue(redScore)} - ${formatScoreValue(blueScore)} Blue`;
-      };
-
-      const formatRpLine = (
-        winner: MatchPredictionWinner,
-        redRp: number | undefined,
-        blueRp: number | undefined
-      ) => {
-        if (winner === 'blue') {
-          return `Blue: ${formatRpValue(blueRp)} Red: ${formatRpValue(redRp)}`;
+        if (result.winner === 'blue') {
+          return lines.reverse();
         }
 
-        if (winner === 'red') {
-          return `Red: ${formatRpValue(redRp)} Blue: ${formatRpValue(blueRp)}`;
-        }
+        return lines;
+      })();
 
-        return `Red: ${formatRpValue(redRp)} Blue: ${formatRpValue(blueRp)}`;
-      };
+      const renderAllianceLine = (line: (typeof allianceLines)[number]) => (
+        <Text key={line.label} fw={line.highlighted ? 600 : 500}>
+          {`${line.label}: ${formatScoreValue(line.score)}`}
+          <Text
+            span
+            inherit
+            component="sup"
+            className={classes.rpSuperscript}
+          >
+            ({`${formatRpValue(line.rp)} RP`})
+          </Text>
+        </Text>
+      );
 
       return (
         <Stack gap={0} align="center" justify="center">
-          <Text fw={600}>{formatScoreLine(result.winner, result.red.score, result.blue.score)}</Text>
-          <Text fw={500}>{formatRpLine(result.winner, result.red.rp, result.blue.rp)}</Text>
+          {allianceLines.map(renderAllianceLine)}
         </Stack>
       );
     })();

@@ -69,6 +69,11 @@
   color: light-dark(var(--mantine-color-dark-9), var(--mantine-color-gray-2));
 }
 
+.rpSuperscript {
+  font-size: 0.65em;
+  margin-left: 2px;
+}
+
 .table :global(th),
 .table :global(td) {
   text-align: center;
