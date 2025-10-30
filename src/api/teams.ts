@@ -99,11 +99,22 @@ export interface DeleteTeamImageInput {
   teamNumber?: number;
 }
 
-export const deleteTeamImage = ({ id }: DeleteTeamImageInput) =>
-  apiFetch<void>('teams/image', {
+export const deleteTeamImage = async ({ id }: DeleteTeamImageInput) => {
+  const response = await apiFetch<Response | void>('teams/image', {
     method: 'DELETE',
     json: { id },
   });
+
+  if (response === undefined || response === null) {
+    return true;
+  }
+
+  if (response instanceof Response && response.status === 204) {
+    return true;
+  }
+
+  return response;
+};
 
 export const useDeleteTeamImage = () => {
   const queryClient = useQueryClient();
