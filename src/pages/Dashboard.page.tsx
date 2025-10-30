@@ -1,15 +1,14 @@
 import { useMemo } from 'react';
-import { Anchor, Card, Center, Group, Loader, Stack, Text, Title } from '@mantine/core';
+import { Anchor, Card, Center, Loader, Stack, Text, Title } from '@mantine/core';
 import { Link } from '@tanstack/react-router';
+import type { MatchScheduleEntry } from '@/api';
 import { useMatchSchedule, useTeamMatchValidation, useUserOrganization } from '@/api';
 import { StatsRing } from '@/components/StatsRing/StatsRing';
 import { useScoutingProgressStats } from '@/hooks/useScoutingProgressStats';
 
 type Alliance = 'red' | 'blue';
 
-interface UpcomingMatch {
-  matchLevel: string;
-  matchNumber: number;
+interface UpcomingMatch extends MatchScheduleEntry {
   alliance: Alliance;
   position: number;
 }
@@ -98,8 +97,7 @@ export function DashboardPage() {
       }
 
       accumulator.push({
-        matchLevel: match.match_level,
-        matchNumber: match.match_number,
+        ...match,
         alliance: allianceSlot.alliance,
         position: allianceSlot.position,
       });
@@ -108,8 +106,8 @@ export function DashboardPage() {
     }, []);
 
     return matches.sort((matchA, matchB) => {
-      const matchALevel = normalizeLevel(matchA.matchLevel);
-      const matchBLevel = normalizeLevel(matchB.matchLevel);
+      const matchALevel = normalizeLevel(matchA.match_level);
+      const matchBLevel = normalizeLevel(matchB.match_level);
       const levelDifference =
         (MATCH_LEVEL_PRIORITY[matchALevel] ?? Number.POSITIVE_INFINITY) -
         (MATCH_LEVEL_PRIORITY[matchBLevel] ?? Number.POSITIVE_INFINITY);
@@ -118,7 +116,7 @@ export function DashboardPage() {
         return levelDifference;
       }
 
-      return matchA.matchNumber - matchB.matchNumber;
+      return matchA.match_number - matchB.match_number;
     });
   }, [matchSchedule, validationEntries, teamNumber]);
 
@@ -158,7 +156,7 @@ export function DashboardPage() {
       <Card shadow="sm" padding="lg" withBorder>
         <Stack gap="md">
           <Title order={3} size="h4">
-            Upcoming Matches
+            Upcoming Matches{teamNumber ? ` for Team ${teamNumber}` : ''}
           </Title>
           {isUpcomingLoading ? (
             <Center mih={MATCH_MIN_HEIGHT}>
@@ -176,21 +174,40 @@ export function DashboardPage() {
             <Stack gap="sm">
               {upcomingMatches.map((match) => {
                 const allianceInfo = allianceDisplay[match.alliance];
-                const key = `${match.matchLevel}-${match.matchNumber}`;
+                const key = `${match.match_level}-${match.match_number}`;
+                const redAlliance = [match.red1_id, match.red2_id, match.red3_id];
+                const blueAlliance = [match.blue1_id, match.blue2_id, match.blue3_id];
+
+                const renderAllianceTeams = (teams: number[]) =>
+                  teams.map((team, index) => (
+                    <Text
+                      key={`${key}-${team}-${index}`}
+                      component="span"
+                      fw={team === teamNumber ? 700 : undefined}
+                    >
+                      {team}
+                      {index < teams.length - 1 ? ', ' : ''}
+                    </Text>
+                  ));
 
                 return (
-                  <Group key={key} justify="space-between" gap="sm">
+                  <Text key={key}>
                     <Anchor
                       component={Link}
-                      to={`/matches/preview/${match.matchLevel}/${match.matchNumber}`}
+                      to={`/matches/preview/${match.match_level}/${match.match_number}`}
                       fw={600}
                     >
-                      {formatMatchLevel(match.matchLevel)} {match.matchNumber}
+                      {formatMatchLevel(match.match_level)} {match.match_number}
                     </Anchor>
-                    <Text fw={600} c={allianceInfo.color}>
+                    {': '}
+                    {renderAllianceTeams(redAlliance)}
+                    {' vs '}
+                    {renderAllianceTeams(blueAlliance)}
+                    {' - '}
+                    <Text component="span" fw={600} c={allianceInfo.color}>
                       {allianceInfo.label} {match.position}
                     </Text>
-                  </Group>
+                  </Text>
                 );
               })}
             </Stack>
