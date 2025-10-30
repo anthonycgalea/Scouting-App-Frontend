@@ -99,5 +99,9 @@ export const apiFetchResponse = async (path: string, options?: RequestOptions) =
 export const apiFetch = async <TResponse = unknown>(path: string, options?: RequestOptions): Promise<TResponse> => {
   const response = await apiFetchResponse(path, options);
 
+  if (response.status === 204 || response.status === 205) {
+    return undefined as TResponse;
+  }
+
   return (await parseResponse(response)) as TResponse;
 };
