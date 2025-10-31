@@ -5,6 +5,11 @@ export interface StatsRingDataItem {
   current: number;
   total: number;
   color: string;
+  progress?: {
+    current: number;
+    total: number;
+  };
+  description?: string;
 }
 
 interface StatsRingProps {
@@ -31,7 +36,9 @@ export function StatsRing({ data }: StatsRingProps) {
   }
 
   const stats = data.map((stat) => {
-    const progress = formatPercentage(stat.current, stat.total);
+    const progressCurrent = stat.progress?.current ?? stat.current;
+    const progressTotal = stat.progress?.total ?? stat.total;
+    const progress = formatPercentage(progressCurrent, progressTotal);
     const displayTotal = stat.total.toLocaleString();
     const displayCurrent = stat.current.toLocaleString();
 
@@ -57,6 +64,11 @@ export function StatsRing({ data }: StatsRingProps) {
             <Text fw={700} size="md">
               {displayCurrent} / {displayTotal}
             </Text>
+            {stat.description ? (
+              <Text size="sm" c="dimmed">
+                {stat.description}
+              </Text>
+            ) : null}
           </div>
         </Group>
       </Paper>
