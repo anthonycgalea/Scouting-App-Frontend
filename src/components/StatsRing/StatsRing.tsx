@@ -61,24 +61,21 @@ export function StatsRing({ data }: StatsRingProps) {
   }
 
   const stats = data.map((stat) => {
+    const secondary = stat.secondary;
     const primaryPercentage = formatPercentage(stat.current, stat.total);
-    const secondaryPercentage = stat.secondary
-      ? formatPercentage(stat.secondary.current, stat.secondary.total)
+    const secondaryPercentage = secondary
+      ? formatPercentage(secondary.current, secondary.total)
       : null;
     const displayTotal = stat.total.toLocaleString();
     const displayCurrent = stat.current.toLocaleString();
-    const secondaryDisplayTotal = stat.secondary
-      ? stat.secondary.total.toLocaleString()
-      : null;
-    const secondaryDisplayCurrent = stat.secondary
-      ? stat.secondary.current.toLocaleString()
-      : null;
+    const secondaryDisplayTotal = secondary ? secondary.total.toLocaleString() : null;
+    const secondaryDisplayCurrent = secondary ? secondary.current.toLocaleString() : null;
 
     const primaryColor = stat.color;
-    const secondaryColor = stat.secondary?.color ?? 'teal.5';
+    const secondaryColor = secondary?.color ?? 'teal.5';
 
     const sections = (() => {
-      if (!stat.secondary) {
+      if (!secondary) {
         return [{ value: primaryPercentage, color: primaryColor }];
       }
 
@@ -127,7 +124,7 @@ export function StatsRing({ data }: StatsRingProps) {
                     </Stack>
                     <Stack gap={2} align="center">
                       <Text size="xs" c="dimmed" fw={600}>
-                        {stat.secondary.label}
+                        {secondary?.label}
                       </Text>
                       <Text fw={700} size="sm">{`${secondaryPercentage}%`}</Text>
                     </Stack>
@@ -146,7 +143,7 @@ export function StatsRing({ data }: StatsRingProps) {
               {stat.label}
             </Text>
 
-            <SimpleGrid cols={stat.secondary ? 2 : 1} spacing={12} verticalSpacing={4}>
+            <SimpleGrid cols={secondary ? 2 : 1} spacing={12} verticalSpacing={4}>
               <Stack gap={2} align="flex-start">
                 <Group gap={6} align="center">
                   <div
@@ -166,7 +163,7 @@ export function StatsRing({ data }: StatsRingProps) {
                 </Text>
               </Stack>
 
-              {stat.secondary ? (
+              {secondary ? (
                 <Stack gap={2} align="flex-start">
                   <Group gap={6} align="center">
                     <div
@@ -178,7 +175,7 @@ export function StatsRing({ data }: StatsRingProps) {
                       }}
                     />
                     <Text size="sm" fw={600}>
-                      {stat.secondary.label}
+                      {secondary.label}
                     </Text>
                   </Group>
                   <Text fw={600} size="sm" c="dimmed">
