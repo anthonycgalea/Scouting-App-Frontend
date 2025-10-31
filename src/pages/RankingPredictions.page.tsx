@@ -31,29 +31,17 @@ export function RankingPredictionsPage() {
   }, [predictions]);
 
   const lastRunRelativeTime = useMemo(() => {
-    if (!predictions || predictions.length === 0) {
+    if (sortedPredictions.length === 0) {
       return null;
     }
 
-    const latestTimestamp = predictions.reduce<number | null>((latest, prediction) => {
-      const currentTimestamp = Date.parse(prediction.timestamp);
+    const topPredictionTimestamp = Date.parse(sortedPredictions[0].timestamp);
 
-      if (Number.isNaN(currentTimestamp)) {
-        return latest;
-      }
-
-      if (latest === null || currentTimestamp > latest) {
-        return currentTimestamp;
-      }
-
-      return latest;
-    }, null);
-
-    if (latestTimestamp === null) {
+    if (Number.isNaN(topPredictionTimestamp)) {
       return null;
     }
 
-    const diffMs = Date.now() - latestTimestamp;
+    const diffMs = Date.now() - topPredictionTimestamp;
     const seconds = Math.max(Math.floor(diffMs / 1000), 0);
 
     if (seconds < 60) {
@@ -76,7 +64,7 @@ export function RankingPredictionsPage() {
     const days = Math.floor(hours / 24);
 
     return `${days} day${days === 1 ? '' : 's'} ago`;
-  }, [predictions]);
+  }, [sortedPredictions]);
 
   const renderContent = () => {
     if (isLoading) {
