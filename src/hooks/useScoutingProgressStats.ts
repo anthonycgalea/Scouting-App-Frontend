@@ -70,19 +70,23 @@ export function useScoutingProgressStats() {
         0
       );
 
-      items.push(
-        {
-          label: 'Team Matches Scouted',
-          current: totalQualificationRecords,
+      items.push({
+        label: 'Team Matches',
+        current: totalQualificationRecords,
+        total: totalPossibleRecords,
+        color: 'yellow.6',
+        primaryLabel: 'Scouted',
+        progress: {
+          current: unvalidatedQualificationRecords,
           total: totalPossibleRecords,
-          color: 'yellow.6',
-          progress: {
-            current: unvalidatedQualificationRecords,
-            total: totalPossibleRecords,
-          },
-          description: `Validated: ${validatedQualificationRecords.toLocaleString()}`,
-        }
-      );
+        },
+        secondary: {
+          label: 'Validated',
+          current: validatedQualificationRecords,
+          total: totalPossibleRecords,
+          color: 'teal.5',
+        },
+      });
     }
 
     const totalTeams = eventTeams.length;
