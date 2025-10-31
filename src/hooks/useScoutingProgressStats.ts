@@ -5,6 +5,7 @@ import {
   useEventTeams,
   useMatchSchedule,
   useTeamMatchValidation,
+  useSuperScoutStatuses,
 } from '@/api';
 import type { StatsRingDataItem } from '@/components/StatsRing/StatsRing';
 
@@ -39,6 +40,11 @@ export function useScoutingProgressStats() {
     isLoading: isTeamImagesLoading,
     isError: isTeamImagesError,
   } = useEventTeamImages();
+  const {
+    data: superScoutStatuses = [],
+    isLoading: isSuperScoutStatusesLoading,
+    isError: isSuperScoutStatusesError,
+  } = useSuperScoutStatuses();
 
   const stats = useMemo(() => {
     const items: StatsRingDataItem[] = [];
@@ -59,6 +65,10 @@ export function useScoutingProgressStats() {
       const validatedQualificationRecords = qualificationValidation.filter(
         (entry) => entry.validation_status === 'VALID'
       ).length;
+      const unvalidatedQualificationRecords = Math.max(
+        totalQualificationRecords - validatedQualificationRecords,
+        0
+      );
 
       items.push(
         {
@@ -66,12 +76,11 @@ export function useScoutingProgressStats() {
           current: totalQualificationRecords,
           total: totalPossibleRecords,
           color: 'yellow.6',
-        },
-        {
-          label: 'Matches Validated',
-          current: validatedQualificationRecords,
-          total: totalPossibleRecords,
-          color: 'green.6',
+          progress: {
+            current: unvalidatedQualificationRecords,
+            total: totalPossibleRecords,
+          },
+          description: `Validated: ${validatedQualificationRecords.toLocaleString()}`,
         }
       );
     }
@@ -115,6 +124,34 @@ export function useScoutingProgressStats() {
       );
     }
 
+    const qualificationEventKeys = new Set(
+      qualificationMatches.map((match) => match.event_key)
+    );
+    const totalQualificationAlliances = totalQualificationMatches * 2;
+
+    if (totalQualificationAlliances > 0) {
+      const alliancesSuperScouted = superScoutStatuses.reduce((count, status) => {
+        if (
+          !qualificationEventKeys.has(status.eventCode) ||
+          !isQualificationMatch(status.matchLevel)
+        ) {
+          return count;
+        }
+
+        const redCount = status.red ? 1 : 0;
+        const blueCount = status.blue ? 1 : 0;
+
+        return count + redCount + blueCount;
+      }, 0);
+
+      items.push({
+        label: 'Alliances SuperScouted',
+        current: Math.min(alliancesSuperScouted, totalQualificationAlliances),
+        total: totalQualificationAlliances,
+        color: 'orange.6',
+      });
+    }
+
     return items;
   }, [
     scheduleData,
@@ -122,6 +159,7 @@ export function useScoutingProgressStats() {
     eventTeams,
     pitScoutRecords,
     teamImages,
+    superScoutStatuses,
   ]);
 
   return {
@@ -131,12 +169,14 @@ export function useScoutingProgressStats() {
       isValidationLoading ||
       isEventTeamsLoading ||
       isPitScoutingLoading ||
-      isTeamImagesLoading,
+      isTeamImagesLoading ||
+      isSuperScoutStatusesLoading,
     isError:
       isScheduleError ||
       isValidationError ||
       isEventTeamsError ||
       isPitScoutingError ||
-      isTeamImagesError,
+      isTeamImagesError ||
+      isSuperScoutStatusesError,
   };
 }

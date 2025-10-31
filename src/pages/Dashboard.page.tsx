@@ -1,8 +1,12 @@
 import { useMemo } from 'react';
 import { Anchor, Card, Center, Loader, Stack, Text, Title } from '@mantine/core';
 import { Link } from '@tanstack/react-router';
-import type { MatchScheduleEntry } from '@/api';
-import { useMatchSchedule, useTeamMatchValidation, useUserOrganization } from '@/api';
+import {
+  type MatchScheduleEntry,
+  useMatchSchedule,
+  useTeamMatchValidation,
+  useUserOrganization,
+} from '@/api';
 import { StatsRing } from '@/components/StatsRing/StatsRing';
 import { useScoutingProgressStats } from '@/hooks/useScoutingProgressStats';
 
