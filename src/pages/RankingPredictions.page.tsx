@@ -30,6 +30,54 @@ export function RankingPredictionsPage() {
     return [...predictions].sort((a, b) => a.mean_rank - b.mean_rank);
   }, [predictions]);
 
+  const lastRunRelativeTime = useMemo(() => {
+    if (!predictions || predictions.length === 0) {
+      return null;
+    }
+
+    const latestTimestamp = predictions.reduce<number | null>((latest, prediction) => {
+      const currentTimestamp = Date.parse(prediction.timestamp);
+
+      if (Number.isNaN(currentTimestamp)) {
+        return latest;
+      }
+
+      if (latest === null || currentTimestamp > latest) {
+        return currentTimestamp;
+      }
+
+      return latest;
+    }, null);
+
+    if (latestTimestamp === null) {
+      return null;
+    }
+
+    const diffMs = Date.now() - latestTimestamp;
+    const seconds = Math.max(Math.floor(diffMs / 1000), 0);
+
+    if (seconds < 60) {
+      const value = seconds;
+      return `${value} second${value === 1 ? '' : 's'} ago`;
+    }
+
+    const minutes = Math.floor(seconds / 60);
+
+    if (minutes < 60) {
+      return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+    }
+
+    const hours = Math.floor(minutes / 60);
+
+    if (hours < 24) {
+      return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+    }
+
+    const days = Math.floor(hours / 24);
+
+    return `${days} day${days === 1 ? '' : 's'} ago`;
+  }, [predictions]);
+
   const renderContent = () => {
     if (isLoading) {
       return (
@@ -102,7 +150,14 @@ export function RankingPredictionsPage() {
   return (
     <Box p="xl" style={{ height: '100%' }}>
       <Flex direction="column" gap="md" style={{ height: '100%' }}>
-        <Title order={2}>Ranking Predictions</Title>
+        <Flex align="center" justify="space-between" gap="sm" wrap="wrap">
+          <Title order={2}>Ranking Predictions</Title>
+          {lastRunRelativeTime ? (
+            <Text c="dimmed" size="sm">
+              Last run {lastRunRelativeTime}
+            </Text>
+          ) : null}
+        </Flex>
         <Card
           withBorder
           radius="md"
