@@ -1,4 +1,12 @@
-import { Center, Group, Paper, RingProgress, SimpleGrid, Text } from '@mantine/core';
+import {
+  Card,
+  Center,
+  Group,
+  RingProgress,
+  SimpleGrid,
+  Stack,
+  Text,
+} from '@mantine/core';
 
 export interface StatsRingDataItem {
   label: string;
@@ -43,25 +51,31 @@ export function StatsRing({ data }: StatsRingProps) {
     const displayCurrent = stat.current.toLocaleString();
 
     return (
-      <Paper withBorder radius="sm" p="md" key={stat.label}>
-        <Group gap="lg" align="center" wrap="nowrap">
+      <Card
+        key={stat.label}
+        radius="md"
+        p="lg"
+        withBorder
+        bg="var(--mantine-color-dark-7)"
+      >
+        <Group gap="lg" align="center" wrap="nowrap" justify="space-between">
           <RingProgress
-            size={90}
+            size={120}
             roundCaps
-            thickness={8}
+            thickness={12}
             sections={[{ value: progress, color: stat.color }]}
             label={
               <Center>
-                <Text fw={700} size="sm">{`${progress}%`}</Text>
+                <Text fw={700} size="lg">{`${progress}%`}</Text>
               </Center>
             }
           />
 
-          <div>
-            <Text c="dimmed" size="sm" tt="uppercase" fw={700}>
+          <Stack gap={6} style={{ flex: 1 }} align="flex-start" justify="center">
+            <Text fw={600} size="lg">
               {stat.label}
             </Text>
-            <Text fw={700} size="md">
+            <Text fw={600} size="sm" c="dimmed">
               {displayCurrent} / {displayTotal}
             </Text>
             {stat.description ? (
@@ -69,16 +83,16 @@ export function StatsRing({ data }: StatsRingProps) {
                 {stat.description}
               </Text>
             ) : null}
-          </div>
+          </Stack>
         </Group>
-      </Paper>
+      </Card>
     );
   });
 
   return (
     <SimpleGrid
-      cols={{ base: 1, sm: Math.min(2, data.length), md: data.length }}
-      spacing="lg"
+      cols={{ base: 1, sm: Math.min(2, data.length), lg: Math.min(4, data.length) }}
+      spacing="xl"
     >
       {stats}
     </SimpleGrid>
