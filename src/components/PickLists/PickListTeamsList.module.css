@@ -58,6 +58,10 @@
   flex: 1;
 }
 
+.rankChangeIndicator {
+  flex-shrink: 0;
+}
+
 .rankValue {
   font-weight: 600;
   font-size: var(--mantine-font-size-xs);

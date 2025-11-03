@@ -17,9 +17,20 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { ActionIcon, Button, Group, Popover, Stack, Text, Textarea, Tooltip } from '@mantine/core';
+import {
+  ActionIcon,
+  Button,
+  Group,
+  Popover,
+  Stack,
+  Text,
+  Textarea,
+  Tooltip,
+} from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import {
+  IconArrowNarrowDown,
+  IconArrowNarrowUp,
   IconExternalLink,
   IconNote,
   IconSquareCheckFilled,
@@ -38,6 +49,7 @@ import classes from './PickListTeamsList.module.css';
 interface PickListTeamsListProps {
   ranks: PickListRank[];
   eventTeamsByNumber: Map<number, EventTeam>;
+  rankChangeIndicators?: Map<number, RankChangeIndicator>;
   onReorder: (nextRanks: PickListRank[]) => void;
   onRemoveTeam: (teamNumber: number) => void;
   onUpdateNotes: (teamNumber: number, notes: string) => void;
@@ -47,12 +59,26 @@ interface PickListTeamsListProps {
 interface SortableTeamCardProps {
   rank: PickListRank;
   teamDetails: EventTeam | undefined;
+  rankChangeIndicator?: RankChangeIndicator;
   onRemove: (teamNumber: number) => void;
   onSaveNotes: (teamNumber: number, notes: string) => void;
   onToggleDnp: (teamNumber: number) => void;
 }
 
-function SortableTeamCard({ rank, teamDetails, onRemove, onSaveNotes, onToggleDnp }: SortableTeamCardProps) {
+export type RankChangeIndicator =
+  | { type: 'none' }
+  | { type: 'new' }
+  | { type: 'movedUp'; spots: number }
+  | { type: 'movedDown'; spots: number };
+
+function SortableTeamCard({
+  rank,
+  teamDetails,
+  rankChangeIndicator,
+  onRemove,
+  onSaveNotes,
+  onToggleDnp,
+}: SortableTeamCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: rank.team_number.toString(),
   });
@@ -94,6 +120,29 @@ function SortableTeamCard({ rank, teamDetails, onRemove, onSaveNotes, onToggleDn
           <Text className={classes.teamName} title={teamDetails?.team_name ?? 'Team information unavailable'}>
             {teamDetails?.team_name ?? 'Team information unavailable'}
           </Text>
+          {rankChangeIndicator && rankChangeIndicator.type !== 'none' && (
+            <Group gap={4} className={classes.rankChangeIndicator} wrap="nowrap">
+              {rankChangeIndicator.type === 'new' ? (
+                <Text fw={600} size="xs" c="blue">
+                  NEW
+                </Text>
+              ) : rankChangeIndicator.type === 'movedUp' ? (
+                <>
+                  <IconArrowNarrowUp size={16} stroke={2.25} color="var(--mantine-color-green-6)" />
+                  <Text fw={600} size="xs" c="green">
+                    {rankChangeIndicator.spots}
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <IconArrowNarrowDown size={16} stroke={2.25} color="var(--mantine-color-red-6)" />
+                  <Text fw={600} size="xs" c="red">
+                    {rankChangeIndicator.spots}
+                  </Text>
+                </>
+              )}
+            </Group>
+          )}
         </div>
       </div>
 
@@ -203,6 +252,7 @@ function SortableTeamCard({ rank, teamDetails, onRemove, onSaveNotes, onToggleDn
 export function PickListTeamsList({
   ranks,
   eventTeamsByNumber,
+  rankChangeIndicators,
   onReorder,
   onRemoveTeam,
   onUpdateNotes,
@@ -244,15 +294,16 @@ export function PickListTeamsList({
       >
         <div className={classes.list}>
           {ranks.map((rank) => (
-            <SortableTeamCard
-              key={rank.team_number}
-              rank={rank}
-              teamDetails={eventTeamsByNumber.get(rank.team_number)}
-              onRemove={onRemoveTeam}
-              onSaveNotes={onUpdateNotes}
-              onToggleDnp={onToggleDnp}
-            />
-          ))}
+        <SortableTeamCard
+          key={rank.team_number}
+          rank={rank}
+          teamDetails={eventTeamsByNumber.get(rank.team_number)}
+          rankChangeIndicator={rankChangeIndicators?.get(rank.team_number)}
+          onRemove={onRemoveTeam}
+          onSaveNotes={onUpdateNotes}
+          onToggleDnp={onToggleDnp}
+        />
+      ))}
         </div>
       </SortableContext>
     </DndContext>
