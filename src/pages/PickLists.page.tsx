@@ -36,7 +36,10 @@ import {
 import { useEventTeams, type EventTeam } from '@/api/teams';
 import { useRequireOrganizationAccess } from '@/hooks/useRequireOrganizationAccess';
 import { PickListSelector } from '@/components/PickLists/PickListSelector';
-import { PickListTeamsList } from '@/components/PickLists/PickListTeamsList';
+import {
+  PickListTeamsList,
+  type RankChangeIndicator,
+} from '@/components/PickLists/PickListTeamsList';
 
 const recalculateRanks = (ranks: PickListRank[]) => {
   const activeRanks = ranks.filter((rank) => !rank.dnp);
@@ -300,6 +303,47 @@ export function PickListsPage() {
     () => editablePickListRanks.filter((rank) => rank.dnp),
     [editablePickListRanks],
   );
+
+  const activeRankChangeIndicators = useMemo(() => {
+    if (!baselinePickListState) {
+      return undefined;
+    }
+
+    const baselinePositions = new Map<number, number>();
+
+    baselinePickListState.ranks
+      .filter((rank) => !rank.dnp)
+      .forEach((rank, index) => {
+        baselinePositions.set(rank.team_number, index + 1);
+      });
+
+    const indicators = new Map<number, RankChangeIndicator>();
+
+    activePickListRanks.forEach((rank, index) => {
+      const baselinePosition = baselinePositions.get(rank.team_number);
+
+      if (baselinePosition === undefined) {
+        indicators.set(rank.team_number, { type: 'new' });
+        return;
+      }
+
+      const delta = baselinePosition - (index + 1);
+
+      if (delta === 0) {
+        indicators.set(rank.team_number, { type: 'none' });
+        return;
+      }
+
+      if (delta > 0) {
+        indicators.set(rank.team_number, { type: 'movedUp', spots: delta });
+        return;
+      }
+
+      indicators.set(rank.team_number, { type: 'movedDown', spots: Math.abs(delta) });
+    });
+
+    return indicators;
+  }, [activePickListRanks, baselinePickListState]);
 
   const trimmedPickListNotes = editablePickListNotes.trim();
   const hasPickListNotes = trimmedPickListNotes.length > 0;
@@ -767,6 +811,7 @@ export function PickListsPage() {
                             <PickListTeamsList
                               ranks={activePickListRanks}
                               eventTeamsByNumber={eventTeamsByNumber}
+                              rankChangeIndicators={activeRankChangeIndicators}
                               onReorder={handleReorderActivePickListRanks}
                               onRemoveTeam={handleRemoveTeamFromPickList}
                               onUpdateNotes={handleUpdatePickListTeamNotes}
