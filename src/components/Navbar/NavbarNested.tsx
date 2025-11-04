@@ -25,10 +25,10 @@ const NAV_LINKS_BEFORE_PICKING = [
   { label: 'Analytics', icon: IconPresentationAnalytics,
     links: [
       { label: 'Summary', link: '/analytics'},
-      { label: 'Prescout Summary', link: '/analytics/prescout-summary' },
       { label: 'Compare', link: '/analytics/compare' },
       { label: 'Match Predictions', link: '/matches' },
-      { label: 'Ranking Predictions', link: '/analytics/ranking-predictions' }
+      { label: 'Ranking Predictions', link: '/analytics/ranking-predictions' },
+      { label: 'Prescout Summary', link: '/analytics/prescout-summary' }
     ]
   }
 ];
