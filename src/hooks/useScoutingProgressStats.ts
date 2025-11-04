@@ -71,28 +71,21 @@ export function useScoutingProgressStats() {
       const validatedQualificationRecords = qualificationValidation.filter(
         (entry) => entry.validation_status === 'VALID'
       ).length;
-      const unvalidatedQualificationRecords = Math.max(
-        totalQualificationRecords - validatedQualificationRecords,
-        0
-      );
 
-      items.push({
-        label: 'Team Matches',
-        current: totalQualificationRecords,
-        total: totalPossibleRecords,
-        color: 'yellow.6',
-        primaryLabel: 'Scouted',
-        progress: {
-          current: unvalidatedQualificationRecords,
+      items.push(
+        {
+          label: 'Team Matches Scouted',
+          current: totalQualificationRecords,
           total: totalPossibleRecords,
+          color: 'yellow.6',
         },
-        secondary: {
-          label: 'Validated',
+        {
+          label: 'Matches Validated',
           current: validatedQualificationRecords,
           total: totalPossibleRecords,
           color: 'teal.5',
-        },
-      });
+        }
+      );
     }
 
     const totalTeams = eventTeams.length;
