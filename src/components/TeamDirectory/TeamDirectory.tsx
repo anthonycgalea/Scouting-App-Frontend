@@ -1,8 +1,14 @@
 import { useMemo } from 'react';
 
-import { useEventTeams, useEventPitScoutRecords, useEventTeamImages } from '@/api';
-import { Badge, Button, Center, Loader, Table, Text } from '@mantine/core';
+import {
+  useEventTeams,
+  useEventPitScoutRecords,
+  useEventTeamImages,
+  useEventPrescoutRecords,
+} from '@/api';
+import { Badge, Button, Center, Loader, Table, Text, ThemeIcon } from '@mantine/core';
 import { Link } from '@tanstack/react-router';
+import { IconCheck } from '@tabler/icons-react';
 
 import {
   TeamCommonCommentsBadgeList,
@@ -33,6 +39,11 @@ export function TeamDirectory() {
     isError: isPitScoutError,
   } = useEventPitScoutRecords();
   const {
+    data: prescoutRecords = [],
+    isLoading: isLoadingPrescouts,
+    isError: isPrescoutError,
+  } = useEventPrescoutRecords();
+  const {
     data: teamImages = [],
     isLoading: isLoadingTeamImages,
     isError: isTeamImagesError,
@@ -42,6 +53,16 @@ export function TeamDirectory() {
     return new Set(pitScoutRecords.map((record) => record.team_number));
   }, [pitScoutRecords]);
 
+  const prescoutCountsByTeam = useMemo(() => {
+    const counts = new Map<number, number>();
+
+    for (const record of prescoutRecords) {
+      counts.set(record.team_number, (counts.get(record.team_number) ?? 0) + 1);
+    }
+
+    return counts;
+  }, [prescoutRecords]);
+
   const teamNumbersWithPhotos = useMemo(() => {
     return new Set(
       teamImages
@@ -50,7 +71,7 @@ export function TeamDirectory() {
     );
   }, [teamImages]);
 
-  if (isLoading || isLoadingPitScouts || isLoadingTeamImages) {
+  if (isLoading || isLoadingPitScouts || isLoadingTeamImages || isLoadingPrescouts) {
     return (
       <Center mih={200}>
         <Loader />
@@ -58,7 +79,7 @@ export function TeamDirectory() {
     );
   }
 
-  if (isError || isPitScoutError || isTeamImagesError) {
+  if (isError || isPitScoutError || isTeamImagesError || isPrescoutError) {
     return (
       <Center mih={200}>
         <Text c="red.6" fw={500}>
@@ -83,6 +104,7 @@ export function TeamDirectory() {
 
       const hasPitScoutRecord = pitScoutTeamNumbers.has(team.team_number);
       const hasTeamPhoto = teamNumbersWithPhotos.has(team.team_number);
+      const prescoutedMatches = prescoutCountsByTeam.get(team.team_number) ?? 0;
 
       return (
         <Table.Tr key={team.team_number}>
@@ -101,6 +123,23 @@ export function TeamDirectory() {
           <Table.Td>{location || <Text c="dimmed">Unknown</Text>}</Table.Td>
           <Table.Td>
             <TeamCommonCommentsCell teamNumber={team.team_number} />
+          </Table.Td>
+          <Table.Td>
+            <Center inline>
+              {prescoutedMatches >= 10 ? (
+                <ThemeIcon
+                  color="green"
+                  variant="filled"
+                  radius="xl"
+                  size="sm"
+                  aria-label="Prescouted for ten or more matches"
+                >
+                  <IconCheck size={16} />
+                </ThemeIcon>
+              ) : (
+                <Text>{`${prescoutedMatches}/10`}</Text>
+              )}
+            </Center>
           </Table.Td>
           <Table.Td>
             <Badge
@@ -131,6 +170,7 @@ export function TeamDirectory() {
             <Table.Th>Team Name</Table.Th>
             <Table.Th>Location</Table.Th>
             <Table.Th>Common Comments</Table.Th>
+            <Table.Th>Prescouted</Table.Th>
             <Table.Th>Pit</Table.Th>
             <Table.Th>Photo</Table.Th>
           </Table.Tr>
