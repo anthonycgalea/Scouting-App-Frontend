@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import {
   useEventPitScoutRecords,
+  useEventPrescoutRecords,
   useEventTeamImages,
   useEventTeams,
   useMatchSchedule,
@@ -30,6 +31,11 @@ export function useScoutingProgressStats() {
     isLoading: isEventTeamsLoading,
     isError: isEventTeamsError,
   } = useEventTeams();
+  const {
+    data: prescoutRecords = [],
+    isLoading: isPrescoutLoading,
+    isError: isPrescoutError,
+  } = useEventPrescoutRecords();
   const {
     data: pitScoutRecords = [],
     isLoading: isPitScoutingLoading,
@@ -93,6 +99,21 @@ export function useScoutingProgressStats() {
 
     if (totalTeams > 0) {
       const eventTeamNumbers = new Set(eventTeams.map((team) => team.team_number));
+
+      const expectedPrescoutRecords = totalTeams * 10;
+
+      if (expectedPrescoutRecords > 0) {
+        const prescoutRecordsForEvent = prescoutRecords.filter((record) =>
+          eventTeamNumbers.has(record.team_number)
+        ).length;
+
+        items.push({
+          label: 'Prescout Progress',
+          current: Math.min(prescoutRecordsForEvent, expectedPrescoutRecords),
+          total: expectedPrescoutRecords,
+          color: 'grape.6',
+        });
+      }
 
       const pitScoutedTeams = pitScoutRecords.reduce((set, record) => {
         if (eventTeamNumbers.has(record.team_number)) {
@@ -161,6 +182,7 @@ export function useScoutingProgressStats() {
     scheduleData,
     validationData,
     eventTeams,
+    prescoutRecords,
     pitScoutRecords,
     teamImages,
     superScoutStatuses,
@@ -172,6 +194,7 @@ export function useScoutingProgressStats() {
       isScheduleLoading ||
       isValidationLoading ||
       isEventTeamsLoading ||
+      isPrescoutLoading ||
       isPitScoutingLoading ||
       isTeamImagesLoading ||
       isSuperScoutStatusesLoading,
@@ -179,6 +202,7 @@ export function useScoutingProgressStats() {
       isScheduleError ||
       isValidationError ||
       isEventTeamsError ||
+      isPrescoutError ||
       isPitScoutingError ||
       isTeamImagesError ||
       isSuperScoutStatusesError,
