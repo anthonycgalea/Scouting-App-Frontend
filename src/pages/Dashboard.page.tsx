@@ -1,5 +1,15 @@
 import { useMemo } from 'react';
-import { Anchor, Card, Center, Loader, Stack, Text, Title } from '@mantine/core';
+import {
+  Anchor,
+  Card,
+  Center,
+  Flex,
+  Loader,
+  ScrollArea,
+  Stack,
+  Text,
+  Title,
+} from '@mantine/core';
 import { Link } from '@tanstack/react-router';
 import {
   type MatchScheduleEntry,
@@ -132,51 +142,66 @@ export function DashboardPage() {
   const isTeamNumberMissing = teamNumber === null;
 
   return (
-    <Stack p="xl" gap="md">
+    <Stack p="xl" gap="md" style={{ minHeight: '100vh' }}>
       <Title order={2}>Dashboard</Title>
-      <Card shadow="sm" padding="lg" withBorder>
-        <Stack gap="md">
-          <Title order={3} size="h4">
-            Scouting Progress
-          </Title>
-          {isLoading ? (
-            <Center mih={180}>
-              <Loader />
-            </Center>
-          ) : isError ? (
-            <Text c="red.6" fw={500}>
-              Unable to load scouting progress.
-            </Text>
-          ) : hasStats ? (
-            <StatsRing data={stats} />
-          ) : (
-            <Text c="dimmed">
-              Scouting progress will appear once qualification matches are
-              scheduled.
-            </Text>
-          )}
-        </Stack>
-      </Card>
-      <Card shadow="sm" padding="lg" withBorder>
-        <Stack gap="md">
-          <Title order={3} size="h4">
-            Upcoming Matches{teamNumber ? ` for Team ${teamNumber}` : ''}
-          </Title>
-          {isUpcomingLoading ? (
-            <Center mih={MATCH_MIN_HEIGHT}>
-              <Loader />
-            </Center>
-          ) : isUpcomingError ? (
-            <Text c="red.6" fw={500}>
-              Unable to load upcoming matches.
-            </Text>
-          ) : isTeamNumberMissing ? (
-            <Text c="dimmed">
-              Assign a team number to your organization to view upcoming matches.
-            </Text>
-          ) : hasUpcomingMatches ? (
-            <Stack gap="sm">
-              {upcomingMatches.map((match) => {
+      <Flex gap="md" align="stretch" style={{ flex: 1 }}>
+        <Card
+          shadow="sm"
+          padding="lg"
+          withBorder
+          style={{ flex: 1, display: 'flex', flexDirection: 'column' }}
+        >
+          <Stack gap="md" style={{ flex: 1 }}>
+            <Title order={3} size="h4">
+              Scouting Progress
+            </Title>
+            {isLoading ? (
+              <Center mih={180} style={{ flex: 1 }}>
+                <Loader />
+              </Center>
+            ) : isError ? (
+              <Text c="red.6" fw={500}>
+                Unable to load scouting progress.
+              </Text>
+            ) : hasStats ? (
+              <ScrollArea style={{ flex: 1 }} type="auto" offsetScrollbars>
+                <StatsRing data={stats} />
+              </ScrollArea>
+            ) : (
+              <Text c="dimmed">
+                Scouting progress will appear once qualification matches are
+                scheduled.
+              </Text>
+            )}
+          </Stack>
+        </Card>
+        <Card
+          shadow="sm"
+          padding="lg"
+          withBorder
+          style={{ flex: 1, display: 'flex', flexDirection: 'column' }}
+        >
+          <Stack gap="md" style={{ flex: 1 }}>
+            <Title order={3} size="h4">
+              Upcoming Matches{teamNumber ? ` for Team ${teamNumber}` : ''}
+            </Title>
+            {isUpcomingLoading ? (
+              <Center mih={MATCH_MIN_HEIGHT} style={{ flex: 1 }}>
+                <Loader />
+              </Center>
+            ) : isUpcomingError ? (
+              <Text c="red.6" fw={500}>
+                Unable to load upcoming matches.
+              </Text>
+            ) : isTeamNumberMissing ? (
+              <Text c="dimmed">
+                Assign a team number to your organization to view upcoming
+                matches.
+              </Text>
+            ) : hasUpcomingMatches ? (
+              <ScrollArea style={{ flex: 1 }} type="auto" offsetScrollbars>
+                <Stack gap="sm" pr="sm">
+                  {upcomingMatches.map((match) => {
                 const allianceInfo = allianceDisplay[match.alliance];
                 const key = `${match.match_level}-${match.match_number}`;
                 const redAlliance = [match.red1_id, match.red2_id, match.red3_id];
@@ -213,19 +238,22 @@ export function DashboardPage() {
                     </Text>
                   </Text>
                 );
-              })}
-            </Stack>
-          ) : matchSchedule.length === 0 ? (
-            <Text c="dimmed">
-              Upcoming matches will appear once the match schedule is available.
-            </Text>
-          ) : (
-            <Text c="dimmed">
-              All scheduled matches for your team have scouting data.
-            </Text>
-          )}
-        </Stack>
-      </Card>
+                  })}
+                </Stack>
+              </ScrollArea>
+            ) : matchSchedule.length === 0 ? (
+              <Text c="dimmed">
+                Upcoming matches will appear once the match schedule is
+                available.
+              </Text>
+            ) : (
+              <Text c="dimmed">
+                All scheduled matches for your team have scouting data.
+              </Text>
+            )}
+          </Stack>
+        </Card>
+      </Flex>
     </Stack>
   );
 }
