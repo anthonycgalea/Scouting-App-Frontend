@@ -60,6 +60,8 @@ export function StatsRing({ data }: StatsRingProps) {
     return null;
   }
 
+  const columns = Math.min(2, data.length);
+
   const stats = data.map((stat) => {
     const secondary = stat.secondary;
     const primaryPercentage = formatPercentage(stat.current, stat.total);
@@ -197,10 +199,7 @@ export function StatsRing({ data }: StatsRingProps) {
   });
 
   return (
-    <SimpleGrid
-      cols={{ base: 1, sm: Math.min(2, data.length), lg: Math.min(4, data.length) }}
-      spacing="xl"
-    >
+    <SimpleGrid cols={{ base: 1, sm: columns }} spacing="xl">
       {stats}
     </SimpleGrid>
   );
