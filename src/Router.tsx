@@ -30,6 +30,7 @@ import { useAuth } from './auth/AuthProvider';
 import { AnalyticsPage } from './pages/Analytics.page';
 import { CompareTeamsPage } from './pages/CompareTeams.page';
 import { RankingPredictionsPage } from './pages/RankingPredictions.page';
+import { PrescoutSummaryPage } from './pages/PrescoutSummary.page';
 import { PickListsPage } from './pages/PickLists.page';
 import { AllianceSelectionPage } from './pages/AllianceSelection.page';
 import { ListGeneratorPage } from './pages/ListGenerator.page';
@@ -210,6 +211,12 @@ const compareTeamsRoute = createRoute({
   component: CompareTeamsPage,
 });
 
+const prescoutSummaryRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/analytics/prescout-summary',
+  component: PrescoutSummaryPage,
+});
+
 const rankingPredictionsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/analytics/ranking-predictions',
@@ -289,6 +296,7 @@ const routeTree = rootRoute.addChildren([
   superScoutRoute.addChildren([]),
   superScoutMatchRoute.addChildren([]),
   summaryAnalyticsRoute.addChildren([]),
+  prescoutSummaryRoute.addChildren([]),
   compareTeamsRoute.addChildren([]),
   rankingPredictionsRoute.addChildren([]),
   settingsRoute.addChildren([]),
