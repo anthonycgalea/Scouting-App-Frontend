@@ -1,8 +1,19 @@
 import { type ReactNode, useCallback, useMemo, useState } from 'react';
 import cx from 'clsx';
-import { Alert, Badge, Group, Rating, ScrollArea, Stack, Table, Text } from '@mantine/core';
+import {
+  Alert,
+  Badge,
+  Group,
+  Loader,
+  Rating,
+  ScrollArea,
+  Stack,
+  Table,
+  Text,
+} from '@mantine/core';
 import type {
   Endgame2025,
+  MatchScheduleEntry,
   SuperScoutField,
   SuperScoutMatchEntry,
   TeamMatchData,
@@ -21,6 +32,11 @@ interface TeamMatchDetail2025Props {
   superScoutFields: SuperScoutField[];
   isSuperScoutLoading: boolean;
   isSuperScoutError: boolean;
+  upcomingMatches: MatchScheduleEntry[];
+  isUpcomingLoading: boolean;
+  isUpcomingError: boolean;
+  totalScheduledMatches: number;
+  teamNumber: number;
 }
 
 type ColumnAlignment = 'left' | 'center' | 'right';
@@ -77,6 +93,31 @@ const MATCH_LEVEL_PRIORITY: Record<string, number> = {
 
 const getMatchLevelPriority = (level: string) =>
   MATCH_LEVEL_PRIORITY[level] ?? Number.MAX_SAFE_INTEGER;
+
+type Alliance = 'red' | 'blue';
+
+type TeamPositionKey =
+  | 'red1_id'
+  | 'red2_id'
+  | 'red3_id'
+  | 'blue1_id'
+  | 'blue2_id'
+  | 'blue3_id';
+
+const TEAM_POSITIONS: Array<{ key: TeamPositionKey; alliance: Alliance; position: number }> = [
+  { key: 'red1_id', alliance: 'red', position: 1 },
+  { key: 'red2_id', alliance: 'red', position: 2 },
+  { key: 'red3_id', alliance: 'red', position: 3 },
+  { key: 'blue1_id', alliance: 'blue', position: 1 },
+  { key: 'blue2_id', alliance: 'blue', position: 2 },
+  { key: 'blue3_id', alliance: 'blue', position: 3 },
+];
+
+const MATCH_LEVEL_LABELS: Record<string, string> = {
+  qm: 'Qualification',
+  sf: 'Playoff',
+  f: 'Final',
+};
 
 const SEASON_TABLE_CONFIGS: Record<number, SeasonMatchTableConfig> = {
   1: {
@@ -183,6 +224,11 @@ export function TeamMatchDetail2025({
   superScoutFields,
   isSuperScoutLoading,
   isSuperScoutError,
+  upcomingMatches,
+  isUpcomingLoading,
+  isUpcomingError,
+  totalScheduledMatches,
+  teamNumber,
 }: TeamMatchDetail2025Props) {
   const [scrolled, setScrolled] = useState(false);
 
@@ -561,37 +607,146 @@ export function TeamMatchDetail2025({
     </Table.Tr>
   ));
 
-  return (
-    <Stack gap="sm" h="100%" style={{ flex: 1, minHeight: 0 }}>
-      {isSuperScoutError ? (
-        <Alert color="red" title="Unable to load SuperScout data">
-          We could not retrieve SuperScout observations for this team. The table may be missing
-          supplemental comments.
+  const allianceLabel = useCallback((alliance: Alliance | undefined, position: number | undefined) => {
+    if (!alliance || !position) {
+      return '—';
+    }
+
+    const label = alliance === 'red' ? 'Red' : 'Blue';
+
+    return `${label} ${position}`;
+  }, []);
+
+  const formatTeamList = useCallback((teams: Array<number | null | undefined>, options?: { exclude?: number }) => {
+    const filtered = teams
+      .filter((team): team is number => typeof team === 'number' && Number.isFinite(team))
+      .filter((team) => (options?.exclude !== undefined ? team !== options.exclude : true));
+
+    if (filtered.length === 0) {
+      return '—';
+    }
+
+    return filtered.join(', ');
+  }, []);
+
+  const upcomingMatchRows = useMemo(() => {
+    return upcomingMatches.map((match) => {
+      const matchKey = `${String(match.match_level ?? '').toLowerCase()}-${match.match_number}`;
+      const assignment = TEAM_POSITIONS.find((position) => match[position.key] === teamNumber);
+      const alliance = assignment?.alliance;
+      const position = assignment?.position;
+      const normalizedLevel = String(match.match_level ?? '').trim().toLowerCase();
+      const levelLabel = MATCH_LEVEL_LABELS[normalizedLevel] ?? String(match.match_level ?? '').toUpperCase();
+      const matchLabel = `${levelLabel} ${match.match_number}`;
+      const alliedTeams: Array<number | null | undefined> =
+        alliance === 'blue'
+          ? [match.blue1_id, match.blue2_id, match.blue3_id]
+          : [match.red1_id, match.red2_id, match.red3_id];
+      const opponentTeams: Array<number | null | undefined> =
+        alliance === 'blue'
+          ? [match.red1_id, match.red2_id, match.red3_id]
+          : [match.blue1_id, match.blue2_id, match.blue3_id];
+
+      return (
+        <Table.Tr key={matchKey}>
+          <Table.Td>{matchLabel}</Table.Td>
+          <Table.Td>{allianceLabel(alliance, position)}</Table.Td>
+          <Table.Td>{formatTeamList(alliedTeams, { exclude: teamNumber })}</Table.Td>
+          <Table.Td>{formatTeamList(opponentTeams)}</Table.Td>
+        </Table.Tr>
+      );
+    });
+  }, [allianceLabel, formatTeamList, teamNumber, upcomingMatches]);
+
+  const renderUpcomingContent = () => {
+    if (isUpcomingLoading) {
+      return (
+        <Group gap="xs">
+          <Loader size="sm" />
+          <Text size="sm" c="dimmed">
+            Loading upcoming matches…
+          </Text>
+        </Group>
+      );
+    }
+
+    if (isUpcomingError) {
+      return (
+        <Alert color="red" title="Unable to load upcoming matches">
+          We could not retrieve the match schedule for this team. Upcoming matches will
+          appear when the schedule is available.
         </Alert>
-      ) : null}
-      <ScrollArea
-        scrollbars="xy"
-        onScrollPositionChange={({ y }) => setScrolled(y !== 0)}
-        style={{ flex: 1, minHeight: 0 }}
-      >
-        <Table miw={1100}>
-          <Table.Thead className={cx(classes.header, { [classes.scrolled]: scrolled })}>
-            <Table.Tr>
-              {renderHeaderRow(tableConfig.leadColumns, hasColumnGroups ? { rowSpan: 2 } : undefined)}
-              {hasColumnGroups ? groupHeaderCells : null}
-              {renderHeaderRow(tableConfig.trailingColumns, hasColumnGroups ? { rowSpan: 2 } : undefined)}
-              {hasColumnGroups ? trailingGroupHeaderCells : null}
-            </Table.Tr>
-            {hasColumnGroups ? (
+      );
+    }
+
+    if (totalScheduledMatches === 0) {
+      return (
+        <Text size="sm" c="dimmed">
+          Upcoming matches will appear once the match schedule is available.
+        </Text>
+      );
+    }
+
+    if (upcomingMatches.length === 0) {
+      return (
+        <Text size="sm" c="dimmed">
+          All scheduled matches for Team {teamNumber} currently have recorded scouting data.
+        </Text>
+      );
+    }
+
+    return (
+      <Table striped withColumnBorders highlightOnHover>
+        <Table.Thead>
+          <Table.Tr>
+            <Table.Th>Match</Table.Th>
+            <Table.Th>Alliance</Table.Th>
+            <Table.Th>Partners</Table.Th>
+            <Table.Th>Opponents</Table.Th>
+          </Table.Tr>
+        </Table.Thead>
+        <Table.Tbody>{upcomingMatchRows}</Table.Tbody>
+      </Table>
+    );
+  };
+
+  return (
+    <Stack gap="lg" h="100%" style={{ flex: 1, minHeight: 0 }}>
+      <Stack gap="sm" style={{ flex: 1, minHeight: 0 }}>
+        {isSuperScoutError ? (
+          <Alert color="red" title="Unable to load SuperScout data">
+            We could not retrieve SuperScout observations for this team. The table may be missing
+            supplemental comments.
+          </Alert>
+        ) : null}
+        <ScrollArea
+          scrollbars="xy"
+          onScrollPositionChange={({ y }) => setScrolled(y !== 0)}
+          style={{ flex: 1, minHeight: 0 }}
+        >
+          <Table miw={1100}>
+            <Table.Thead className={cx(classes.header, { [classes.scrolled]: scrolled })}>
               <Table.Tr>
-                {groupColumnHeaders}
-                {trailingGroupColumnHeaders}
+                {renderHeaderRow(tableConfig.leadColumns, hasColumnGroups ? { rowSpan: 2 } : undefined)}
+                {hasColumnGroups ? groupHeaderCells : null}
+                {renderHeaderRow(tableConfig.trailingColumns, hasColumnGroups ? { rowSpan: 2 } : undefined)}
+                {hasColumnGroups ? trailingGroupHeaderCells : null}
               </Table.Tr>
-            ) : null}
-          </Table.Thead>
-          <Table.Tbody>{rows}</Table.Tbody>
-        </Table>
-      </ScrollArea>
+              {hasColumnGroups ? (
+                <Table.Tr>
+                  {groupColumnHeaders}
+                  {trailingGroupColumnHeaders}
+                </Table.Tr>
+              ) : null}
+            </Table.Thead>
+            <Table.Tbody>{rows}</Table.Tbody>
+          </Table>
+        </ScrollArea>
+      </Stack>
+      <Stack gap="xs">
+        <Text fw={600}>Upcoming Matches</Text>
+        {renderUpcomingContent()}
+      </Stack>
     </Stack>
   );
 }
