@@ -168,11 +168,11 @@ export function TeamDirectory() {
           <Table.Tr>
             <Table.Th>Team #</Table.Th>
             <Table.Th>Team Name</Table.Th>
-            <Table.Th>Prescouted</Table.Th>
             <Table.Th>Pit</Table.Th>
+            <Table.Th>Photo</Table.Th>
             <Table.Th>Location</Table.Th>
             <Table.Th>Common Comments</Table.Th>
-            <Table.Th>Photo</Table.Th>
+            <Table.Th>Prescouted</Table.Th>
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>{rows}</Table.Tbody>
