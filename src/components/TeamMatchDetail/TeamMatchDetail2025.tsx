@@ -2,6 +2,7 @@ import { type ReactNode, useCallback, useMemo, useState } from 'react';
 import cx from 'clsx';
 import {
   Alert,
+  Anchor,
   Badge,
   Group,
   Loader,
@@ -11,6 +12,7 @@ import {
   Table,
   Text,
 } from '@mantine/core';
+import { Link } from '@tanstack/react-router';
 import type {
   Endgame2025,
   MatchScheduleEntry,
@@ -637,7 +639,13 @@ export function TeamMatchDetail2025({
       const position = assignment?.position;
       const normalizedLevel = String(match.match_level ?? '').trim().toLowerCase();
       const levelLabel = MATCH_LEVEL_LABELS[normalizedLevel] ?? String(match.match_level ?? '').toUpperCase();
-      const matchLabel = `${levelLabel} ${match.match_number}`;
+      const matchNumber = match.match_number;
+      const matchLabel =
+        typeof matchNumber === 'number' ? `${levelLabel} ${matchNumber}` : levelLabel;
+      const hasPreviewLink = normalizedLevel.length > 0 && typeof matchNumber === 'number';
+      const matchPreviewPath = hasPreviewLink
+        ? `/matches/preview/${normalizedLevel}/${matchNumber}`
+        : undefined;
       const alliedTeams: Array<number | null | undefined> =
         alliance === 'blue'
           ? [match.blue1_id, match.blue2_id, match.blue3_id]
@@ -649,7 +657,15 @@ export function TeamMatchDetail2025({
 
       return (
         <Table.Tr key={matchKey}>
-          <Table.Td>{matchLabel}</Table.Td>
+          <Table.Td>
+            {matchPreviewPath ? (
+              <Anchor component={Link} to={matchPreviewPath}>
+                {matchLabel}
+              </Anchor>
+            ) : (
+              matchLabel
+            )}
+          </Table.Td>
           <Table.Td>{allianceLabel(alliance, position)}</Table.Td>
           <Table.Td>{formatTeamList(alliedTeams, { exclude: teamNumber })}</Table.Td>
           <Table.Td>{formatTeamList(opponentTeams)}</Table.Td>
