@@ -719,7 +719,7 @@ export function TeamMatchDetail2025({
           </Table>
         </ScrollArea>
       </Stack>
-      <Stack gap="xs">
+      <Stack gap="xs" style={{ flex: 1, minHeight: 0 }}>
         <Text fw={600}>Upcoming Matches</Text>
         {renderUpcomingContent()}
       </Stack>
