@@ -19,17 +19,11 @@ import type {
   SuperScoutField,
   SuperScoutMatchEntry,
   TeamMatchData,
-  TeamMatchValidationEntry,
-  TeamMatchValidationStatus,
 } from '@/api';
-import { ValidationStatusIcon } from '../ValidationStatusIcon';
 import classes from './TeamMatchDetail2025.module.css';
 
 interface TeamMatchDetail2025Props {
   data: TeamMatchData[];
-  validationData: TeamMatchValidationEntry[];
-  isValidationLoading: boolean;
-  isValidationError: boolean;
   superScoutData: SuperScoutMatchEntry[];
   superScoutFields: SuperScoutField[];
   isSuperScoutLoading: boolean;
@@ -219,9 +213,6 @@ const formatStartPosition = (value: string) =>
 
 export function TeamMatchDetail2025({
   data,
-  validationData,
-  isValidationLoading,
-  isValidationError,
   superScoutData,
   superScoutFields,
   isSuperScoutLoading,
@@ -256,19 +247,6 @@ export function TeamMatchDetail2025({
 
     return undefined;
   }, [season]);
-
-  const validationLookup = useMemo(() => {
-    const entries = new Map<string, TeamMatchValidationStatus>();
-
-    validationData.forEach((entry) => {
-      entries.set(
-        buildValidationKey(entry.match_level, entry.match_number, entry.team_number),
-        entry.validation_status
-      );
-    });
-
-    return entries;
-  }, [validationData]);
 
   const superScoutLookup = useMemo(() => {
     const entries = new Map<string, SuperScoutMatchEntry>();
@@ -416,22 +394,7 @@ export function TeamMatchDetail2025({
 
       return {
         ...column,
-        render: (row: TeamMatchData) => {
-          const status = validationLookup.get(
-            buildValidationKey(row.match_level, row.match_number, row.team_number)
-          );
-
-          return (
-            <Group justify="center" align="center" gap="xs" wrap="nowrap">
-              <Text>{formatMatchIdentifier(row)}</Text>
-              <ValidationStatusIcon
-                status={status}
-                isLoading={isValidationLoading}
-                isError={isValidationError}
-              />
-            </Group>
-          );
-        },
+        render: (row: TeamMatchData) => formatMatchIdentifier(row),
       };
     });
 
@@ -520,14 +483,11 @@ export function TeamMatchDetail2025({
       trailingGroups,
     };
   }, [
-    isValidationError,
-    isValidationLoading,
     renderStartPositionCell,
     renderNotesCell,
     renderSuperScoutComments,
     renderSuperScoutRating,
     seasonConfig,
-    validationLookup,
   ]);
 
   if (!tableConfig) {
