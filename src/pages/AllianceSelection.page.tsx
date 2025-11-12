@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActionIcon,
   Box,
+  Button,
   Flex,
   Group,
   Loader,
@@ -37,6 +38,8 @@ type AllianceEntry = {
 };
 
 const DEFAULT_ALLIANCE_COUNT = 8;
+const MAX_ALLIANCE_COUNT = 16;
+const ALLIANCE_SELECTION_STORAGE_KEY = 'allianceSelectionCache';
 
 const createAllianceEntries = (count: number): AllianceEntry[] =>
   Array.from({ length: count }, () => ({
@@ -213,16 +216,18 @@ export function AllianceSelectionPage() {
       return;
     }
 
-    setAllianceCount(numericValue);
+    const clampedValue = Math.min(numericValue, MAX_ALLIANCE_COUNT);
+
+    setAllianceCount(clampedValue);
     setAllianceEntries((previous) => {
-      if (numericValue > previous.length) {
+      if (clampedValue > previous.length) {
         return [
           ...previous,
-          ...createAllianceEntries(numericValue - previous.length),
+          ...createAllianceEntries(clampedValue - previous.length),
         ];
       }
 
-      return previous.slice(0, numericValue);
+      return previous.slice(0, clampedValue);
     });
   };
 
@@ -282,6 +287,80 @@ export function AllianceSelectionPage() {
     );
   }, [filteredRankings, remainingCaptainSpots]);
 
+  const handleSaveAllianceSelection = useCallback(() => {
+    if (!activeEvent || typeof window === 'undefined') {
+      return;
+    }
+
+    const payload = {
+      eventKey: activeEvent.eventKey,
+      includeThirdPicks,
+      allianceCount,
+      allianceEntries,
+    };
+
+    try {
+      window.localStorage.setItem(
+        ALLIANCE_SELECTION_STORAGE_KEY,
+        JSON.stringify(payload),
+      );
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to save alliance selection', error);
+    }
+  }, [activeEvent, allianceEntries, allianceCount, includeThirdPicks]);
+
+  useEffect(() => {
+    if (!activeEvent || typeof window === 'undefined') {
+      return;
+    }
+
+    const storedValue = window.localStorage.getItem(ALLIANCE_SELECTION_STORAGE_KEY);
+    if (!storedValue) {
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(storedValue) as {
+        eventKey?: string;
+        includeThirdPicks?: boolean;
+        allianceCount?: number;
+        allianceEntries?: AllianceEntry[];
+      } | null;
+
+      if (!parsed || parsed.eventKey !== activeEvent.eventKey) {
+        return;
+      }
+
+      const savedAllianceCount =
+        typeof parsed.allianceCount === 'number' && parsed.allianceCount >= 1
+          ? parsed.allianceCount
+          : DEFAULT_ALLIANCE_COUNT;
+      const normalizedAllianceCount = Math.min(savedAllianceCount, MAX_ALLIANCE_COUNT);
+
+      setIncludeThirdPicks(Boolean(parsed.includeThirdPicks));
+      setAllianceCount(normalizedAllianceCount);
+      setAllianceEntries(() => {
+        const normalizedEntries = createAllianceEntries(normalizedAllianceCount);
+        if (Array.isArray(parsed.allianceEntries)) {
+          parsed.allianceEntries.slice(0, normalizedAllianceCount).forEach((entry, index) => {
+            normalizedEntries[index] = {
+              captain: entry?.captain ?? '',
+              firstPick: entry?.firstPick ?? '',
+              secondPick: entry?.secondPick ?? '',
+              thirdPick: entry?.thirdPick ?? '',
+            };
+          });
+        }
+
+        return normalizedEntries;
+      });
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to parse saved alliance selection', error);
+    }
+  }, [activeEvent]);
+
   if (isCheckingAccess || !canAccessOrganizationPages) {
     return null;
   }
@@ -332,7 +411,7 @@ export function AllianceSelectionPage() {
                   label="Number of alliances"
                   size="sm"
                   min={1}
-                  max={16}
+                  max={MAX_ALLIANCE_COUNT}
                   value={allianceCount}
                   onChange={handleAllianceCountChange}
                   clampBehavior="strict"
@@ -498,6 +577,11 @@ export function AllianceSelectionPage() {
                   </Table.Tbody>
                 </Table>
               </ScrollArea>
+              <Group justify="flex-end">
+                <Button onClick={handleSaveAllianceSelection} disabled={!activeEvent}>
+                  Save alliance selection
+                </Button>
+              </Group>
             </Stack>
           </Paper>
           <Paper
