@@ -120,6 +120,22 @@ export function TeamDirectory() {
             </Button>
           </Table.Td>
           <Table.Td>{team.team_name}</Table.Td>
+          <Table.Td>
+            <Badge
+              color={hasPitScoutRecord ? 'green' : 'gray'}
+              variant={hasPitScoutRecord ? 'light' : 'outline'}
+            >
+              {hasPitScoutRecord ? 'Yes' : 'No'}
+            </Badge>
+          </Table.Td>
+          <Table.Td>
+            <Badge
+              color={hasTeamPhoto ? 'blue' : 'gray'}
+              variant={hasTeamPhoto ? 'light' : 'outline'}
+            >
+              {hasTeamPhoto ? 'Yes' : 'No'}
+            </Badge>
+          </Table.Td>
           <Table.Td>{location || <Text c="dimmed">Unknown</Text>}</Table.Td>
           <Table.Td>
             <TeamCommonCommentsCell teamNumber={team.team_number} />
@@ -141,22 +157,6 @@ export function TeamDirectory() {
               )}
             </Center>
           </Table.Td>
-          <Table.Td>
-            <Badge
-              color={hasPitScoutRecord ? 'green' : 'gray'}
-              variant={hasPitScoutRecord ? 'light' : 'outline'}
-            >
-              {hasPitScoutRecord ? 'Yes' : 'No'}
-            </Badge>
-          </Table.Td>
-          <Table.Td>
-            <Badge
-              color={hasTeamPhoto ? 'blue' : 'gray'}
-              variant={hasTeamPhoto ? 'light' : 'outline'}
-            >
-              {hasTeamPhoto ? 'Yes' : 'No'}
-            </Badge>
-          </Table.Td>
         </Table.Tr>
       );
     });
@@ -168,10 +168,10 @@ export function TeamDirectory() {
           <Table.Tr>
             <Table.Th>Team #</Table.Th>
             <Table.Th>Team Name</Table.Th>
-            <Table.Th>Location</Table.Th>
-            <Table.Th>Common Comments</Table.Th>
             <Table.Th>Prescouted</Table.Th>
             <Table.Th>Pit</Table.Th>
+            <Table.Th>Location</Table.Th>
+            <Table.Th>Common Comments</Table.Th>
             <Table.Th>Photo</Table.Th>
           </Table.Tr>
         </Table.Thead>
