@@ -19,6 +19,7 @@ export const organizationCollaborationRequestsQueryKey = [
   'collaboration-requests',
 ] as const;
 export const adminUsersQueryKey = ['admin', 'users'] as const;
+export const organizationDashboardQueryKey = ['organization', 'dashboard'] as const;
 
 export interface OrganizationApplication {
   displayName: string;
@@ -82,6 +83,45 @@ export interface ManageOrganizationMemberInput {
   organization_id: number;
 }
 
+export interface OrganizationDashboardTeam {
+  number: number;
+  name: string;
+}
+
+export interface OrganizationDashboardEventInfo {
+  teamCount: number;
+  qualificationMatches: number;
+}
+
+export interface OrganizationDashboardProgress {
+  scouted: number;
+  prescout: number;
+  pitScouting: number;
+  photos: number;
+  superScout: number;
+  validated: number;
+}
+
+export interface OrganizationDashboardAlliance {
+  teams: number[];
+}
+
+export interface OrganizationDashboardUpcomingMatch {
+  matchLevel: string;
+  matchNumber: number;
+  alliances: {
+    red: OrganizationDashboardAlliance;
+    blue: OrganizationDashboardAlliance;
+  };
+}
+
+export interface OrganizationDashboard {
+  loggedInTeam?: OrganizationDashboardTeam | null;
+  eventInfo?: OrganizationDashboardEventInfo | null;
+  progress?: OrganizationDashboardProgress | null;
+  upcomingMatches?: OrganizationDashboardUpcomingMatch[];
+}
+
 export const fetchOrganizations = () => apiFetch<Organization[]>('user/organizations');
 export const fetchAllOrganizations = () => apiFetch<Organization[]>('organizations');
 export const fetchOrganizationApplications = () =>
@@ -121,6 +161,9 @@ export const deleteOrganizationApplication = ({ userId }: { userId: string }) =>
     method: 'DELETE',
     json: { userId },
   });
+
+export const fetchOrganizationDashboard = () =>
+  apiFetch<OrganizationDashboard>('organization/dashboard');
 
 export const createOrganization = ({ name, team_number }: CreateOrganizationInput) =>
   apiFetch<void>('admin/organizations/create', {
@@ -175,6 +218,13 @@ export const useOrganizationApplications = ({ enabled }: { enabled?: boolean } =
   useQuery<OrganizationApplication[]>({
     queryKey: organizationApplicationsQueryKey,
     queryFn: fetchOrganizationApplications,
+    enabled,
+  });
+
+export const useOrganizationDashboard = ({ enabled }: { enabled?: boolean } = {}) =>
+  useQuery<OrganizationDashboard>({
+    queryKey: organizationDashboardQueryKey,
+    queryFn: fetchOrganizationDashboard,
     enabled,
   });
 
