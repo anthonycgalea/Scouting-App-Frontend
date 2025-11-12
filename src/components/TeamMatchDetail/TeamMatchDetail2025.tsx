@@ -672,6 +672,11 @@ export function TeamMatchDetail2025({
     }
 
     return (
+        <ScrollArea
+          scrollbars="xy"
+          onScrollPositionChange={({ y }) => setScrolled(y !== 0)}
+          style={{ flex: 1, minHeight: 0 }}
+        >
       <Table striped withColumnBorders highlightOnHover>
         <Table.Thead>
           <Table.Tr>
@@ -683,6 +688,7 @@ export function TeamMatchDetail2025({
         </Table.Thead>
         <Table.Tbody>{upcomingMatchRows}</Table.Tbody>
       </Table>
+        </ScrollArea>
     );
   };
 
