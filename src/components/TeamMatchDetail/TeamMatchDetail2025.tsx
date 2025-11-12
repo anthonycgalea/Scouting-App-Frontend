@@ -694,7 +694,7 @@ export function TeamMatchDetail2025({
 
   return (
     <Stack gap="lg" h="100%" style={{ flex: 1, minHeight: 0 }}>
-      <Stack gap="sm" style={{ flex: 1, minHeight: 0 }}>
+      <Stack gap="sm" style={{ flex: 2, minHeight: 0 }}>
         {isSuperScoutError ? (
           <Alert color="red" title="Unable to load SuperScout data">
             We could not retrieve SuperScout observations for this team. The table may be missing
