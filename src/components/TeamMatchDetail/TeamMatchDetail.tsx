@@ -6,7 +6,6 @@ import {
   useSuperScoutMatchData,
   useTeamMatchData,
   useMatchSchedule,
-  useTeamMatchValidation,
 } from '@/api';
 import { TeamMatchDetail2025 } from './TeamMatchDetail2025';
 
@@ -33,11 +32,6 @@ export function TeamMatchDetail({ teamNumber }: TeamMatchDetailProps) {
     isLoading,
     isError,
   } = useTeamMatchData(teamNumber);
-  const {
-    data: validationData = [],
-    isLoading: isValidationLoading,
-    isError: isValidationError,
-  } = useTeamMatchValidation();
   const {
     data: superScoutData = [],
     isLoading: isSuperScoutDataLoading,
@@ -135,9 +129,6 @@ export function TeamMatchDetail({ teamNumber }: TeamMatchDetailProps) {
   return (
     <TeamMatchDetail2025
       data={data}
-      validationData={validationData}
-      isValidationLoading={isValidationLoading}
-      isValidationError={isValidationError}
       superScoutData={superScoutData}
       superScoutFields={superScoutFields}
       isSuperScoutLoading={isSuperScoutDataLoading || isSuperScoutFieldsLoading}
