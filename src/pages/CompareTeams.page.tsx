@@ -15,7 +15,7 @@ import {
 import { type TeamHeadToHeadSummary } from '@/types/analytics';
 import classes from './CompareTeams.module.css';
 
-const MAX_TEAMS = 5;
+const MAX_TEAMS = 6;
 
 export function CompareTeamsPage() {
   const { data: matchHistory, isLoading, isError } = useTeamMatchHistory();
@@ -126,7 +126,7 @@ export function CompareTeamsPage() {
         <Stack gap={4}>
           <Title order={2}>Compare Teams</Title>
           <Text c="dimmed" size="sm">
-            Select up to five teams to see how their performance compares.
+            Select up to six teams to see how their performance compares.
           </Text>
         </Stack>
         <MultiSelect
@@ -137,7 +137,7 @@ export function CompareTeamsPage() {
           onChange={handleTeamChange}
           maxValues={MAX_TEAMS}
           searchable
-          placeholder="Select up to 5 teams"
+          placeholder="Select up to 6 teams"
           nothingFoundMessage="No teams found"
           checkIconPosition="right"
           comboboxProps={{ withinPortal: true }}
