@@ -33,7 +33,13 @@ const ALLIANCE_CONFIG = {
 
 type AllianceKey = keyof typeof ALLIANCE_CONFIG;
 
-type StartingPosition = 'LEFT' | 'CENTER' | 'RIGHT' | 'NO_SHOW';
+type StartingPosition =
+  | 'LEFT_TRENCH'
+  | 'LEFT_BUMP'
+  | 'HUB'
+  | 'RIGHT_BUMP'
+  | 'RIGHT_TRENCH'
+  | 'NO_SHOW';
 
 interface TeamInputState {
   startingPosition: StartingPosition | null;
@@ -54,9 +60,11 @@ const createDefaultTeamState = (): TeamInputState => ({
 });
 
 const STARTING_POSITION_OPTIONS: { label: string; value: StartingPosition }[] = [
-  { label: 'Left', value: 'LEFT' },
-  { label: 'Center', value: 'CENTER' },
-  { label: 'Right', value: 'RIGHT' },
+  { label: 'Left Trench', value: 'LEFT_TRENCH' },
+  { label: 'Left Bump', value: 'LEFT_BUMP' },
+  { label: 'Hub', value: 'HUB' },
+  { label: 'Right Bump', value: 'RIGHT_BUMP' },
+  { label: 'Right Trench', value: 'RIGHT_TRENCH' },
   { label: 'No Show', value: 'NO_SHOW' },
 ];
 
