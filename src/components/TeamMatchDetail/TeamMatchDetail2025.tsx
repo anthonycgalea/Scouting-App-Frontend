@@ -353,7 +353,7 @@ export function TeamMatchDetail2025({
         return nullLabel;
       }
 
-      return <Rating value={value} count={5} readOnly size="sm" />;
+      return <Rating value={value} count={3} readOnly size="sm" />;
     },
     [getSuperScoutEntry, isSuperScoutLoading, renderLoadingText]
   );

@@ -405,7 +405,7 @@ export function SuperScoutMatchPage() {
                               driverRating: value,
                             }))
                           }
-                          count={5}
+                          count={3}
                           style={{ justifySelf: 'center' }}
                         />
                         {showDefense && (
@@ -417,7 +417,7 @@ export function SuperScoutMatchPage() {
                                 defenseRating: value,
                               }))
                             }
-                            count={5}
+                            count={3}
                             style={{ justifySelf: 'center' }}
                           />
                         )}
@@ -429,7 +429,7 @@ export function SuperScoutMatchPage() {
                               robotOverall: value,
                             }))
                           }
-                          count={5}
+                          count={3}
                           style={{ justifySelf: 'center' }}
                         />
                       </Box>
