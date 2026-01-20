@@ -37,34 +37,7 @@ export function AddEventPage() {
     () => new Set<number>(ALLOWED_EVENT_YEARS),
     []
   );
-  const organizationEventYears = useMemo(() => {
-    return Array.from(
-      new Set(
-        organizationEventList
-          .map((event) => event.eventYear)
-          .filter(
-            (year): year is number =>
-              typeof year === 'number' && allowedEventYearSet.has(year)
-          )
-      )
-    ).sort((a, b) => b - a);
-  }, [allowedEventYearSet, organizationEventList]);
-  const activeOrganizationEventYear =
-    organizationEventList.find((event) => event.isActive)?.eventYear ?? null;
-  const fallbackYearNumber = useMemo(() => {
-    if (
-      typeof activeOrganizationEventYear === 'number' &&
-      allowedEventYearSet.has(activeOrganizationEventYear)
-    ) {
-      return activeOrganizationEventYear;
-    }
-
-    if (organizationEventYears.length > 0) {
-      return organizationEventYears[0];
-    }
-
-    return ALLOWED_EVENT_YEARS[0];
-  }, [activeOrganizationEventYear, allowedEventYearSet, organizationEventYears]);
+  const fallbackYearNumber = useMemo(() => ALLOWED_EVENT_YEARS[0], []);
   const [selectedYear, setSelectedYear] = useState<string>(
     fallbackYearNumber.toString()
   );

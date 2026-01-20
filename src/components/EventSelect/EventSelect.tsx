@@ -157,37 +157,10 @@ export function EventSelect() {
     () => events.find((event) => event.isActive) ?? null,
     [events]
   );
-  const allowedEventYearsWithData = useMemo(() => {
-    const allowedYearSet = new Set<number>(ALLOWED_EVENT_YEARS);
-
-    return Array.from(
-      new Set(
-        events
-          .map((event) => event.eventYear)
-          .filter(
-            (year): year is number =>
-              typeof year === 'number' && allowedYearSet.has(year)
-          )
-      )
-    ).sort((a, b) => b - a);
-  }, [events]);
   const yearOptions = useMemo(() => ALLOWED_EVENT_YEAR_OPTIONS, []);
-  const activeEventYearValue = selectedEvent?.eventYear
-    ? selectedEvent.eventYear.toString()
-    : null;
   const defaultYearValue = useMemo(() => {
-    if (activeEventYearValue && ALLOWED_EVENT_YEAR_VALUE_SET.has(activeEventYearValue)) {
-      return activeEventYearValue;
-    }
-
-    const availableYearValue = allowedEventYearsWithData[0]?.toString();
-
-    if (availableYearValue) {
-      return availableYearValue;
-    }
-
     return ALLOWED_EVENT_YEAR_OPTIONS[0]?.value ?? '';
-  }, [activeEventYearValue, allowedEventYearsWithData]);
+  }, []);
 
   useEffect(() => {
     if (!hasUserSelectedYear) {
