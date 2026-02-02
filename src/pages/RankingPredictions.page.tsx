@@ -13,7 +13,7 @@ import {
 import { Link } from '@tanstack/react-router';
 import { useMemo } from 'react';
 
-import { useRankingPredictions } from '@/api';
+import { useEventRankings, useRankingPredictions } from '@/api';
 
 export function RankingPredictionsPage() {
   const {
@@ -21,6 +21,7 @@ export function RankingPredictionsPage() {
     isLoading,
     isError,
   } = useRankingPredictions();
+  const { data: eventRankings } = useEventRankings();
 
   const sortedPredictions = useMemo(() => {
     if (!predictions) {
@@ -29,6 +30,14 @@ export function RankingPredictionsPage() {
 
     return [...predictions].sort((a, b) => a.mean_rank - b.mean_rank);
   }, [predictions]);
+
+  const currentRankByTeamNumber = useMemo(() => {
+    if (!eventRankings) {
+      return new Map<number, number>();
+    }
+
+    return new Map(eventRankings.map((ranking) => [ranking.team_number, ranking.rank]));
+  }, [eventRankings]);
 
   const lastRunRelativeTime = useMemo(() => {
     if (sortedPredictions.length === 0) {
@@ -99,6 +108,7 @@ export function RankingPredictionsPage() {
           <Table.Thead>
             <Table.Tr>
               <Table.Th ta="center">Predicted Rank</Table.Th>
+              <Table.Th ta="center">Current Rank</Table.Th>
               <Table.Th ta="center">Team</Table.Th>
               <Table.Th ta="center">Mean Rank</Table.Th>
               <Table.Th ta="center">5% Rank</Table.Th>
@@ -111,6 +121,9 @@ export function RankingPredictionsPage() {
             {sortedPredictions.map((prediction, index) => (
               <Table.Tr key={prediction.team_number}>
                 <Table.Td ta="center">{index + 1}</Table.Td>
+                <Table.Td ta="center">
+                  {currentRankByTeamNumber.get(prediction.team_number) ?? '—'}
+                </Table.Td>
                 <Table.Td ta="center">
                   <Anchor
                     component={Link}
