@@ -53,18 +53,18 @@ const normalizeRanks = (
     return first.dnp ? 1 : -1;
   });
 
-  const recalculated = recalculateRanks(sortedRanks).map((rank) => ({
+  const filtered = sortedRanks.filter(
+    (rank) => !selectedTeamNumbers.has(String(rank.team_number)),
+  );
+
+  const recalculated = recalculateRanks(filtered).map((rank) => ({
     ...rank,
     notes: rank.notes?.trim() ?? '',
   }));
 
-  const filtered = recalculated.filter(
-    (rank) => !selectedTeamNumbers.has(String(rank.team_number)),
-  );
-
   return {
-    teams: filtered.filter((rank) => !rank.dnp),
-    dnp: filtered.filter((rank) => rank.dnp),
+    teams: recalculated.filter((rank) => !rank.dnp),
+    dnp: recalculated.filter((rank) => rank.dnp),
   };
 };
 
