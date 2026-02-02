@@ -1,4 +1,4 @@
-import type { Endgame2025, TeamMatchData } from '@/api/teams';
+import type { Endgame2025, TeamMatchData2025 } from '@/api/teams';
 import { MATCH_VALIDATION_NUMERIC_FIELDS } from './matchValidation.config';
 
 export const ENDGAME_LABELS: Record<Endgame2025, string> = {
@@ -173,7 +173,7 @@ export const parseNumericValue = (value: unknown): number | undefined => {
 
 export interface TbaTeamEntry {
   teamNumber: number;
-  data: Partial<TeamMatchData>;
+  data: Partial<TeamMatchData2025>;
 }
 
 const extractTeamEntryFromRecord = (
@@ -191,7 +191,7 @@ const extractTeamEntryFromRecord = (
 
   return {
     teamNumber,
-    data: dataCandidate as Partial<TeamMatchData>,
+    data: dataCandidate as Partial<TeamMatchData2025>,
   };
 };
 
@@ -215,7 +215,7 @@ const normalizeTbaTeamEntries = (candidate: unknown): TbaTeamEntry[] => {
       if (teamNumberFromKey && value && typeof value === 'object') {
         entries.push({
           teamNumber: teamNumberFromKey,
-          data: value as Partial<TeamMatchData>,
+          data: value as Partial<TeamMatchData2025>,
         });
 
         return;
@@ -407,7 +407,7 @@ export const parseEndgameKey = (value: unknown): Endgame2025 | undefined => {
 
 export const extractScoutMatchData = (
   candidate: unknown
-): Partial<TeamMatchData> | undefined => {
+): Partial<TeamMatchData2025> | undefined => {
   if (!candidate) {
     return undefined;
   }
@@ -429,7 +429,7 @@ export const extractScoutMatchData = (
   }
 
   const record = candidate as Record<string, unknown>;
-  const result: Partial<TeamMatchData> = {};
+  const result: Partial<TeamMatchData2025> = {};
 
   MATCH_VALIDATION_NUMERIC_FIELDS.forEach((field) => {
     const numericValue = parseNumericValue(record[field]);
@@ -464,7 +464,7 @@ export const extractScoutMatchData = (
 
 export const getTeamMatchData = (
   candidate: unknown
-): Partial<TeamMatchData> | undefined => extractScoutMatchData(candidate);
+): Partial<TeamMatchData2025> | undefined => extractScoutMatchData(candidate);
 
 export const isValidTeamNumber = (value: number | undefined): value is number =>
   typeof value === 'number' && Number.isFinite(value);

@@ -20,6 +20,7 @@ import { IconDeviceFloppy } from '@tabler/icons-react';
 import {
   type MatchValidationDataUpdate,
   type TeamMatchData,
+  type TeamMatchData2025,
   Endgame2025,
   scoutMatchQueryKey,
   submitMatchValidationData,
@@ -366,7 +367,7 @@ export function MatchValidation() {
     { teamNumber: rawTeamNumbers[2], query: team3Query },
   ];
 
-  const [teamEdits, setTeamEdits] = useState<Record<number, Partial<TeamMatchData>>>({});
+  const [teamEdits, setTeamEdits] = useState<Record<number, Partial<TeamMatchData2025>>>({});
   const [rowOverrides, setRowOverrides] = useState<Record<string, boolean>>({});
   const [notes, setNotes] = useState('');
   const notesInitializedRef = useRef(false);
@@ -737,7 +738,7 @@ export function MatchValidation() {
         user_id: metadata.userId,
         organization_id: metadata.organizationId,
         endgame: getCurrentEndgameValue(state),
-      } as TeamMatchData;
+      } as TeamMatchData2025;
 
       MATCH_VALIDATION_NUMERIC_FIELDS.forEach((field) => {
         const numericValue = getCurrentNumericValue(state, field);
@@ -758,8 +759,8 @@ export function MatchValidation() {
 
       const batchMatchData =
         notesForSubmission !== undefined
-          ? ({ ...baseMatchData, notes: notesForSubmission } as TeamMatchData)
-          : ({ ...baseMatchData } as TeamMatchData);
+          ? ({ ...baseMatchData, notes: notesForSubmission } as TeamMatchData2025)
+          : ({ ...baseMatchData } as TeamMatchData2025);
 
       batchUpdates.push(batchMatchData);
     }

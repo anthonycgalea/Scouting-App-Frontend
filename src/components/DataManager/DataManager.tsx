@@ -26,7 +26,7 @@ import {
   useEventTbaMatchDataset,
   type MatchScheduleEntry,
   type Endgame2025,
-  type TeamMatchData,
+  type TeamMatchData2025,
   type TeamMatchValidationStatus,
   updateMatchDataBatch,
   scoutMatchQueryKey,
@@ -269,7 +269,7 @@ const computeAllianceEndgameDetails = (
   alliance: AllianceColor,
   teamNumbers: number[],
   teamRecords: Array<Record<string, unknown> | undefined>,
-  teamData: Array<Partial<TeamMatchData> | undefined>,
+  teamData: Array<Partial<TeamMatchData2025> | undefined>,
   tbaEndgameMap: Map<number, { label?: string; value?: Endgame2025 }>,
   tbaTotalsRecord: Record<string, unknown> | undefined,
   tbaRecord: Record<string, unknown> | undefined
@@ -370,7 +370,7 @@ const parseNotesField = (value: unknown): string | null | undefined => {
 };
 
 const getAllianceMetricData = (
-  data: Partial<TeamMatchData> | undefined
+  data: Partial<TeamMatchData2025> | undefined
 ): AllianceMetricData | undefined => {
   if (!data) {
     return undefined;
@@ -407,7 +407,7 @@ const getRecordValue = (
 const buildMatchDataFromRecord = (
   record: Record<string, unknown>,
   endgame: Endgame2025
-): TeamMatchData | undefined => {
+): TeamMatchData2025 | undefined => {
   const season = parseNumberField(getRecordValue(record, 'season'));
   const eventKey = parseStringField(getRecordValue(record, 'event_key', 'eventKey'));
   const matchNumber = parseNumberField(
@@ -439,7 +439,7 @@ const buildMatchDataFromRecord = (
   const notes = parseNotesField(getRecordValue(record, 'notes'));
 
   const numericData = getTeamMatchData(record) ?? {};
-  const payload: Partial<TeamMatchData> = {
+  const payload: Partial<TeamMatchData2025> = {
     season,
     event_key: eventKey,
     match_number: matchNumber,
@@ -469,7 +469,7 @@ const buildMatchDataFromRecord = (
     payload.notes = notes;
   }
 
-  return payload as TeamMatchData;
+  return payload as TeamMatchData2025;
 };
 
 const buildAllianceSummary = (

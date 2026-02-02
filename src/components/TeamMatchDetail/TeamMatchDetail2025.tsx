@@ -67,11 +67,23 @@ const formatEndgameLabel = (value: string | null | undefined) => {
     .join(' ');
 };
 
-const numberColumn = (key: keyof TeamMatchData & string, title: string): ColumnDefinition => ({
+const numberColumn = (key: string, title: string): ColumnDefinition => ({
   key,
   title,
   align: 'center',
-  render: (row) => row[key] ?? 0,
+  render: (row) => {
+    const value = (row as unknown as Record<string, unknown>)[key];
+
+    if (typeof value === 'number') {
+      return value;
+    }
+
+    if (value === null || value === undefined) {
+      return 0;
+    }
+
+    return String(value);
+  },
 });
 
 const formatMatchIdentifier = (row: TeamMatchData) => {
