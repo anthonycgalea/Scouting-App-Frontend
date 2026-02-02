@@ -119,6 +119,79 @@ const MATCH_LEVEL_LABELS: Record<string, string> = {
   f: 'Final',
 };
 
+const SEASON_2026_MATCH_CONFIG: SeasonMatchTableConfig = {
+  leadColumns: [
+    {
+      key: 'match',
+      title: 'Match #',
+      align: 'center',
+      render: (row) => formatMatchIdentifier(row),
+    },
+  ],
+  groups: [
+    {
+      title: 'Autonomous',
+      columns: [
+        numberColumn('autoFuel', 'Fuel'),
+        numberColumn('autoPass', 'Pass'),
+        numberColumn('autoClimb', 'Climb'),
+      ],
+    },
+    {
+      title: 'Teleop',
+      columns: [numberColumn('teleopFuel', 'Fuel'), numberColumn('teleopPass', 'Pass')],
+    },
+  ],
+  trailingColumns: [
+    {
+      key: 'endgame',
+      title: 'Endgame',
+      align: 'center',
+      render: (row) => formatEndgameLabel(row.endgame),
+    },
+  ],
+  trailingGroups: [
+    {
+      title: 'Notes',
+      columns: [
+        {
+          key: 'notes',
+          title: 'Notes',
+          render: (row) => row.notes?.trim() || '—',
+        },
+      ],
+    },
+    {
+      title: 'SuperScout',
+      columns: [
+        {
+          key: 'superScoutComments',
+          title: 'Comments',
+          render: () => '—',
+        },
+        {
+          key: 'superScoutDriverAbility',
+          title: 'Driver Ability',
+          align: 'center',
+          render: () => '—',
+        },
+        {
+          key: 'superScoutDefense',
+          title: 'Defense',
+          align: 'center',
+          render: () => '—',
+        },
+        {
+          key: 'superScoutOverall',
+          title: 'Overall',
+          align: 'center',
+          render: () => '—',
+        },
+      ],
+    },
+  ],
+};
+
 const SEASON_TABLE_CONFIGS: Record<number, SeasonMatchTableConfig> = {
   1: {
     leadColumns: [
@@ -207,78 +280,8 @@ const SEASON_TABLE_CONFIGS: Record<number, SeasonMatchTableConfig> = {
       },
     ],
   },
-  2: {
-    leadColumns: [
-      {
-        key: 'match',
-        title: 'Match #',
-        align: 'center',
-        render: (row) => formatMatchIdentifier(row),
-      },
-    ],
-    groups: [
-      {
-        title: 'Autonomous',
-        columns: [
-          numberColumn('autoFuel', 'Fuel'),
-          numberColumn('autoPass', 'Pass'),
-          numberColumn('autoClimb', 'Climb'),
-        ],
-      },
-      {
-        title: 'Teleop',
-        columns: [numberColumn('teleopFuel', 'Fuel'), numberColumn('teleopPass', 'Pass')],
-      },
-    ],
-    trailingColumns: [
-      {
-        key: 'endgame',
-        title: 'Endgame',
-        align: 'center',
-        render: (row) => formatEndgameLabel(row.endgame),
-      },
-    ],
-    trailingGroups: [
-      {
-        title: 'Notes',
-        columns: [
-          {
-            key: 'notes',
-            title: 'Notes',
-            render: (row) => row.notes?.trim() || '—',
-          },
-        ],
-      },
-      {
-        title: 'SuperScout',
-        columns: [
-          {
-            key: 'superScoutComments',
-            title: 'Comments',
-            render: () => '—',
-          },
-          {
-            key: 'superScoutDriverAbility',
-            title: 'Driver Ability',
-            align: 'center',
-            render: () => '—',
-          },
-          {
-            key: 'superScoutDefense',
-            title: 'Defense',
-            align: 'center',
-            render: () => '—',
-          },
-          {
-            key: 'superScoutOverall',
-            title: 'Overall',
-            align: 'center',
-            render: () => '—',
-          },
-        ],
-      },
-    ],
-  },
+  2: SEASON_2026_MATCH_CONFIG,
+  2026: SEASON_2026_MATCH_CONFIG,
 };
 
 const formatStartPosition = (value: string) =>
