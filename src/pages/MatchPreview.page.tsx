@@ -9,9 +9,13 @@ import {
   useMatchPreview,
   useMatchSchedule,
   useMatchSimulation,
+  type MatchPreviewResponse,
+  type MatchPreviewResponse2025,
+  type MatchPreviewResponse2026,
   type MatchSimulationResponse,
 } from '@/api';
 import { MatchPreview2025 } from '@/components/MatchPreview/MatchPreview2025';
+import { MatchPreview2026 } from '@/components/MatchPreview/MatchPreview2026';
 import { Simulation, type MatchSimulationData } from '@/components/Simulation';
 import classes from './MatchPreview.module.css';
 
@@ -140,8 +144,13 @@ export function MatchPreviewPage() {
     );
   }
 
+  const isMatchPreview2025 = (value: MatchPreviewResponse): value is MatchPreviewResponse2025 =>
+    value.season === 1;
+  const isMatchPreview2026 = (value: MatchPreviewResponse): value is MatchPreviewResponse2026 =>
+    value.season === 2;
   const season = matchPreview.season;
-  const shouldUse2025Preview = season === 1;
+  const shouldUse2025Preview = isMatchPreview2025(matchPreview);
+  const shouldUse2026Preview = isMatchPreview2026(matchPreview);
 
   const isSimulationBusy = isSimulationLoading || isSimulationRunning || isSimulationFetching;
   const isMatchSimulationData = (
@@ -193,6 +202,8 @@ export function MatchPreviewPage() {
 
   const previewCard = shouldUse2025Preview ? (
     <MatchPreview2025 match={match} preview={matchPreview} />
+  ) : shouldUse2026Preview ? (
+    <MatchPreview2026 match={match} preview={matchPreview} />
   ) : (
     <Card
       withBorder

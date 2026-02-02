@@ -21,7 +21,7 @@ export interface MetricStatistics {
   standard_deviation: number | null;
 }
 
-export interface PhaseMetrics {
+export interface PhaseMetrics2025 {
   level4: MetricStatistics;
   level3: MetricStatistics;
   level2: MetricStatistics;
@@ -31,10 +31,25 @@ export interface PhaseMetrics {
   total_points: MetricStatistics;
 }
 
-export interface TeamMatchPreview {
+export interface TeamMatchPreview2025 {
   team_number: number;
-  auto: PhaseMetrics;
-  teleop: PhaseMetrics;
+  auto: PhaseMetrics2025;
+  teleop: PhaseMetrics2025;
+  endgame: MetricStatistics;
+  total_points: MetricStatistics;
+}
+
+export interface PhaseMetrics2026 {
+  fuel_scored: MetricStatistics;
+  fuel_passed: MetricStatistics;
+  climb_points: MetricStatistics;
+  total_points: MetricStatistics;
+}
+
+export interface TeamMatchPreview2026 {
+  team_number: number;
+  auto: PhaseMetrics2026;
+  teleop: PhaseMetrics2026;
   endgame: MetricStatistics;
   total_points: MetricStatistics;
 }
@@ -52,9 +67,9 @@ export interface AllianceLevelAverages {
   adjusted: AllianceLevelValues;
 }
 
-export interface AllianceMatchPreview {
-  teams: TeamMatchPreview[];
-  alliance_level_averages: AllianceLevelAverages;
+export interface AllianceMatchPreview<TTeam extends { team_number: number } = TeamMatchPreview2025> {
+  teams: TTeam[];
+  alliance_level_averages?: AllianceLevelAverages;
 }
 
 export interface MatchPreviewRequest {
@@ -62,11 +77,19 @@ export interface MatchPreviewRequest {
   matchNumber: number;
 }
 
-export interface MatchPreviewResponse {
+export interface MatchPreviewResponse2025 {
   season: number;
-  red: AllianceMatchPreview;
-  blue: AllianceMatchPreview;
+  red: AllianceMatchPreview<TeamMatchPreview2025>;
+  blue: AllianceMatchPreview<TeamMatchPreview2025>;
 }
+
+export interface MatchPreviewResponse2026 {
+  season: number;
+  red: AllianceMatchPreview<TeamMatchPreview2026>;
+  blue: AllianceMatchPreview<TeamMatchPreview2026>;
+}
+
+export type MatchPreviewResponse = MatchPreviewResponse2025 | MatchPreviewResponse2026;
 
 export interface MatchImagesRequest {
   matchLevel: string;
