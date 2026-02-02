@@ -47,6 +47,7 @@ const BASE_GENERATOR_FIELDS = new Set([
 ]);
 
 const DEFAULT_SEASON_ID = 1;
+const SEASON_2026_ID = 2;
 
 const REEFSCAPE_WEIGHT_LABELS = {
   al4c: 'Autonomous Level 4 Coral',
@@ -74,15 +75,34 @@ const REEFSCAPE_WEIGHT_LABELS = {
   total_points: 'Total Points',
 } as const;
 
+const CHARGED_WEIGHT_LABELS = {
+  autonomous_fuel: 'Autonomous Fuel',
+  autonomous_pass: 'Autonomous Pass',
+  autonomous_climb: 'Autonomous Climb',
+  autonomous_points: 'Autonomous Points',
+  teleop_fuel: 'Teleop Fuel',
+  teleop_pass: 'Teleop Pass',
+  endgame_points: 'Endgame Points',
+  total_fuel: 'Total Fuel',
+  total_climb: 'Total Climb',
+  total_points: 'Total Points',
+} as const;
+
+const ALLOWED_WEIGHT_KEYS_BY_SEASON: Record<number, Set<string>> = {
+  [SEASON_2026_ID]: new Set(Object.keys(CHARGED_WEIGHT_LABELS)),
+};
+
 const WEIGHT_LABELS_BY_SEASON: Record<number, Record<string, string>> = {
   0: REEFSCAPE_WEIGHT_LABELS,
   [DEFAULT_SEASON_ID]: REEFSCAPE_WEIGHT_LABELS,
+  [SEASON_2026_ID]: CHARGED_WEIGHT_LABELS,
   2025: REEFSCAPE_WEIGHT_LABELS,
 };
 
 const SEASON_LABELS: Record<number, string> = {
   0: '2025: REEFSCAPE',
   [DEFAULT_SEASON_ID]: '2025: REEFSCAPE',
+  [SEASON_2026_ID]: '2026',
   2025: '2025: REEFSCAPE',
 };
 
@@ -207,9 +227,11 @@ export function ListGeneratorPage() {
       return;
     }
 
+    const allowedWeightKeys = ALLOWED_WEIGHT_KEYS_BY_SEASON[selectedGenerator.season];
     const draftEntries = Object.entries(selectedGenerator)
       .filter((entry): entry is [string, number] => typeof entry[1] === 'number')
-      .filter(([key]) => !BASE_GENERATOR_FIELDS.has(key));
+      .filter(([key]) => !BASE_GENERATOR_FIELDS.has(key))
+      .filter(([key]) => (allowedWeightKeys ? allowedWeightKeys.has(key) : true));
 
     const nextWeights = draftEntries.reduce<Record<string, number>>((accumulator, [key, value]) => {
       accumulator[key] = value;
