@@ -316,13 +316,33 @@ export function TeamMatchDetail2025({
 
   const season = data[0]?.season;
 
-  const seasonConfig = useMemo(() => {
-    if (season) {
-      return SEASON_TABLE_CONFIGS[season];
+  const inferredSeason = useMemo(() => {
+    const firstRow = data[0];
+
+    if (!firstRow) {
+      return undefined;
+    }
+
+    if ('autoPass' in firstRow || 'autoFuel' in firstRow || 'teleopFuel' in firstRow) {
+      return 2;
+    }
+
+    if ('al4c' in firstRow || 'aNet' in firstRow || 'tProcessor' in firstRow) {
+      return 1;
     }
 
     return undefined;
-  }, [season]);
+  }, [data]);
+
+  const resolvedSeason = inferredSeason ?? season;
+
+  const seasonConfig = useMemo(() => {
+    if (resolvedSeason) {
+      return SEASON_TABLE_CONFIGS[resolvedSeason];
+    }
+
+    return undefined;
+  }, [resolvedSeason]);
 
   const superScoutLookup = useMemo(() => {
     const entries = new Map<string, SuperScoutMatchEntry>();
@@ -569,7 +589,7 @@ export function TeamMatchDetail2025({
   if (!tableConfig) {
     return (
       <Alert color="yellow" title="Unsupported season">
-        Match data for season {season ?? 'Unknown'} is not configured yet. Please update the table configuration.
+        Match data for season {resolvedSeason ?? 'Unknown'} is not configured yet. Please update the table configuration.
       </Alert>
     );
   }
