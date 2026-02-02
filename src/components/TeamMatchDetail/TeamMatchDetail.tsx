@@ -13,8 +13,6 @@ interface TeamMatchDetailProps {
   teamNumber: number;
 }
 
-const getSeasonFromData = (data: TeamMatchData[] | undefined) => data?.[0]?.season;
-
 const MATCH_LEVEL_SORT_ORDER: Record<string, number> = {
   qm: 0,
   sf: 1,
@@ -112,16 +110,6 @@ export function TeamMatchDetail({ teamNumber }: TeamMatchDetailProps) {
     return (
       <Alert color="blue" title="No match data available">
         We do not have any match data for Team {teamNumber} at this event yet.
-      </Alert>
-    );
-  }
-
-  const season = getSeasonFromData(data);
-
-  if (season !== 1) {
-    return (
-      <Alert color="yellow" title="Unsupported season">
-        Match data for season {season ?? 'Unknown'} is not configured yet. Please update the table configuration.
       </Alert>
     );
   }
