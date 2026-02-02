@@ -23,22 +23,22 @@ import {
 } from '@tabler/icons-react';
 import {
   useMatchImages,
-  type MatchPreviewResponse,
+  type MatchPreviewResponse2025,
   type MatchScheduleEntry,
   type MetricStatistics,
-  type TeamMatchPreview,
+  type TeamMatchPreview2025,
   type EventTeamImageSummary,
 } from '@/api';
 import classes from '@/pages/MatchPreview.module.css';
 
 interface MatchPreview2025Props {
   match: MatchScheduleEntry;
-  preview: MatchPreviewResponse;
+  preview: MatchPreviewResponse2025;
   className?: string;
   contentClassName?: string;
 }
 
-type AllianceTeam = TeamMatchPreview | undefined;
+type AllianceTeam = TeamMatchPreview2025 | undefined;
 
 const resolveTeamNumbers = (
   teams: AllianceTeam[],
@@ -747,4 +747,3 @@ const MissingTeamImage = ({ teamNumber }: { teamNumber: number }) => (
     </Text>
   </Stack>
 );
-
