@@ -31,10 +31,10 @@ import {
 } from '@mantine/core';
 
 const BOX_METRIC_OPTIONS: { label: string; value: BoxMetric }[] = [
-  { label: 'Game Pieces', value: 'gamePieces' },
+  { label: 'Total Points', value: 'total' },
   { label: 'Autonomous', value: 'autonomous' },
   { label: 'Teleop', value: 'teleop' },
-  { label: 'Total Points', value: 'total' },
+  { label: 'Game Pieces', value: 'gamePieces' },
 ];
 
 const mapAnalyticsResponse = (team: TeamAnalyticsResponse): TeamPerformanceSummary => ({
@@ -157,7 +157,7 @@ export function AnalyticsPage() {
   const showLoadError = isError && !isLoading;
   const showNoDataMessage = !isLoading && !showLoadError && !hasTeams;
   const [view, setView] = useState<AnalyticsView>('scatter');
-  const [boxMetric, setBoxMetric] = useState<BoxMetric>('gamePieces');
+  const [boxMetric, setBoxMetric] = useState<BoxMetric>('total');
 
   const selectedTeamNumbersSet = useMemo(
     () => new Set(selectedTeamNumbers),
