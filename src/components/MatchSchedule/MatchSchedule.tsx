@@ -6,7 +6,6 @@ import {
   useMatchScheduleSimulation,
   useEventTbaMatchDataset,
   type MatchScheduleEntry,
-  type MatchSimulation2025,
   type MatchSimulationResponse,
 } from '@/api';
 import {
@@ -62,9 +61,19 @@ const totalTableColumns = 1 + teamNumberKeys.length + 2;
 const createMatchKey = (matchLevel: string, matchNumber: number) =>
   `${matchLevel.toLowerCase()}-${matchNumber}`;
 
+type MatchSimulationWithMeta = Extract<
+  MatchSimulationResponse,
+  {
+    match_level: string;
+    match_number: number;
+    red_alliance_win_pct: number;
+    blue_alliance_win_pct: number;
+  }
+>;
+
 const isSimulationWithMeta = (
   simulation: MatchSimulationResponse
-): simulation is MatchSimulation2025 =>
+): simulation is MatchSimulationWithMeta =>
   typeof simulation === 'object' &&
   simulation !== null &&
   'match_level' in simulation &&
