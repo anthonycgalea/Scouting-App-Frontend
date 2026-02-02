@@ -28,6 +28,7 @@ import {
   usePickListGenerators,
   useUpdatePickListGenerator,
   type CreatePickListGeneratorRequest,
+  type PickListGenerator,
 } from '@/api/pickLists';
 import { useRequireOrganizationAccess } from '@/hooks/useRequireOrganizationAccess';
 
@@ -116,6 +117,37 @@ const formatWeightKey = (key: string) =>
 
 const formatSeasonLabel = (season: number) =>
   SEASON_LABELS[season] ?? (season >= 1900 ? `${season}` : `Season ${season}`);
+
+const buildGeneratorPayload = (
+  generator: PickListGenerator,
+  weights: Record<string, number>,
+) => {
+  const allowedWeightKeys = ALLOWED_WEIGHT_KEYS_BY_SEASON[generator.season];
+  const basePayload = Array.from(BASE_GENERATOR_FIELDS).reduce<Record<string, PickListGenerator[keyof PickListGenerator]>>(
+    (accumulator, key) => {
+      if (key in generator) {
+        accumulator[key] = generator[key];
+      }
+      return accumulator;
+    },
+    {},
+  );
+
+  const filteredWeights = Object.entries(weights).reduce<Record<string, number>>(
+    (accumulator, [key, value]) => {
+      if (!allowedWeightKeys || allowedWeightKeys.has(key)) {
+        accumulator[key] = value;
+      }
+      return accumulator;
+    },
+    {},
+  );
+
+  return {
+    ...basePayload,
+    ...filteredWeights,
+  };
+};
 
 export function ListGeneratorPage() {
   const { canAccessOrganizationPages, isCheckingAccess } = useRequireOrganizationAccess();
@@ -481,12 +513,18 @@ export function ListGeneratorPage() {
     }, {});
 
     try {
-      await updateGeneratorMutation.mutateAsync({
-        generator: {
+      const generatorPayload = buildGeneratorPayload(
+        {
           ...selectedGenerator,
           title: trimmedTitle,
           notes: trimmedNotes,
-          ...payloadWeights,
+        },
+        payloadWeights,
+      );
+
+      await updateGeneratorMutation.mutateAsync({
+        generator: {
+          ...generatorPayload,
         },
       });
 
