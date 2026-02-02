@@ -68,6 +68,11 @@ export interface TeamMatchPerformanceResponse {
   endgame_points: number;
   game_pieces: number;
   total_points: number;
+  autoFuel?: number;
+  autoPass?: number;
+  autoClimb?: number;
+  teleopFuel?: number;
+  teleopPass?: number;
   notes: string | null;
 }
 

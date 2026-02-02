@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Card,
   Center,
@@ -25,7 +25,7 @@ import {
   type TooltipContentProps,
 } from 'recharts';
 
-import { type TeamMatchHistoryResponse } from '@/api';
+import { useEventInfo, type TeamMatchHistoryResponse } from '@/api';
 
 type TeamIdentifier = string;
 
@@ -34,7 +34,12 @@ type MetricKey =
   | 'autonomous_points'
   | 'teleop_points'
   | 'endgame_points'
-  | 'game_pieces';
+  | 'game_pieces'
+  | 'autoFuel'
+  | 'autoClimb'
+  | 'teleopFuel'
+  | 'teleopPass'
+  | 'total_fuel';
 
 type MetricOption = {
   value: MetricKey;
@@ -63,7 +68,7 @@ type TooltipTeam = {
   matchLabel?: string;
 };
 
-const METRIC_OPTIONS: MetricOption[] = [
+const METRIC_OPTIONS_2025: MetricOption[] = [
   { value: 'total_points', label: 'Total Points', axisLabel: 'Total Points', valueSuffix: 'Points' },
   {
     value: 'autonomous_points',
@@ -85,6 +90,46 @@ const METRIC_OPTIONS: MetricOption[] = [
     valueSuffix: 'Game Pieces',
   },
 ];
+
+const METRIC_OPTIONS_2026: MetricOption[] = [
+  { value: 'autoFuel', label: 'Autonomous Fuel', axisLabel: 'Autonomous Fuel', valueSuffix: 'Fuel' },
+  {
+    value: 'endgame_points',
+    label: 'Endgame Points',
+    axisLabel: 'Endgame Points',
+    valueSuffix: 'Points',
+  },
+  { value: 'total_fuel', label: 'Total Fuel', axisLabel: 'Total Fuel', valueSuffix: 'Fuel' },
+  {
+    value: 'autoClimb',
+    label: 'Autonomous Climb',
+    axisLabel: 'Autonomous Climb',
+    valueSuffix: 'Climb',
+  },
+  { value: 'teleopFuel', label: 'Teleop Fuel', axisLabel: 'Teleop Fuel', valueSuffix: 'Fuel' },
+  {
+    value: 'teleopPass',
+    label: 'Teleop Passing',
+    axisLabel: 'Teleop Passing',
+    valueSuffix: 'Passes',
+  },
+];
+
+const getMetricValue = (match: TeamMatchHistoryResponse['matches'][number], metricKey: MetricKey) => {
+  if (metricKey === 'total_fuel') {
+    const autoFuel = typeof match.autoFuel === 'number' ? match.autoFuel : null;
+    const teleopFuel = typeof match.teleopFuel === 'number' ? match.teleopFuel : null;
+
+    if (autoFuel === null && teleopFuel === null) {
+      return null;
+    }
+
+    return (autoFuel ?? 0) + (teleopFuel ?? 0);
+  }
+
+  const value = match[metricKey as keyof TeamMatchHistoryResponse['matches'][number]];
+  return typeof value === 'number' ? value : null;
+};
 
 const getPalette = (colorScheme: 'dark' | 'light', theme: ReturnType<typeof useMantineTheme>) => {
   if (colorScheme === 'dark') {
@@ -141,8 +186,7 @@ const buildChartData = (
         return;
       }
 
-      const value = match[metricKey];
-      point[teamId] = typeof value === 'number' ? value : null;
+      point[teamId] = getMetricValue(match, metricKey);
 
       const level = match.match_level?.toLowerCase() ?? '';
       const matchLabel =
@@ -258,8 +302,21 @@ export default function CompareLineChart2025({ teams, isLoading, isError }: Comp
   const theme = useMantineTheme();
   const { colorScheme: resolvedColorScheme } = useMantineColorScheme();
   const colorScheme = resolvedColorScheme === 'dark' ? 'dark' : 'light';
+  const { data: eventInfo } = useEventInfo();
 
-  const [selectedMetric, setSelectedMetric] = useState<MetricKey>(METRIC_OPTIONS[0].value);
+  const is2026Event = eventInfo?.year === 2026;
+  const metricOptions = useMemo(
+    () => (is2026Event ? METRIC_OPTIONS_2026 : METRIC_OPTIONS_2025),
+    [is2026Event],
+  );
+
+  const [selectedMetric, setSelectedMetric] = useState<MetricKey>(METRIC_OPTIONS_2025[0].value);
+
+  useEffect(() => {
+    if (!metricOptions.some((option) => option.value === selectedMetric)) {
+      setSelectedMetric(metricOptions[0].value);
+    }
+  }, [metricOptions, selectedMetric]);
 
   const teamLookup = useMemo(() => {
     return new Map<TeamIdentifier, TeamMatchHistoryResponse>(
@@ -278,8 +335,8 @@ export default function CompareLineChart2025({ teams, isLoading, isError }: Comp
   );
 
   const selectedMetricDefinition = useMemo(
-    () => METRIC_OPTIONS.find((option) => option.value === selectedMetric) ?? METRIC_OPTIONS[0],
-    [selectedMetric],
+    () => metricOptions.find((option) => option.value === selectedMetric) ?? metricOptions[0],
+    [metricOptions, selectedMetric],
   );
 
   const chartData = useMemo(
@@ -300,8 +357,8 @@ export default function CompareLineChart2025({ teams, isLoading, isError }: Comp
   );
 
   const metricSelectOptions = useMemo(
-    () => METRIC_OPTIONS.map((option) => ({ value: option.value, label: option.label })),
-    [],
+    () => metricOptions.map((option) => ({ value: option.value, label: option.label })),
+    [metricOptions],
   );
 
   const hasData = chartData.length > 0 && selectedTeams.length > 0;
