@@ -78,6 +78,9 @@ type AllianceMetricField = Extract<
 
 const AUTO_CORAL_FIELDS = ['al4c', 'al3c', 'al2c', 'al1c'] as const satisfies readonly AllianceMetricField[];
 const TELEOP_CORAL_FIELDS = ['tl4c', 'tl3c', 'tl2c', 'tl1c'] as const satisfies readonly AllianceMetricField[];
+const ALLIANCE_METRIC_FIELDS = [...AUTO_CORAL_FIELDS, ...TELEOP_CORAL_FIELDS] as const;
+
+type AllianceMetricData = Partial<Record<AllianceMetricField, number>>;
 
 type AllianceColor = 'RED' | 'BLUE';
 type AllianceKey = `${string}-${AllianceColor}`;
@@ -126,7 +129,7 @@ const buildAllianceKey = (
 ): AllianceKey => `${(matchLevel ?? '').toLowerCase()}-${matchNumber}-${alliance}`;
 
 const sumScoutFields = (
-  teamData: Array<Partial<TeamMatchData> | undefined>,
+  teamData: Array<AllianceMetricData | undefined>,
   fields: readonly AllianceMetricField[]
 ) => {
   let hasValue = false;
@@ -191,7 +194,7 @@ const sumTbaFields = (
 };
 
 const computeNumericComparison = (
-  teamData: Array<Partial<TeamMatchData> | undefined>,
+  teamData: Array<AllianceMetricData | undefined>,
   tbaEntries: TbaTeamEntry[],
   tbaTotalsRecord: Record<string, unknown> | undefined,
   fields: readonly AllianceMetricField[]
@@ -366,6 +369,28 @@ const parseNotesField = (value: unknown): string | null | undefined => {
   return undefined;
 };
 
+const getAllianceMetricData = (
+  data: Partial<TeamMatchData> | undefined
+): AllianceMetricData | undefined => {
+  if (!data) {
+    return undefined;
+  }
+
+  const metrics: AllianceMetricData = {};
+  let hasValue = false;
+
+  ALLIANCE_METRIC_FIELDS.forEach((field) => {
+    const value = (data as Record<string, unknown>)[field];
+
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      metrics[field] = value;
+      hasValue = true;
+    }
+  });
+
+  return hasValue ? metrics : undefined;
+};
+
 const getRecordValue = (
   record: Record<string, unknown>,
   ...keys: string[]
@@ -479,7 +504,7 @@ const buildAllianceSummary = (
   });
 
   const teamData = teamRecords.map((record) =>
-    record ? getTeamMatchData(record) ?? undefined : undefined
+    getAllianceMetricData(record ? getTeamMatchData(record) ?? undefined : undefined)
   );
   const tbaRecord = findTbaAllianceRecordInLookup(tbaLookup, {
     matchLevel,
