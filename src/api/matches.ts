@@ -141,7 +141,18 @@ export interface MatchSimulation2025 extends MatchSimulationBase {
   blue_rw_win_pct: number;
 }
 
-export type MatchSimulationResponse = MatchSimulation2025 | string;
+export interface MatchSimulation2026 extends MatchSimulationBase {
+  blue_alliance_win_pct: number;
+  blue_energized_rp: number;
+  blue_supercharged_rp: number;
+  blue_traversal_rp: number;
+  red_alliance_win_pct: number;
+  red_energized_rp: number;
+  red_supercharged_rp: number;
+  red_traversal_rp: number;
+}
+
+export type MatchSimulationResponse = MatchSimulation2025 | MatchSimulation2026 | string;
 
 export const matchSimulationQueryKey = (params?: MatchPreviewRequest) =>
   ['match-simulation', params?.matchLevel, params?.matchNumber] as const;
