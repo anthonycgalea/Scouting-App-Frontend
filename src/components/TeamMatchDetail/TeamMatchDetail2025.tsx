@@ -13,13 +13,7 @@ import {
   Text,
 } from '@mantine/core';
 import { Link } from '@tanstack/react-router';
-import type {
-  Endgame2025,
-  MatchScheduleEntry,
-  SuperScoutField,
-  SuperScoutMatchEntry,
-  TeamMatchData,
-} from '@/api';
+import type { MatchScheduleEntry, SuperScoutField, SuperScoutMatchEntry, TeamMatchData } from '@/api';
 import classes from './TeamMatchDetail2025.module.css';
 
 interface TeamMatchDetail2025Props {
@@ -56,11 +50,21 @@ interface SeasonMatchTableConfig {
   trailingGroups?: ColumnGroupDefinition[];
 }
 
-const ENDGAME_2025_LABELS: Record<Endgame2025, string> = {
-  NONE: 'None',
-  PARK: 'Park',
-  SHALLOW: 'Shallow',
-  DEEP: 'Deep',
+const formatEndgameLabel = (value: string | null | undefined) => {
+  if (!value) {
+    return '—';
+  }
+
+  const normalized = value.trim();
+
+  if (normalized.toUpperCase() === 'NONE') {
+    return 'None';
+  }
+
+  return normalized
+    .split('_')
+    .map((part) => part.charAt(0) + part.slice(1).toLowerCase())
+    .join(' ');
 };
 
 const numberColumn = (key: keyof TeamMatchData & string, title: string): ColumnDefinition => ({
@@ -159,7 +163,79 @@ const SEASON_TABLE_CONFIGS: Record<number, SeasonMatchTableConfig> = {
         key: 'endgame',
         title: 'Endgame',
         align: 'center',
-        render: (row) => ENDGAME_2025_LABELS[row.endgame] ?? row.endgame,
+        render: (row) => formatEndgameLabel(row.endgame),
+      },
+    ],
+    trailingGroups: [
+      {
+        title: 'Notes',
+        columns: [
+          {
+            key: 'notes',
+            title: 'Notes',
+            render: (row) => row.notes?.trim() || '—',
+          },
+        ],
+      },
+      {
+        title: 'SuperScout',
+        columns: [
+          {
+            key: 'superScoutComments',
+            title: 'Comments',
+            render: () => '—',
+          },
+          {
+            key: 'superScoutDriverAbility',
+            title: 'Driver Ability',
+            align: 'center',
+            render: () => '—',
+          },
+          {
+            key: 'superScoutDefense',
+            title: 'Defense',
+            align: 'center',
+            render: () => '—',
+          },
+          {
+            key: 'superScoutOverall',
+            title: 'Overall',
+            align: 'center',
+            render: () => '—',
+          },
+        ],
+      },
+    ],
+  },
+  2: {
+    leadColumns: [
+      {
+        key: 'match',
+        title: 'Match #',
+        align: 'center',
+        render: (row) => formatMatchIdentifier(row),
+      },
+    ],
+    groups: [
+      {
+        title: 'Autonomous',
+        columns: [
+          numberColumn('autoFuel', 'Fuel'),
+          numberColumn('autoPass', 'Pass'),
+          numberColumn('autoClimb', 'Climb'),
+        ],
+      },
+      {
+        title: 'Teleop',
+        columns: [numberColumn('teleopFuel', 'Fuel'), numberColumn('teleopPass', 'Pass')],
+      },
+    ],
+    trailingColumns: [
+      {
+        key: 'endgame',
+        title: 'Endgame',
+        align: 'center',
+        render: (row) => formatEndgameLabel(row.endgame),
       },
     ],
     trailingGroups: [

@@ -64,7 +64,16 @@ export interface TeamMatchData2025 extends BaseTeamMatchData {
   endgame: Endgame2025;
 }
 
-export type TeamMatchData = TeamMatchData2025;
+export interface TeamMatchData2026 extends BaseTeamMatchData {
+  autoPass: number;
+  autoFuel: number;
+  autoClimb: number;
+  teleopFuel: number;
+  teleopPass: number;
+  endgame: string;
+}
+
+export type TeamMatchData = TeamMatchData2025 | TeamMatchData2026;
 
 export const eventTeamsQueryKey = () => ['event-teams'] as const;
 
@@ -227,4 +236,3 @@ export const useTeamMatchData = (teamNumber: number) =>
     queryFn: () => fetchTeamMatchData(teamNumber),
     enabled: Number.isFinite(teamNumber),
   });
-
