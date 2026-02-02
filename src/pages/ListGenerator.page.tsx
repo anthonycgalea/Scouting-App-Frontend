@@ -121,16 +121,16 @@ const formatSeasonLabel = (season: number) =>
 const buildGeneratorPayload = (
   generator: PickListGenerator,
   weights: Record<string, number>,
-) => {
+): PickListGenerator => {
   const allowedWeightKeys = ALLOWED_WEIGHT_KEYS_BY_SEASON[generator.season];
-  const basePayload = Array.from(BASE_GENERATOR_FIELDS).reduce<Record<string, PickListGenerator[keyof PickListGenerator]>>(
+  const basePayload = Array.from(BASE_GENERATOR_FIELDS).reduce<PickListGenerator>(
     (accumulator, key) => {
       if (key in generator) {
         accumulator[key] = generator[key];
       }
       return accumulator;
     },
-    {},
+    {} as PickListGenerator,
   );
 
   const filteredWeights = Object.entries(weights).reduce<Record<string, number>>(

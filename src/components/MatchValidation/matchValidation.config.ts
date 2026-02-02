@@ -1,4 +1,4 @@
-import type { TeamMatchData } from '@/api';
+import type { TeamMatchData2025 } from '@/api';
 
 // This configuration drives the Match Validation table layout so the game-specific
 // fields can be adjusted each season without modifying the rendering logic.
@@ -17,7 +17,7 @@ export type MatchValidationNumericField =
   | 'aProcessor'
   | 'tProcessor';
 
-type FieldKey = MatchValidationNumericField & keyof TeamMatchData;
+type FieldKey = MatchValidationNumericField & keyof TeamMatchData2025;
 
 export interface MatchValidationNumericRowConfig {
   type: 'numeric';
