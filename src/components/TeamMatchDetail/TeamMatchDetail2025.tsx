@@ -1,27 +1,12 @@
 import { type ReactNode, useCallback, useMemo, useState } from 'react';
 import cx from 'clsx';
-import {
-  Alert,
-  Anchor,
-  Badge,
-  Group,
-  Loader,
-  Rating,
-  ScrollArea,
-  Stack,
-  Table,
-  Text,
-} from '@mantine/core';
+import { Alert, Anchor, Group, Loader, ScrollArea, Stack, Table, Text } from '@mantine/core';
 import { Link } from '@tanstack/react-router';
-import type { MatchScheduleEntry, SuperScoutField, SuperScoutMatchEntry, TeamMatchData } from '@/api';
+import type { MatchScheduleEntry, TeamMatchData } from '@/api';
 import classes from './TeamMatchDetail2025.module.css';
 
 interface TeamMatchDetail2025Props {
   data: TeamMatchData[];
-  superScoutData: SuperScoutMatchEntry[];
-  superScoutFields: SuperScoutField[];
-  isSuperScoutLoading: boolean;
-  isSuperScoutError: boolean;
   upcomingMatches: MatchScheduleEntry[];
   isUpcomingLoading: boolean;
   isUpcomingError: boolean;
@@ -90,12 +75,6 @@ const formatMatchIdentifier = (row: TeamMatchData) => {
   const level = typeof row.match_level === 'string' ? row.match_level.toUpperCase() : String(row.match_level ?? '');
   return `${level}${row.match_number}`;
 };
-
-const buildValidationKey = (
-  matchLevel: string | null | undefined,
-  matchNumber: number | null | undefined,
-  teamNumber: number | null | undefined
-) => `${(matchLevel ?? '').toLowerCase()}-${matchNumber ?? 0}-${teamNumber ?? 0}`;
 
 const MATCH_LEVEL_PRIORITY: Record<string, number> = {
   QM: 0,
@@ -173,34 +152,6 @@ const SEASON_2026_MATCH_CONFIG: SeasonMatchTableConfig = {
         },
       ],
     },
-    {
-      title: 'SuperScout',
-      columns: [
-        {
-          key: 'superScoutComments',
-          title: 'Comments',
-          render: () => '—',
-        },
-        {
-          key: 'superScoutDriverAbility',
-          title: 'Driver Ability',
-          align: 'center',
-          render: () => '—',
-        },
-        {
-          key: 'superScoutDefense',
-          title: 'Defense',
-          align: 'center',
-          render: () => '—',
-        },
-        {
-          key: 'superScoutOverall',
-          title: 'Overall',
-          align: 'center',
-          render: () => '—',
-        },
-      ],
-    },
   ],
 };
 
@@ -218,12 +169,6 @@ const SEASON_TABLE_CONFIGS: Record<number, SeasonMatchTableConfig> = {
       {
         title: 'Autonomous Coral',
         columns: [
-          {
-            key: 'startPosition',
-            title: 'Start Position',
-            align: 'center',
-            render: () => '—',
-          },
           numberColumn('al4c', 'L4'),
           numberColumn('al3c', 'L3'),
           numberColumn('al2c', 'L2'),
@@ -262,52 +207,14 @@ const SEASON_TABLE_CONFIGS: Record<number, SeasonMatchTableConfig> = {
           },
         ],
       },
-      {
-        title: 'SuperScout',
-        columns: [
-          {
-            key: 'superScoutComments',
-            title: 'Comments',
-            render: () => '—',
-          },
-          {
-            key: 'superScoutDriverAbility',
-            title: 'Driver Ability',
-            align: 'center',
-            render: () => '—',
-          },
-          {
-            key: 'superScoutDefense',
-            title: 'Defense',
-            align: 'center',
-            render: () => '—',
-          },
-          {
-            key: 'superScoutOverall',
-            title: 'Overall',
-            align: 'center',
-            render: () => '—',
-          },
-        ],
-      },
     ],
   },
   2: SEASON_2026_MATCH_CONFIG,
   2026: SEASON_2026_MATCH_CONFIG,
 };
 
-const formatStartPosition = (value: string) =>
-  value
-    .split('_')
-    .map((part) => part.charAt(0) + part.slice(1).toLowerCase())
-    .join(' ');
-
 export function TeamMatchDetail2025({
   data,
-  superScoutData,
-  superScoutFields,
-  isSuperScoutLoading,
-  isSuperScoutError,
   upcomingMatches,
   isUpcomingLoading,
   isUpcomingError,
@@ -359,138 +266,9 @@ export function TeamMatchDetail2025({
     return undefined;
   }, [resolvedSeason]);
 
-  const superScoutLookup = useMemo(() => {
-    const entries = new Map<string, SuperScoutMatchEntry>();
-
-    superScoutData.forEach((entry) => {
-      entries.set(
-        buildValidationKey(entry.match_level, entry.match_number, entry.team_number),
-        entry
-      );
-    });
-
-    return entries;
-  }, [superScoutData]);
-
-  const renderLoadingText = useCallback(
-    () => (
-      <Text size="sm" c="dimmed">
-        Loading…
-      </Text>
-    ),
-    []
-  );
-
-  const getSuperScoutEntry = useCallback(
-    (row: TeamMatchData) =>
-      superScoutLookup.get(
-        buildValidationKey(row.match_level, row.match_number, row.team_number)
-      ),
-    [superScoutLookup]
-  );
-
-  const renderStartPositionCell = useCallback(
-    (row: TeamMatchData) => {
-      if (isSuperScoutLoading) {
-        return renderLoadingText();
-      }
-
-      const entry = getSuperScoutEntry(row);
-      const value = typeof entry?.startPosition === 'string' ? entry.startPosition.trim() : '';
-
-      if (!value) {
-        return '—';
-      }
-
-      return formatStartPosition(value);
-    },
-    [getSuperScoutEntry, isSuperScoutLoading, renderLoadingText]
-  );
-
-  const renderSuperScoutComments = useCallback(
-    (row: TeamMatchData) => {
-      if (isSuperScoutLoading) {
-        return renderLoadingText();
-      }
-
-      const entry = getSuperScoutEntry(row);
-
-      if (!entry) {
-        return '—';
-      }
-
-      const record = entry as Record<string, unknown>;
-
-      const activeFields = superScoutFields.filter((field) => record[field.key] === true);
-
-      if (activeFields.length === 0) {
-        return '—';
-      }
-
-      return (
-        <Group gap={4} wrap="wrap" justify="flex-start">
-          {activeFields.map((field) => (
-            <Badge key={field.key} variant="light" size="sm">
-              {field.label}
-            </Badge>
-          ))}
-        </Group>
-      );
-    },
-    [getSuperScoutEntry, isSuperScoutLoading, renderLoadingText, superScoutFields]
-  );
-
-  const renderSuperScoutRating = useCallback(
-    (
-      row: TeamMatchData,
-      key: 'driver_rating' | 'defense_rating' | 'robot_overall',
-      options?: { nullLabel?: string }
-    ) => {
-      if (isSuperScoutLoading) {
-        return renderLoadingText();
-      }
-
-      const entry = getSuperScoutEntry(row);
-      const nullLabel = options?.nullLabel ?? '—';
-      const rawValue =
-        key === 'driver_rating'
-          ? entry?.driver_rating ?? null
-          : key === 'defense_rating'
-            ? entry?.defense_rating ?? null
-            : entry?.robot_overall ?? null;
-      const value = typeof rawValue === 'number' ? rawValue : 0;
-
-      if (!value) {
-        return nullLabel;
-      }
-
-      return <Rating value={value} count={3} readOnly size="sm" />;
-    },
-    [getSuperScoutEntry, isSuperScoutLoading, renderLoadingText]
-  );
-
   const renderNotesCell = useCallback(
-    (row: TeamMatchData) => {
-      const matchNotes = typeof row.notes === 'string' ? row.notes.trim() : '';
-
-      if (isSuperScoutLoading) {
-        return matchNotes || renderLoadingText();
-      }
-
-      const superScoutNotes = (() => {
-        const entry = getSuperScoutEntry(row);
-        return typeof entry?.notes === 'string' ? entry.notes.trim() : '';
-      })();
-
-      const combinedNotes = [matchNotes, superScoutNotes].filter((value) => value.length > 0);
-
-      if (combinedNotes.length === 0) {
-        return '—';
-      }
-
-      return combinedNotes.join('; ');
-    },
-    [getSuperScoutEntry, isSuperScoutLoading, renderLoadingText]
+    (row: TeamMatchData) => row.notes?.trim() || '—',
+    []
   );
 
   const tableConfig = useMemo(() => {
@@ -509,25 +287,7 @@ export function TeamMatchDetail2025({
       };
     });
 
-    const groups = seasonConfig.groups.map((group) => {
-      if (group.title !== 'Autonomous Coral') {
-        return group;
-      }
-
-      return {
-        ...group,
-        columns: group.columns.map((column) => {
-          if (column.key !== 'startPosition') {
-            return column;
-          }
-
-          return {
-            ...column,
-            render: (row: TeamMatchData) => renderStartPositionCell(row),
-          };
-        }),
-      };
-    });
+    const groups = seasonConfig.groups;
 
     const trailingGroups = seasonConfig.trailingGroups?.map((group) => {
       if (group.title === 'Notes') {
@@ -546,45 +306,7 @@ export function TeamMatchDetail2025({
         };
       }
 
-      if (group.title !== 'SuperScout') {
-        return group;
-      }
-
-      return {
-        ...group,
-        columns: group.columns.map((column) => {
-          if (column.key === 'superScoutComments') {
-            return {
-              ...column,
-              render: (row: TeamMatchData) => renderSuperScoutComments(row),
-            };
-          }
-
-          if (column.key === 'superScoutDriverAbility') {
-            return {
-              ...column,
-              render: (row: TeamMatchData) => renderSuperScoutRating(row, 'driver_rating'),
-            };
-          }
-
-          if (column.key === 'superScoutDefense') {
-            return {
-              ...column,
-              render: (row: TeamMatchData) =>
-                renderSuperScoutRating(row, 'defense_rating', { nullLabel: 'N/A' }),
-            };
-          }
-
-          if (column.key === 'superScoutOverall') {
-            return {
-              ...column,
-              render: (row: TeamMatchData) => renderSuperScoutRating(row, 'robot_overall'),
-            };
-          }
-
-          return column;
-        }),
-      };
+      return group;
     });
 
     return {
@@ -594,10 +316,7 @@ export function TeamMatchDetail2025({
       trailingGroups,
     };
   }, [
-    renderStartPositionCell,
     renderNotesCell,
-    renderSuperScoutComments,
-    renderSuperScoutRating,
     seasonConfig,
   ]);
 
@@ -783,35 +502,29 @@ export function TeamMatchDetail2025({
     }
 
     return (
-        <ScrollArea
-          scrollbars="xy"
-          onScrollPositionChange={({ y }) => setScrolled(y !== 0)}
-          style={{ flex: 1, minHeight: 0 }}
-        >
-      <Table striped withColumnBorders highlightOnHover>
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th>Match</Table.Th>
-            <Table.Th>Alliance</Table.Th>
-            <Table.Th>Partners</Table.Th>
-            <Table.Th>Opponents</Table.Th>
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>{upcomingMatchRows}</Table.Tbody>
-      </Table>
-        </ScrollArea>
+      <ScrollArea
+        scrollbars="xy"
+        onScrollPositionChange={({ y }) => setScrolled(y !== 0)}
+        style={{ flex: 1, minHeight: 0 }}
+      >
+        <Table striped withColumnBorders highlightOnHover>
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>Match</Table.Th>
+              <Table.Th>Alliance</Table.Th>
+              <Table.Th>Partners</Table.Th>
+              <Table.Th>Opponents</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>{upcomingMatchRows}</Table.Tbody>
+        </Table>
+      </ScrollArea>
     );
   };
 
   return (
     <Stack gap="lg" h="100%" style={{ flex: 1, minHeight: 0 }}>
       <Stack gap="sm" style={{ flex: 2, minHeight: 0 }}>
-        {isSuperScoutError ? (
-          <Alert color="red" title="Unable to load SuperScout data">
-            We could not retrieve SuperScout observations for this team. The table may be missing
-            supplemental comments.
-          </Alert>
-        ) : null}
         <ScrollArea
           scrollbars="xy"
           onScrollPositionChange={({ y }) => setScrolled(y !== 0)}

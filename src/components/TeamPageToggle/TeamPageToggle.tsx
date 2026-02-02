@@ -1,7 +1,7 @@
 import { SegmentedControl } from '@mantine/core';
 import classes from './TeamPageToggle.module.css';
 
-export type TeamPageSection = 'match-data' | 'analytics' | 'pit-scouting';
+export type TeamPageSection = 'match-data' | 'super-scout' | 'analytics' | 'pit-scouting';
 
 type TeamPageToggleProps = {
   value: TeamPageSection;
@@ -15,6 +15,7 @@ export function TeamPageToggle({ value, onChange }: TeamPageToggleProps) {
       size="md"
       data={[
         { label: 'Match Data', value: 'match-data' },
+        { label: 'SuperScout', value: 'super-scout' },
         { label: 'Analytics', value: 'analytics' },
         { label: 'Pit Scouting', value: 'pit-scouting' },
       ]}

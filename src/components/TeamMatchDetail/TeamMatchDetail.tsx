@@ -1,12 +1,6 @@
 import { useMemo } from 'react';
 import { Alert, Center, Loader } from '@mantine/core';
-import {
-  type TeamMatchData,
-  useSuperScoutFields,
-  useSuperScoutMatchData,
-  useTeamMatchData,
-  useMatchSchedule,
-} from '@/api';
+import { type TeamMatchData, useTeamMatchData, useMatchSchedule } from '@/api';
 import { TeamMatchDetail2025 } from './TeamMatchDetail2025';
 
 interface TeamMatchDetailProps {
@@ -30,16 +24,6 @@ export function TeamMatchDetail({ teamNumber }: TeamMatchDetailProps) {
     isLoading,
     isError,
   } = useTeamMatchData(teamNumber);
-  const {
-    data: superScoutData = [],
-    isLoading: isSuperScoutDataLoading,
-    isError: isSuperScoutDataError,
-  } = useSuperScoutMatchData(teamNumber);
-  const {
-    data: superScoutFields = [],
-    isLoading: isSuperScoutFieldsLoading,
-    isError: isSuperScoutFieldsError,
-  } = useSuperScoutFields();
   const {
     data: matchSchedule = [],
     isLoading: isScheduleLoading,
@@ -117,10 +101,6 @@ export function TeamMatchDetail({ teamNumber }: TeamMatchDetailProps) {
   return (
     <TeamMatchDetail2025
       data={data}
-      superScoutData={superScoutData}
-      superScoutFields={superScoutFields}
-      isSuperScoutLoading={isSuperScoutDataLoading || isSuperScoutFieldsLoading}
-      isSuperScoutError={isSuperScoutDataError || isSuperScoutFieldsError}
       upcomingMatches={upcomingMatches}
       isUpcomingLoading={isScheduleLoading}
       isUpcomingError={isScheduleError}

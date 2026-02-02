@@ -14,6 +14,10 @@ const TeamAnalytics = lazy(async () => ({
   default: (await import('@/components/TeamAnalytics/TeamAnalytics')).TeamAnalytics,
 }));
 
+const TeamSuperScout = lazy(async () => ({
+  default: (await import('@/components/TeamSuperScout/TeamSuperScout')).TeamSuperScout,
+}));
+
 const TeamPitScout = lazy(async () => ({
   default: (await import('@/components/TeamPitScout/TeamPitScout')).TeamPitScout,
 }));
@@ -29,6 +33,8 @@ export function TeamDetailPage() {
 
   const renderActiveSection = () => {
     switch (activeSection) {
+      case 'super-scout':
+        return <TeamSuperScout teamNumber={teamNumber} />;
       case 'analytics':
         return <TeamAnalytics teamNumber={teamNumber} />;
       case 'pit-scouting':
