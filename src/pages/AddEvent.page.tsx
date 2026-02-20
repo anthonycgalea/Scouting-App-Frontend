@@ -123,7 +123,7 @@ export function AddEventPage() {
       { value: 'all', label: 'All Weeks' },
       ...weeks.map((week) => ({
         value: week.toString(),
-        label: getEventWeekLabel(week, { placeholder: '' }),
+        label: week === 0 ? 'Preseason' : getEventWeekLabel(week, { placeholder: '' }),
       })),
     ];
   }, [eventList]);
