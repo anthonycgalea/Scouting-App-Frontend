@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Alert, Box, Center, Flex, Loader, Stack, Text, Title } from '@mantine/core';
 
 import CompareLineChart2025 from '@/components/CompareLineChart2025/CompareLineChart2025';
-import CompareZScoreChart2025 from '@/components/CompareZScoreChart2025/CompareZScoreChart2025';
+import CompareZScoreChart2026 from '@/components/CompareZScoreChart2026/CompareZScoreChart2026';
 import { useTeamMatchHistory, type TeamMatchHistoryResponse } from '@/api';
 
 type TeamAnalyticsProps = {
@@ -74,7 +74,7 @@ export function TeamAnalytics({ teamNumber }: TeamAnalyticsProps) {
           <CompareLineChart2025 teams={chartTeams} isLoading={false} isError={false} />
         </Box>
         <Box style={{ flex: 2, minWidth: 0 }}>
-          <CompareZScoreChart2025 selectedTeams={selectedTeamIds} />
+          <CompareZScoreChart2026 selectedTeams={selectedTeamIds} />
         </Box>
       </Flex>
     </Stack>
