@@ -89,7 +89,7 @@ const DEFAULT_ATTRIBUTE_SELECTION: ZScoreAttributeKey[] = [
   'teleop_passing_z',
 ];
 
-type CompareZScoreChart2025Props = {
+type CompareZScoreChart2026Props = {
   selectedTeams: string[];
 };
 
@@ -120,7 +120,7 @@ const getPalette = (colorScheme: 'dark' | 'light', theme: ReturnType<typeof useM
 
 const getTeamKey = (team: TeamZScoreResponseTeam) => `team-${team.team_number}`;
 
-export default function CompareZScoreChart2025({ selectedTeams }: CompareZScoreChart2025Props) {
+export default function CompareZScoreChart2026({ selectedTeams }: CompareZScoreChart2026Props) {
   const theme = useMantineTheme();
   const { colorScheme: resolvedScheme } = useMantineColorScheme();
   const colorScheme = resolvedScheme === 'dark' ? 'dark' : 'light';

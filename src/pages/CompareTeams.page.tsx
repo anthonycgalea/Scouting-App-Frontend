@@ -4,7 +4,7 @@ import { Box, Flex, MultiSelect, Stack, Tabs, Text, Title } from '@mantine/core'
 import cx from 'clsx';
 
 import CompareLineChart2025 from '@/components/CompareLineChart2025/CompareLineChart2025';
-import CompareZScoreChart2025 from '@/components/CompareZScoreChart2025/CompareZScoreChart2025';
+import CompareZScoreChart2026 from '@/components/CompareZScoreChart2026/CompareZScoreChart2026';
 import HeadToHeadStatsTable from '@/components/HeadToHeadStatsTable/HeadToHeadStatsTable';
 import {
   useTeamHeadToHeadStats,
@@ -165,7 +165,7 @@ export function CompareTeamsPage() {
                 <CompareLineChart2025 teams={selectedTeamData} isLoading={isLoading} isError={isError} />
               </Box>
               <Box className={cx(classes.chartPanel, classes.radarChartPanel)}>
-                <CompareZScoreChart2025 selectedTeams={selectedTeams} />
+                <CompareZScoreChart2026 selectedTeams={selectedTeams} />
               </Box>
             </Flex>
           </Tabs.Panel>
