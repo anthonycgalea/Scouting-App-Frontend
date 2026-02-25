@@ -187,7 +187,7 @@ export function HeadToHeadStatsTable({ teams, isLoading, isError }: HeadToHeadSt
     <Paper withBorder radius="md" p="xl" className={classes.card}>
       <Stack gap="lg" className={classes.tableContainer}>
         <Title order={4} ta="center">
-          Head-to-Head Summary
+          2026 Head-to-Head Summary
         </Title>
 
         <Table.ScrollContainer minWidth={600}>
