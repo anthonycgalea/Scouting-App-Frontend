@@ -68,11 +68,19 @@ export interface TeamMatchPerformanceResponse {
   endgame_points: number;
   game_pieces: number;
   total_points: number;
+  autonomous_fuel_scored?: number;
+  autonomous_climbed?: number;
+  teleop_fuel?: number;
+  teleop_passing?: number;
+  total_fuel?: number;
   autoFuel?: number;
   autoPass?: number;
   autoClimb?: number;
   teleopFuel?: number;
   teleopPass?: number;
+  superscout_overall?: number | null;
+  superscout_driver?: number | null;
+  superscout_defense?: number | null;
   notes: string | null;
 }
 

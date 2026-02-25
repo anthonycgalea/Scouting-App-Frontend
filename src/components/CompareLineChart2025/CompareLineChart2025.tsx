@@ -116,15 +116,57 @@ const METRIC_OPTIONS_2026: MetricOption[] = [
 ];
 
 const getMetricValue = (match: TeamMatchHistoryResponse['matches'][number], metricKey: MetricKey) => {
-  if (metricKey === 'total_fuel') {
-    const autoFuel = typeof match.autoFuel === 'number' ? match.autoFuel : null;
-    const teleopFuel = typeof match.teleopFuel === 'number' ? match.teleopFuel : null;
+  const autonomousFuelScored =
+    typeof match.autonomous_fuel_scored === 'number'
+      ? match.autonomous_fuel_scored
+      : typeof match.autoFuel === 'number'
+        ? match.autoFuel
+        : null;
+  const autonomousClimbed =
+    typeof match.autonomous_climbed === 'number'
+      ? match.autonomous_climbed
+      : typeof match.autoClimb === 'number'
+        ? match.autoClimb
+        : null;
+  const teleopFuel =
+    typeof match.teleop_fuel === 'number'
+      ? match.teleop_fuel
+      : typeof match.teleopFuel === 'number'
+        ? match.teleopFuel
+        : null;
+  const teleopPassing =
+    typeof match.teleop_passing === 'number'
+      ? match.teleop_passing
+      : typeof match.teleopPass === 'number'
+        ? match.teleopPass
+        : null;
 
-    if (autoFuel === null && teleopFuel === null) {
+  if (metricKey === 'autoFuel') {
+    return autonomousFuelScored;
+  }
+
+  if (metricKey === 'autoClimb') {
+    return autonomousClimbed;
+  }
+
+  if (metricKey === 'teleopFuel') {
+    return teleopFuel;
+  }
+
+  if (metricKey === 'teleopPass') {
+    return teleopPassing;
+  }
+
+  if (metricKey === 'total_fuel') {
+    if (typeof match.total_fuel === 'number') {
+      return match.total_fuel;
+    }
+
+    if (autonomousFuelScored === null && teleopFuel === null) {
       return null;
     }
 
-    return (autoFuel ?? 0) + (teleopFuel ?? 0);
+    return (autonomousFuelScored ?? 0) + (teleopFuel ?? 0);
   }
 
   const value = match[metricKey as keyof TeamMatchHistoryResponse['matches'][number]];
