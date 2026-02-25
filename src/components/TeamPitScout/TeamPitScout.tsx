@@ -1,4 +1,4 @@
-import { type ChangeEvent, type CSSProperties, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ChangeEvent, type CSSProperties } from 'react';
 import {
   Alert,
   Box,
@@ -18,15 +18,15 @@ import {
   useMantineTheme,
 } from '@mantine/core';
 import {
-  type PitScout,
-  type PitScout2026,
-  type PitScoutIdentifier,
-  type PitScout2025,
-  type PitScoutUpsertPayload,
   useCreatePitScoutRecord,
   useDeletePitScoutRecord,
   usePitScoutRecords,
   useUpdatePitScoutRecord,
+  type PitScout,
+  type PitScout2025,
+  type PitScout2026,
+  type PitScoutIdentifier,
+  type PitScoutUpsertPayload,
 } from '@/api';
 
 interface TeamPitScoutProps {
@@ -35,11 +35,7 @@ interface TeamPitScoutProps {
 
 type PitScoutFormValues = PitScout2025;
 
-type NumberField =
-  | 'robot_weight'
-  | 'autoCoralCount'
-  | 'autoAlgaeNet'
-  | 'autoAlgaeProcessor';
+type NumberField = 'robot_weight' | 'autoCoralCount' | 'autoAlgaeNet' | 'autoAlgaeProcessor';
 
 type BooleanField =
   | 'startPositionLeft'
@@ -58,13 +54,7 @@ type BooleanField =
   | 'teleAlgaeNet'
   | 'teleAlgaeProcessor';
 
-type TextField =
-  | 'notes'
-  | 'drivetrain'
-  | 'driveteam'
-  | 'autoNotes'
-  | 'teleNotes'
-  | 'overallNotes';
+type TextField = 'notes' | 'drivetrain' | 'driveteam' | 'autoNotes' | 'teleNotes' | 'overallNotes';
 
 const ENDGAME_OPTIONS: PitScout['endgame'][] = ['NONE', 'PARK', 'SHALLOW', 'DEEP'];
 const NULLABLE_NUMBER_FIELDS: NumberField[] = ['robot_weight'];
@@ -205,7 +195,9 @@ const getErrorMessage = (error: unknown) => {
 
 export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [formValues, setFormValues] = useState<PitScoutFormValues>(() => getEmptyFormValues(teamNumber));
+  const [formValues, setFormValues] = useState<PitScoutFormValues>(() =>
+    getEmptyFormValues(teamNumber)
+  );
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
   const {
@@ -262,13 +254,14 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
     }));
   };
 
-  const handleTextChange = (field: TextField) => (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { value } = event.currentTarget;
-    setFormValues((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
+  const handleTextChange =
+    (field: TextField) => (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const { value } = event.currentTarget;
+      setFormValues((prev) => ({
+        ...prev,
+        [field]: value,
+      }));
+    };
 
   const handleDrivetrainChange = (value: string | null) => {
     setFormValues((prev) => ({
@@ -283,17 +276,14 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
     }
 
     const hasExistingOption = DRIVETRAIN_OPTIONS.some(
-      (option) => option.value === formValues.drivetrain,
+      (option) => option.value === formValues.drivetrain
     );
 
     if (hasExistingOption) {
       return DRIVETRAIN_OPTIONS;
     }
 
-    return [
-      ...DRIVETRAIN_OPTIONS,
-      { value: formValues.drivetrain, label: formValues.drivetrain },
-    ];
+    return [...DRIVETRAIN_OPTIONS, { value: formValues.drivetrain, label: formValues.drivetrain }];
   }, [formValues.drivetrain]);
 
   const endgameOptions = useMemo(() => {
@@ -750,7 +740,12 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
       <>
         <Box>
           <Title order={4}>General Information</Title>
-          <Table withColumnBorders highlightOnHover={false} verticalSpacing="xs" horizontalSpacing="sm">
+          <Table
+            withColumnBorders
+            highlightOnHover={false}
+            verticalSpacing="xs"
+            horizontalSpacing="sm"
+          >
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>Robot Weight</Table.Th>
@@ -783,7 +778,12 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
           <Title order={4}>Autonomous</Title>
           <Stack gap="sm">
             {renderBooleanTable(autoCoralFields)}
-            <Table withColumnBorders highlightOnHover={false} verticalSpacing="xs" horizontalSpacing="sm">
+            <Table
+              withColumnBorders
+              highlightOnHover={false}
+              verticalSpacing="xs"
+              horizontalSpacing="sm"
+            >
               <Table.Tbody>
                 <Table.Tr>
                   <Table.Th scope="row">Coral Count</Table.Th>
@@ -799,12 +799,19 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
                 </Table.Tr>
               </Table.Tbody>
             </Table>
-            <Table withColumnBorders highlightOnHover={false} verticalSpacing="xs" horizontalSpacing="sm">
+            <Table
+              withColumnBorders
+              highlightOnHover={false}
+              verticalSpacing="xs"
+              horizontalSpacing="sm"
+            >
               <Table.Tbody>
                 <Table.Tr>
                   <Table.Th scope="row">Autonomous Notes</Table.Th>
                   <Table.Td>
-                    <Text style={{ whiteSpace: 'pre-wrap' }}>{formatText(formValues.autoNotes)}</Text>
+                    <Text style={{ whiteSpace: 'pre-wrap' }}>
+                      {formatText(formValues.autoNotes)}
+                    </Text>
                   </Table.Td>
                 </Table.Tr>
               </Table.Tbody>
@@ -815,12 +822,19 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
           <Title order={4}>Teleop</Title>
           <Stack gap="sm">
             {renderBooleanTable(telePerformanceFields)}
-            <Table withColumnBorders highlightOnHover={false} verticalSpacing="xs" horizontalSpacing="sm">
+            <Table
+              withColumnBorders
+              highlightOnHover={false}
+              verticalSpacing="xs"
+              horizontalSpacing="sm"
+            >
               <Table.Tbody>
                 <Table.Tr>
                   <Table.Th scope="row">Teleop Notes</Table.Th>
                   <Table.Td>
-                    <Text style={{ whiteSpace: 'pre-wrap' }}>{formatText(formValues.teleNotes)}</Text>
+                    <Text style={{ whiteSpace: 'pre-wrap' }}>
+                      {formatText(formValues.teleNotes)}
+                    </Text>
                   </Table.Td>
                 </Table.Tr>
               </Table.Tbody>
@@ -829,7 +843,12 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
         </Box>
         <Box>
           <Title order={4}>Endgame & Overall Notes</Title>
-          <Table withColumnBorders highlightOnHover={false} verticalSpacing="xs" horizontalSpacing="sm">
+          <Table
+            withColumnBorders
+            highlightOnHover={false}
+            verticalSpacing="xs"
+            horizontalSpacing="sm"
+          >
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>Endgame</Table.Th>
@@ -840,7 +859,9 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               <Table.Tr>
                 <Table.Td>{formatText(formValues.endgame)}</Table.Td>
                 <Table.Td>
-                  <Text style={{ whiteSpace: 'pre-wrap' }}>{formatText(formValues.overallNotes)}</Text>
+                  <Text style={{ whiteSpace: 'pre-wrap' }}>
+                    {formatText(formValues.overallNotes)}
+                  </Text>
                 </Table.Td>
               </Table.Tr>
             </Table.Tbody>
@@ -850,7 +871,191 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
     );
   };
 
-  const content = isEditing ? renderEditingContent() : renderReadOnlyContent();
+  const render2026ReadOnlyContent = (record: PitScout2026) => {
+    const startingPositionFields = [
+      { label: 'Bump Left', value: record.startPositionBumpLeft },
+      { label: 'Center', value: record.startPositionCenter },
+      { label: 'Bump Right', value: record.startPositionBumpRight },
+      { label: 'Trench Left', value: record.startPositionTrenchLeft },
+      { label: 'Trench Right', value: record.startPositionTrenchRight },
+    ];
+
+    const pickupFields = [
+      { label: 'Ground', value: record.pickupGround },
+      { label: 'Feeder', value: record.pickupFeeder },
+      { label: 'Corral Pickup (Auto)', value: record.autoPickupCorral },
+      { label: 'Outpost Pickup (Auto)', value: record.autoPickupOutpost },
+    ];
+
+    const autoFields = [
+      { label: 'Fuel', value: record.autoFuel },
+      { label: 'Pass', value: record.autoPass },
+    ];
+
+    const teleopFields = [
+      { label: 'Fuel', value: record.teleFuel },
+      { label: 'Pass', value: record.telePass },
+      { label: 'Trench Bot', value: record.trenchBot },
+      { label: 'Bump Bot', value: record.bumpBot },
+      { label: 'Auto Climb', value: record.autoClimb },
+    ];
+
+    const renderBooleanTable = (fields: { label: string; value: boolean }[]) => (
+      <Table withColumnBorders highlightOnHover={false} verticalSpacing="xs" horizontalSpacing="sm">
+        <Table.Thead>
+          <Table.Tr>
+            {fields.map((field) => (
+              <Table.Th key={field.label}>{field.label}</Table.Th>
+            ))}
+          </Table.Tr>
+        </Table.Thead>
+        <Table.Tbody>
+          <Table.Tr>
+            {fields.map((field) => (
+              <Table.Td key={field.label} style={getBooleanCellStyles(field.value)}>
+                {field.value ? 'Yes' : 'No'}
+              </Table.Td>
+            ))}
+          </Table.Tr>
+        </Table.Tbody>
+      </Table>
+    );
+
+    return (
+      <>
+        <Box>
+          <Title order={4}>General Information</Title>
+          <Table
+            withColumnBorders
+            highlightOnHover={false}
+            verticalSpacing="xs"
+            horizontalSpacing="sm"
+          >
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>Robot Weight</Table.Th>
+                <Table.Th>Drivetrain</Table.Th>
+                <Table.Th>Drive Team</Table.Th>
+                <Table.Th>Notes</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              <Table.Tr>
+                <Table.Td>{formatNumber(record.robot_weight)}</Table.Td>
+                <Table.Td>{formatText(record.drivetrain)}</Table.Td>
+                <Table.Td>{formatText(record.driveteam)}</Table.Td>
+                <Table.Td>
+                  <Text style={{ whiteSpace: 'pre-wrap' }}>{formatText(record.notes)}</Text>
+                </Table.Td>
+              </Table.Tr>
+            </Table.Tbody>
+          </Table>
+        </Box>
+        <Box>
+          <Title order={4}>Starting Positions</Title>
+          {renderBooleanTable(startingPositionFields)}
+        </Box>
+        <Box>
+          <Title order={4}>Pickup Options</Title>
+          {renderBooleanTable(pickupFields)}
+        </Box>
+        <Box>
+          <Title order={4}>Autonomous</Title>
+          <Stack gap="sm">
+            {renderBooleanTable(autoFields)}
+            <Table
+              withColumnBorders
+              highlightOnHover={false}
+              verticalSpacing="xs"
+              horizontalSpacing="sm"
+            >
+              <Table.Tbody>
+                <Table.Tr>
+                  <Table.Th scope="row">Auto Fuel Count</Table.Th>
+                  <Table.Td>{formatNumber(record.autoFuelCount)}</Table.Td>
+                </Table.Tr>
+                <Table.Tr>
+                  <Table.Th scope="row">Auto Pass Count</Table.Th>
+                  <Table.Td>{formatNumber(record.autoPassCount)}</Table.Td>
+                </Table.Tr>
+              </Table.Tbody>
+            </Table>
+            <Table
+              withColumnBorders
+              highlightOnHover={false}
+              verticalSpacing="xs"
+              horizontalSpacing="sm"
+            >
+              <Table.Tbody>
+                <Table.Tr>
+                  <Table.Th scope="row">Autonomous Notes</Table.Th>
+                  <Table.Td>
+                    <Text style={{ whiteSpace: 'pre-wrap' }}>{formatText(record.autoNotes)}</Text>
+                  </Table.Td>
+                </Table.Tr>
+              </Table.Tbody>
+            </Table>
+          </Stack>
+        </Box>
+        <Box>
+          <Title order={4}>Teleop</Title>
+          <Stack gap="sm">
+            {renderBooleanTable(teleopFields)}
+            <Table
+              withColumnBorders
+              highlightOnHover={false}
+              verticalSpacing="xs"
+              horizontalSpacing="sm"
+            >
+              <Table.Tbody>
+                <Table.Tr>
+                  <Table.Th scope="row">Hopper Capacity</Table.Th>
+                  <Table.Td>{formatNumber(record.hopperCapacity)}</Table.Td>
+                </Table.Tr>
+                <Table.Tr>
+                  <Table.Th scope="row">Teleop Notes</Table.Th>
+                  <Table.Td>
+                    <Text style={{ whiteSpace: 'pre-wrap' }}>{formatText(record.teleNotes)}</Text>
+                  </Table.Td>
+                </Table.Tr>
+              </Table.Tbody>
+            </Table>
+          </Stack>
+        </Box>
+        <Box>
+          <Title order={4}>Endgame & Overall Notes</Title>
+          <Table
+            withColumnBorders
+            highlightOnHover={false}
+            verticalSpacing="xs"
+            horizontalSpacing="sm"
+          >
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>Endgame</Table.Th>
+                <Table.Th>Overall Notes</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              <Table.Tr>
+                <Table.Td>{formatText(record.endgame)}</Table.Td>
+                <Table.Td>
+                  <Text style={{ whiteSpace: 'pre-wrap' }}>{formatText(record.overallNotes)}</Text>
+                </Table.Td>
+              </Table.Tr>
+            </Table.Tbody>
+          </Table>
+        </Box>
+      </>
+    );
+  };
+
+  const content =
+    !isEditing && is2026Record && existingRecord
+      ? render2026ReadOnlyContent(existingRecord)
+      : isEditing
+        ? renderEditingContent()
+        : renderReadOnlyContent();
 
   return (
     <Stack>
@@ -862,14 +1067,18 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
       ) : null}
       {is2026Record ? (
         <Alert color="blue" title="2026 pit data">
-          This team has 2026 pit scouting data from the legacy schema. Data can be viewed here, but editing
-          is currently disabled to prevent overwriting it with 2025 fields.
+          This team has 2026 pit scouting data from the legacy schema. Data can be viewed here, but
+          editing is currently disabled to prevent overwriting it with 2025 fields.
         </Alert>
       ) : null}
       {content}
       <Group justify="flex-end">
         {isConfirmingDelete ? (
-          <Button onClick={handleCancelDelete} disabled={isDeleting || isSubmitting} variant="subtle">
+          <Button
+            onClick={handleCancelDelete}
+            disabled={isDeleting || isSubmitting}
+            variant="subtle"
+          >
             Cancel
           </Button>
         ) : null}
