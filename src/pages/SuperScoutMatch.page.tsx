@@ -157,10 +157,7 @@ export function SuperScoutMatchPage() {
       const teamKey = String(teamNumber ?? `slot-${index}`);
       const teamState = teamInputs[teamKey] ?? createDefaultTeamState();
 
-      const startPosition =
-        teamState.startingPosition && teamState.startingPosition !== 'NO_SHOW'
-          ? teamState.startingPosition
-          : undefined;
+      const startPosition = teamState.startingPosition ?? undefined;
 
       const defenseRating = teamState.defenseRating ?? undefined;
 
