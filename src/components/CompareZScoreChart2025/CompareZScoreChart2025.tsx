@@ -62,68 +62,14 @@ const ATTRIBUTE_OPTIONS: AttributeOption[] = [
   { value: 'endgame_points_z', label: 'Endgame Points', extremesKey: 'endgame_points_average' },
   { value: 'game_piece_z', label: 'Total Game Pieces', extremesKey: 'game_piece_average' },
   { value: 'total_points_z', label: 'Total Points', extremesKey: 'total_points_average' },
-  {
-    value: 'autonomous_level_4_coral_z',
-    label: 'Auto L4 Coral',
-    extremesKey: 'autonomous_level_4_coral_average',
-  },
-  {
-    value: 'autonomous_level_3_coral_z',
-    label: 'Auto L3 Coral',
-    extremesKey: 'autonomous_level_3_coral_average',
-  },
-  {
-    value: 'autonomous_level_2_coral_z',
-    label: 'Auto L2 Coral',
-    extremesKey: 'autonomous_level_2_coral_average',
-  },
-  {
-    value: 'autonomous_level_1_coral_z',
-    label: 'Auto L1 Coral',
-    extremesKey: 'autonomous_level_1_coral_average',
-  },
-  {
-    value: 'teleop_level_4_coral_z',
-    label: 'Teleop L4 Coral',
-    extremesKey: 'teleop_level_4_coral_average',
-  },
-  {
-    value: 'teleop_level_3_coral_z',
-    label: 'Teleop L3 Coral',
-    extremesKey: 'teleop_level_3_coral_average',
-  },
-  {
-    value: 'teleop_level_2_coral_z',
-    label: 'Teleop L2 Coral',
-    extremesKey: 'teleop_level_2_coral_average',
-  },
-  {
-    value: 'teleop_level_1_coral_z',
-    label: 'Teleop L1 Coral',
-    extremesKey: 'teleop_level_1_coral_average',
-  },
-  { value: 'autonomous_net_z', label: 'Autonomous Net Algae', extremesKey: 'autonomous_net_average' },
-  { value: 'teleop_net_z', label: 'Teleop Net Algae', extremesKey: 'teleop_net_average' },
-  {
-    value: 'autonomous_processor_z',
-    label: 'Autonomous Processor Algae',
-    extremesKey: 'autonomous_processor_average',
-  },
-  {
-    value: 'teleop_processor_z',
-    label: 'Teleop Processor Algae',
-    extremesKey: 'teleop_processor_average',
-  },
-  { value: 'teleop_cycles_z', label: 'Teleop Cycles', extremesKey: 'teleop_cycles_average' },
 ];
 
 const DEFAULT_ATTRIBUTE_SELECTION: ZScoreAttributeKey[] = [
+  'total_points_z',
   'autonomous_points_z',
+  'teleop_points_z',
   'endgame_points_z',
   'game_piece_z',
-  'teleop_net_z',
-  'teleop_processor_z',
-  'teleop_cycles_z',
 ];
 
 type CompareZScoreChart2025Props = {
