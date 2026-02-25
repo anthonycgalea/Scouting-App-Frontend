@@ -36,19 +36,15 @@ type ZScoreAttributeKey =
   | 'endgame_points_z'
   | 'game_piece_z'
   | 'total_points_z'
-  | 'autonomous_level_4_coral_z'
-  | 'autonomous_level_3_coral_z'
-  | 'autonomous_level_2_coral_z'
-  | 'autonomous_level_1_coral_z'
-  | 'teleop_level_4_coral_z'
-  | 'teleop_level_3_coral_z'
-  | 'teleop_level_2_coral_z'
-  | 'teleop_level_1_coral_z'
-  | 'autonomous_net_z'
-  | 'teleop_net_z'
-  | 'autonomous_processor_z'
-  | 'teleop_processor_z'
-  | 'teleop_cycles_z';
+  | 'autonomous_fuel_z'
+  | 'teleop_fuel_z'
+  | 'total_fuel_z'
+  | 'autonomous_passing_z'
+  | 'teleop_passing_z'
+  | 'autonomous_climb_z'
+  | 'superscout_overall_score_z'
+  | 'superscout_driver_score_z'
+  | 'superscout_defense_score_z';
 
 type AttributeOption = {
   value: ZScoreAttributeKey;
@@ -62,14 +58,35 @@ const ATTRIBUTE_OPTIONS: AttributeOption[] = [
   { value: 'endgame_points_z', label: 'Endgame Points', extremesKey: 'endgame_points_average' },
   { value: 'game_piece_z', label: 'Total Game Pieces', extremesKey: 'game_piece_average' },
   { value: 'total_points_z', label: 'Total Points', extremesKey: 'total_points_average' },
+  { value: 'autonomous_fuel_z', label: 'Autonomous Fuel', extremesKey: 'autonomous_fuel_average' },
+  { value: 'teleop_fuel_z', label: 'Teleop Fuel', extremesKey: 'teleop_fuel_average' },
+  { value: 'total_fuel_z', label: 'Total Fuel', extremesKey: 'total_fuel_average' },
+  { value: 'autonomous_passing_z', label: 'Autonomous Passing', extremesKey: 'autonomous_passing_average' },
+  { value: 'teleop_passing_z', label: 'Teleop Passing', extremesKey: 'teleop_passing_average' },
+  { value: 'autonomous_climb_z', label: 'Autonomous Climb', extremesKey: 'autonomous_climb_average' },
+  {
+    value: 'superscout_overall_score_z',
+    label: 'Superscout Overall Score',
+    extremesKey: 'superscout_overall_score_average',
+  },
+  {
+    value: 'superscout_driver_score_z',
+    label: 'Superscout Driver Score',
+    extremesKey: 'superscout_driver_score_average',
+  },
+  {
+    value: 'superscout_defense_score_z',
+    label: 'Superscout Defense Score',
+    extremesKey: 'superscout_defense_score_average',
+  },
 ];
 
 const DEFAULT_ATTRIBUTE_SELECTION: ZScoreAttributeKey[] = [
-  'total_points_z',
-  'autonomous_points_z',
-  'teleop_points_z',
-  'endgame_points_z',
-  'game_piece_z',
+  'total_fuel_z',
+  'autonomous_fuel_z',
+  'teleop_fuel_z',
+  'autonomous_passing_z',
+  'teleop_passing_z',
 ];
 
 type CompareZScoreChart2025Props = {
