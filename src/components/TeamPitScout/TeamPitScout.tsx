@@ -19,6 +19,7 @@ import {
 } from '@mantine/core';
 import {
   type PitScout,
+  type PitScout2026,
   type PitScoutIdentifier,
   type PitScout2025,
   type PitScoutUpsertPayload,
@@ -111,11 +112,52 @@ const getEmptyFormValues = (teamNumber: number): PitScoutFormValues => ({
   overallNotes: '',
 });
 
+const isPitScout2026Record = (record: PitScout | undefined): record is PitScout2026 =>
+  Boolean(record && 'hopperCapacity' in record);
+
 const normalizeRecord = (record: PitScout | undefined, teamNumber: number): PitScoutFormValues => {
   const base = getEmptyFormValues(teamNumber);
 
   if (!record) {
     return base;
+  }
+
+  if (isPitScout2026Record(record)) {
+    return {
+      ...base,
+      season: record.season,
+      team_number: record.team_number,
+      event_key: record.event_key,
+      user_id: record.user_id ?? '',
+      organization_id: record.organization_id ?? null,
+      timestamp: record.timestamp,
+      notes: record.notes ?? '',
+      robot_weight: record.robot_weight ?? null,
+      drivetrain: record.drivetrain ?? '',
+      driveteam: record.driveteam ?? '',
+      startPositionLeft: record.startPositionBumpLeft || record.startPositionTrenchLeft,
+      startPositionCenter: record.startPositionCenter,
+      startPositionRight: record.startPositionBumpRight || record.startPositionTrenchRight,
+      pickupGround: record.pickupGround,
+      pickupFeeder: record.pickupFeeder,
+      autoL4Coral: record.autoFuel,
+      autoL3Coral: record.autoPass,
+      autoL2Coral: record.autoPickupCorral,
+      autoL1Coral: record.autoPickupOutpost,
+      autoCoralCount: record.autoFuelCount ?? 0,
+      autoAlgaeNet: record.autoPassCount ?? 0,
+      autoAlgaeProcessor: record.hopperCapacity ?? 0,
+      autoNotes: record.autoNotes ?? '',
+      teleL4Coral: record.teleFuel,
+      teleL3Coral: record.telePass,
+      teleL2Coral: record.trenchBot,
+      teleL1Coral: record.bumpBot,
+      teleAlgaeNet: record.autoClimb,
+      teleAlgaeProcessor: false,
+      teleNotes: record.teleNotes ?? '',
+      endgame: (record.endgame as PitScout2025['endgame']) ?? 'NONE',
+      overallNotes: record.overallNotes ?? '',
+    } satisfies PitScoutFormValues;
   }
 
   return {
@@ -174,6 +216,7 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
   } = usePitScoutRecords(teamNumber);
 
   const existingRecord = useMemo(() => pitScoutRecords[0], [pitScoutRecords]);
+  const is2026Record = isPitScout2026Record(existingRecord);
 
   const createPitScout = useCreatePitScoutRecord(teamNumber);
   const updatePitScout = useUpdatePitScoutRecord(teamNumber);
@@ -253,10 +296,18 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
     ];
   }, [formValues.drivetrain]);
 
+  const endgameOptions = useMemo(() => {
+    if (!formValues.endgame || ENDGAME_OPTIONS.includes(formValues.endgame)) {
+      return ENDGAME_OPTIONS;
+    }
+
+    return [...ENDGAME_OPTIONS, formValues.endgame as PitScout2025['endgame']];
+  }, [formValues.endgame]);
+
   const handleEndgameChange = (value: string | null) => {
     setFormValues((prev) => ({
       ...prev,
-      endgame: (value as PitScout['endgame'] | null) ?? 'NONE',
+      endgame: (value as PitScout2025['endgame'] | null) ?? 'NONE',
     }));
   };
 
@@ -267,6 +318,10 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
   const isDeleting = deletePitScout.isPending;
 
   const handlePrimaryAction = async () => {
+    if (is2026Record) {
+      return;
+    }
+
     if (!isEditing) {
       setIsEditing(true);
       setIsConfirmingDelete(false);
@@ -622,7 +677,7 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
             <Select
               label="Endgame"
               value={formValues.endgame}
-              data={ENDGAME_OPTIONS.map((option) => ({ value: option, label: option }))}
+              data={endgameOptions.map((option) => ({ value: option, label: option }))}
               onChange={handleEndgameChange}
               disabled={!isEditing}
             />
@@ -805,6 +860,12 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
           {errorMessage}
         </Alert>
       ) : null}
+      {is2026Record ? (
+        <Alert color="blue" title="2026 pit data">
+          This team has 2026 pit scouting data from the legacy schema. Data can be viewed here, but editing
+          is currently disabled to prevent overwriting it with 2025 fields.
+        </Alert>
+      ) : null}
       {content}
       <Group justify="flex-end">
         {isConfirmingDelete ? (
@@ -815,13 +876,17 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
         <Button
           color="red"
           onClick={handleDelete}
-          disabled={!existingRecord || isDeleting || isSubmitting}
+          disabled={!existingRecord || isDeleting || isSubmitting || is2026Record}
           loading={isDeleting}
           variant={isConfirmingDelete ? 'filled' : 'outline'}
         >
           {isConfirmingDelete ? 'Confirm delete' : 'Delete pit scout record'}
         </Button>
-        <Button onClick={handlePrimaryAction} disabled={isDeleting || isSubmitting} loading={isSubmitting}>
+        <Button
+          onClick={handlePrimaryAction}
+          disabled={isDeleting || isSubmitting || is2026Record}
+          loading={isSubmitting}
+        >
           {isEditing ? 'Save changes' : 'Edit information'}
         </Button>
       </Group>

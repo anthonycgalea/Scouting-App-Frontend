@@ -3,6 +3,8 @@ import { apiFetch } from './httpClient';
 
 export type EndgameOption2025 = 'NONE' | 'PARK' | 'SHALLOW' | 'DEEP';
 
+export type EndgameOption2026 = string;
+
 export interface PitScout2025 {
   season: number;
   team_number: number;
@@ -38,7 +40,43 @@ export interface PitScout2025 {
   overallNotes: string | null;
 }
 
-export type PitScout = PitScout2025;
+export interface PitScout2026 {
+  season: number;
+  team_number: number;
+  event_key: string;
+  user_id: string | null;
+  organization_id: number | null;
+  timestamp: string;
+  notes: string | null;
+  robot_weight: number | null;
+  drivetrain: string | null;
+  driveteam: string | null;
+  overallNotes: string | null;
+  autoNotes: string | null;
+  teleNotes: string | null;
+  startPositionBumpLeft: boolean;
+  startPositionCenter: boolean;
+  startPositionBumpRight: boolean;
+  startPositionTrenchLeft: boolean;
+  startPositionTrenchRight: boolean;
+  pickupGround: boolean;
+  pickupFeeder: boolean;
+  autoPickupCorral: boolean;
+  autoPickupOutpost: boolean;
+  autoFuel: boolean;
+  autoPass: boolean;
+  autoFuelCount: number | null;
+  autoPassCount: number | null;
+  teleFuel: boolean;
+  telePass: boolean;
+  trenchBot: boolean;
+  bumpBot: boolean;
+  autoClimb: boolean;
+  hopperCapacity: number | null;
+  endgame: EndgameOption2026;
+}
+
+export type PitScout = PitScout2025 | PitScout2026;
 
 export interface PitScoutIdentifier extends Record<string, unknown> {
   season: number;
@@ -47,7 +85,7 @@ export interface PitScoutIdentifier extends Record<string, unknown> {
 }
 
 export type PitScoutUpsertPayload = Omit<
-  PitScout,
+  PitScout2025,
   'season' | 'event_key' | 'user_id' | 'organization_id' | 'timestamp'
 >;
 
