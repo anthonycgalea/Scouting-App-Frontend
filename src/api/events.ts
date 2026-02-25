@@ -20,6 +20,7 @@ import {
   teamZScoresQueryKey,
 } from './analytics';
 import { eventPitScoutQueryKey } from './pitScouting';
+import { superScoutFieldsQueryKey } from './superScout';
 import { eventTeamImagesQueryKey, eventTeamsQueryKey } from './teams';
 
 export interface EventSummary {
@@ -129,6 +130,7 @@ const eventQueryKeys: QueryKey[] = [
   teamMatchValidationQueryKey(),
   pickListsQueryKey(),
   pickListGeneratorsQueryKey(),
+  superScoutFieldsQueryKey(),
   teamAnalyticsQueryKey(),
   teamDetailedAnalyticsQueryKey(),
   teamHeadToHeadQueryKey(),
