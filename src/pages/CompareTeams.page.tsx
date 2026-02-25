@@ -1,17 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
-
-import { Box, Flex, MultiSelect, Stack, Tabs, Text, Title } from '@mantine/core';
 import cx from 'clsx';
-
-import CompareLineChart2025 from '@/components/CompareLineChart2025/CompareLineChart2025';
-import CompareZScoreChart2026 from '@/components/CompareZScoreChart2026/CompareZScoreChart2026';
-import HeadToHeadStatsTable from '@/components/HeadToHeadStatsTable/HeadToHeadStatsTable';
+import { Box, Flex, MultiSelect, Stack, Tabs, Text, Title } from '@mantine/core';
 import {
   useTeamHeadToHeadStats,
   useTeamMatchHistory,
   type TeamHeadToHeadResponse,
   type TeamMatchHistoryResponse,
 } from '@/api';
+import CompareLineChart2025 from '@/components/CompareLineChart2025/CompareLineChart2025';
+import CompareZScoreChart2026 from '@/components/CompareZScoreChart2026/CompareZScoreChart2026';
+import HeadToHeadStatsTable from '@/components/HeadToHeadStatsTable/HeadToHeadStatsTable';
 import { type TeamHeadToHeadSummary } from '@/types/analytics';
 import classes from './CompareTeams.module.css';
 
@@ -34,13 +32,9 @@ export function CompareTeamsPage() {
     }
 
     setSelectedTeams((previous) => {
-      const availableTeamIds = new Set(
-        matchHistory.map((team) => String(team.team_number)),
-      );
+      const availableTeamIds = new Set(matchHistory.map((team) => String(team.team_number)));
 
-      return previous
-        .filter((teamId) => availableTeamIds.has(teamId))
-        .slice(0, MAX_TEAMS);
+      return previous.filter((teamId) => availableTeamIds.has(teamId)).slice(0, MAX_TEAMS);
     });
   }, [matchHistory]);
 
@@ -50,7 +44,7 @@ export function CompareTeamsPage() {
         value: String(team.team_number),
         label: team.team_name ? `${team.team_number} • ${team.team_name}` : `${team.team_number}`,
       })),
-    [matchHistory],
+    [matchHistory]
   );
 
   const selectedTeamData = useMemo(() => {
@@ -72,23 +66,21 @@ export function CompareTeamsPage() {
       teamNumber: team.team_number,
       teamName: team.team_name,
       matchesPlayed: team.matches_played,
-      autonomousCoral: team.autonomous_coral,
-      autonomousNetAlgae: team.autonomous_net_algae,
-      autonomousProcessorAlgae: team.autonomous_processor_algae,
+      autonomousFuelScored: team.autonomous_fuel_scored,
+      autonomousFuelPassed: team.autonomous_fuel_passed,
+      autonomousAutoClimb: team.autonomous_auto_climb,
       autonomousPoints: team.autonomous_points,
-      teleopCoral: team.teleop_coral,
-      teleopGamePieces: team.teleop_game_pieces,
+      teleopFuelScored: team.teleop_fuel_scored,
+      teleopFuelPassed: team.teleop_fuel_passed,
       teleopPoints: team.teleop_points,
-      teleopNetAlgae: team.teleop_net_algae,
-      teleopProcessorAlgae: team.teleop_processor_algae,
+      endgameClimb: team.endgame_climb,
       endgamePoints: team.endgame_points,
       totalPoints: team.total_points,
-      totalNetAlgae: team.total_net_algae,
       endgameSuccessRate: team.endgame_success_rate,
     });
 
     return new Map<number, TeamHeadToHeadSummary>(
-      headToHeadStats.map((team) => [team.team_number, mapResponse(team)]),
+      headToHeadStats.map((team) => [team.team_number, mapResponse(team)])
     );
   }, [headToHeadStats]);
 
@@ -162,7 +154,11 @@ export function CompareTeamsPage() {
               className={classes.chartsRow}
             >
               <Box className={cx(classes.chartPanel, classes.lineChartPanel)}>
-                <CompareLineChart2025 teams={selectedTeamData} isLoading={isLoading} isError={isError} />
+                <CompareLineChart2025
+                  teams={selectedTeamData}
+                  isLoading={isLoading}
+                  isError={isError}
+                />
               </Box>
               <Box className={cx(classes.chartPanel, classes.radarChartPanel)}>
                 <CompareZScoreChart2026 selectedTeams={selectedTeams} />

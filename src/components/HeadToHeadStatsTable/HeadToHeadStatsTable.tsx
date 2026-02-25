@@ -1,21 +1,8 @@
 import { Fragment, useMemo, useState } from 'react';
-
-import {
-  ActionIcon,
-  Center,
-  Group,
-  Loader,
-  Paper,
-  Stack,
-  Table,
-  Text,
-  Title,
-} from '@mantine/core';
 import { IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 import cx from 'clsx';
-
+import { ActionIcon, Center, Group, Loader, Paper, Stack, Table, Text, Title } from '@mantine/core';
 import { type TeamHeadToHeadSummary } from '@/types/analytics';
-
 import classes from './HeadToHeadStatsTable.module.css';
 
 type HeadToHeadStatsTableProps = {
@@ -26,18 +13,16 @@ type HeadToHeadStatsTableProps = {
 
 type SummaryMetricKey = keyof Pick<
   TeamHeadToHeadSummary,
-  | 'autonomousCoral'
-  | 'autonomousNetAlgae'
-  | 'autonomousProcessorAlgae'
+  | 'autonomousFuelScored'
+  | 'autonomousFuelPassed'
+  | 'autonomousAutoClimb'
   | 'autonomousPoints'
-  | 'teleopCoral'
-  | 'teleopGamePieces'
+  | 'teleopFuelScored'
+  | 'teleopFuelPassed'
   | 'teleopPoints'
-  | 'teleopNetAlgae'
-  | 'teleopProcessorAlgae'
+  | 'endgameClimb'
   | 'endgamePoints'
   | 'totalPoints'
-  | 'totalNetAlgae'
 >;
 
 type ValueMetricKey = 'endgameSuccessRate';
@@ -55,35 +40,31 @@ const METRIC_SECTIONS: MetricSection[] = [
   {
     label: 'Autonomous',
     metrics: [
-      { type: 'summary', key: 'autonomousCoral', label: 'Coral', unit: 'pcs' },
-      { type: 'summary', key: 'autonomousNetAlgae', label: 'Net Algae', unit: 'pcs' },
-      { type: 'summary', key: 'autonomousProcessorAlgae', label: 'Processor Algae', unit: 'pcs' },
+      { type: 'summary', key: 'autonomousFuelScored', label: 'Fuel Scored', unit: 'pts' },
+      { type: 'summary', key: 'autonomousFuelPassed', label: 'Fuel Passed', unit: 'pts' },
+      { type: 'summary', key: 'autonomousAutoClimb', label: 'Auto Climb', unit: 'pts' },
       { type: 'summary', key: 'autonomousPoints', label: 'Points', unit: 'pts' },
     ],
   },
   {
     label: 'Teleop',
     metrics: [
-      { type: 'summary', key: 'teleopCoral', label: 'Coral', unit: 'pcs' },
-      { type: 'summary', key: 'teleopGamePieces', label: 'Game Pieces', unit: 'pcs' },
+      { type: 'summary', key: 'teleopFuelScored', label: 'Fuel Scored', unit: 'pts' },
+      { type: 'summary', key: 'teleopFuelPassed', label: 'Fuel Passed', unit: 'pts' },
       { type: 'summary', key: 'teleopPoints', label: 'Points', unit: 'pts' },
-      { type: 'summary', key: 'teleopNetAlgae', label: 'Net Algae', unit: 'pcs' },
-      { type: 'summary', key: 'teleopProcessorAlgae', label: 'Processor Algae', unit: 'pcs' },
     ],
   },
   {
     label: 'Endgame',
     metrics: [
+      { type: 'summary', key: 'endgameClimb', label: 'Climb', unit: 'pts' },
       { type: 'summary', key: 'endgamePoints', label: 'Points', unit: 'pts' },
       { type: 'value', key: 'endgameSuccessRate', label: 'Success Rate', unit: '%' },
     ],
   },
   {
     label: 'Overall',
-    metrics: [
-      { type: 'summary', key: 'totalPoints', label: 'Total Points', unit: 'pts' },
-      { type: 'summary', key: 'totalNetAlgae', label: 'Total Net Algae', unit: 'pcs' },
-    ],
+    metrics: [{ type: 'summary', key: 'totalPoints', label: 'Total Points', unit: 'pts' }],
   },
 ];
 
@@ -156,15 +137,15 @@ export function HeadToHeadStatsTable({ teams, isLoading, isError }: HeadToHeadSt
             });
 
             return [`${section.label}-${metric.key}`, hasValue] as const;
-          }),
-        ),
+          })
+        )
       ),
-    [teams],
+    [teams]
   );
 
   const toggleMetric = (metricKey: string) => {
     setExpandedMetrics((prev) =>
-      prev.includes(metricKey) ? prev.filter((key) => key !== metricKey) : [...prev, metricKey],
+      prev.includes(metricKey) ? prev.filter((key) => key !== metricKey) : [...prev, metricKey]
     );
   };
 
@@ -206,7 +187,7 @@ export function HeadToHeadStatsTable({ teams, isLoading, isError }: HeadToHeadSt
     <Paper withBorder radius="md" p="xl" className={classes.card}>
       <Stack gap="lg" className={classes.tableContainer}>
         <Title order={4} ta="center">
-          Head-to-Head Summary
+          2026 Head-to-Head Summary
         </Title>
 
         <Table.ScrollContainer minWidth={600}>
@@ -221,9 +202,7 @@ export function HeadToHeadStatsTable({ teams, isLoading, isError }: HeadToHeadSt
                       {team.teamName ? (
                         <Text className={classes.headerTeamName}>{team.teamName}</Text>
                       ) : null}
-                      <Text className={classes.headerMatches}>
-                        Matches: {team.matchesPlayed}
-                      </Text>
+                      <Text className={classes.headerMatches}>Matches: {team.matchesPlayed}</Text>
                     </Stack>
                   </Table.Th>
                 ))}
@@ -255,13 +234,19 @@ export function HeadToHeadStatsTable({ teams, isLoading, isError }: HeadToHeadSt
                         <Fragment key={`${section.label}-${metric.key}`}>
                           <Table.Tr
                             key={`${section.label}-${metric.key}-average`}
-                            className={cx(classes.metricRow, hasData && classes.metricRowInteractive)}
+                            className={cx(
+                              classes.metricRow,
+                              hasData && classes.metricRowInteractive
+                            )}
                             onClick={() => (hasData ? toggleMetric(metricKey) : undefined)}
                           >
-                          <Table.Th
-                            scope="row"
-                            className={cx(classes.metricLabelCell, classes.metricLabelCellCompact)}
-                          >
+                            <Table.Th
+                              scope="row"
+                              className={cx(
+                                classes.metricLabelCell,
+                                classes.metricLabelCellCompact
+                              )}
+                            >
                               <Group gap="xs" wrap="nowrap">
                                 <ActionIcon
                                   size="sm"
@@ -306,7 +291,10 @@ export function HeadToHeadStatsTable({ teams, isLoading, isError }: HeadToHeadSt
                                 );
                               }
 
-                              const averageText = formatNumberWithUnit(summary.average, metric.unit);
+                              const averageText = formatNumberWithUnit(
+                                summary.average,
+                                metric.unit
+                              );
 
                               if (!averageText) {
                                 return (
@@ -329,7 +317,7 @@ export function HeadToHeadStatsTable({ teams, isLoading, isError }: HeadToHeadSt
                                   className={cx(
                                     classes.valueCell,
                                     classes.valueCellCompact,
-                                    isHighlighted && averageText ? classes.highlightCell : null,
+                                    isHighlighted && averageText ? classes.highlightCell : null
                                   )}
                                 >
                                   <Text component="span" fw={600}>
@@ -338,7 +326,10 @@ export function HeadToHeadStatsTable({ teams, isLoading, isError }: HeadToHeadSt
                                   {deviationNumber ? (
                                     <Text
                                       component="span"
-                                      className={cx(classes.deviationText, classes.deviationTextCompact)}
+                                      className={cx(
+                                        classes.deviationText,
+                                        classes.deviationTextCompact
+                                      )}
                                     >
                                       {` (±${deviationNumber}${deviationUnitSuffix})`}
                                     </Text>
@@ -356,18 +347,25 @@ export function HeadToHeadStatsTable({ teams, isLoading, isError }: HeadToHeadSt
                                 const summary = team[metric.key];
                                 const cellKey = `${team.teamNumber}-${metric.key}-range`;
 
-                                const minText = formatNumberWithUnit(summary?.min, metric.unit) ?? '—';
+                                const minText =
+                                  formatNumberWithUnit(summary?.min, metric.unit) ?? '—';
                                 const medianText =
                                   formatNumberWithUnit(summary?.median, metric.unit) ?? '—';
-                                const maxText = formatNumberWithUnit(summary?.max, metric.unit) ?? '—';
+                                const maxText =
+                                  formatNumberWithUnit(summary?.max, metric.unit) ?? '—';
 
-                                const isMinHighlighted = minText !== '—' && minHighlights.has(index);
+                                const isMinHighlighted =
+                                  minText !== '—' && minHighlights.has(index);
                                 const isMedianHighlighted =
                                   medianText !== '—' && medianHighlights.has(index);
-                                const isMaxHighlighted = maxText !== '—' && maxHighlights.has(index);
+                                const isMaxHighlighted =
+                                  maxText !== '—' && maxHighlights.has(index);
 
                                 return (
-                                  <Table.Td key={cellKey} className={cx(classes.valueCell, classes.rangeCell)}>
+                                  <Table.Td
+                                    key={cellKey}
+                                    className={cx(classes.valueCell, classes.rangeCell)}
+                                  >
                                     <div className={classes.rangeValues}>
                                       <div className={classes.rangeValue}>
                                         <Text component="span" className={classes.rangeValueLabel}>
@@ -377,7 +375,7 @@ export function HeadToHeadStatsTable({ teams, isLoading, isError }: HeadToHeadSt
                                           component="span"
                                           className={cx(
                                             classes.rangeValueText,
-                                            isMinHighlighted ? classes.rangeValueHighlight : null,
+                                            isMinHighlighted ? classes.rangeValueHighlight : null
                                           )}
                                         >
                                           {minText}
@@ -391,7 +389,7 @@ export function HeadToHeadStatsTable({ teams, isLoading, isError }: HeadToHeadSt
                                           component="span"
                                           className={cx(
                                             classes.rangeValueText,
-                                            isMedianHighlighted ? classes.rangeValueHighlight : null,
+                                            isMedianHighlighted ? classes.rangeValueHighlight : null
                                           )}
                                         >
                                           {medianText}
@@ -405,7 +403,7 @@ export function HeadToHeadStatsTable({ teams, isLoading, isError }: HeadToHeadSt
                                           component="span"
                                           className={cx(
                                             classes.rangeValueText,
-                                            isMaxHighlighted ? classes.rangeValueHighlight : null,
+                                            isMaxHighlighted ? classes.rangeValueHighlight : null
                                           )}
                                         >
                                           {maxText}
@@ -441,7 +439,7 @@ export function HeadToHeadStatsTable({ teams, isLoading, isError }: HeadToHeadSt
                                 key={cellKey}
                                 className={cx(
                                   classes.valueCell,
-                                  isHighlighted && displayValue ? classes.highlightCell : null,
+                                  isHighlighted && displayValue ? classes.highlightCell : null
                                 )}
                               >
                                 {displayValue ?? '—'}
