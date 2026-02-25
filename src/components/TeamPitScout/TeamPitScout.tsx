@@ -1,21 +1,31 @@
-import { useEffect, useMemo, useState, type ChangeEvent, type CSSProperties } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type ChangeEvent,
+  type CSSProperties,
+  type ReactNode,
+} from 'react';
 import {
   Alert,
+  Badge,
   Box,
   Button,
+  Card,
   Checkbox,
+  Divider,
   Grid,
   Group,
   Loader,
   NumberInput,
   Select,
+  SimpleGrid,
   Stack,
   Table,
   Text,
   Textarea,
   TextInput,
   Title,
-  useMantineTheme,
 } from '@mantine/core';
 import {
   useCreatePitScoutRecord,
@@ -214,8 +224,6 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
   const updatePitScout = useUpdatePitScoutRecord(teamNumber);
   const deletePitScout = useDeletePitScoutRecord(teamNumber);
 
-  const theme = useMantineTheme();
-
   useEffect(() => {
     if (!isEditing) {
       setFormValues(normalizeRecord(existingRecord, teamNumber));
@@ -403,12 +411,40 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
   const formatNumber = (value: number | null | undefined) =>
     value === null || value === undefined ? '—' : value;
 
-  const getBooleanCellStyles = (value: boolean): CSSProperties => ({
-    backgroundColor: value ? theme.colors.green[6] : theme.colors.red[6],
-    color: theme.white,
-    textAlign: 'center',
-    fontWeight: 600,
+  const getBooleanBadgeStyles = (): CSSProperties => ({
+    textTransform: 'none',
+    minWidth: 86,
+    justifyContent: 'center',
   });
+
+  const renderBooleanBadges = (fields: { label: string; value: boolean }[]) => (
+    <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="sm">
+      {fields.map((field) => (
+        <Group key={field.label} justify="space-between" wrap="nowrap">
+          <Text size="sm" fw={500} c="dimmed">
+            {field.label}
+          </Text>
+          <Badge
+            color={field.value ? 'green' : 'red'}
+            variant="light"
+            style={getBooleanBadgeStyles()}
+          >
+            {field.value ? 'Yes' : 'No'}
+          </Badge>
+        </Group>
+      ))}
+    </SimpleGrid>
+  );
+
+  const renderSectionCard = (title: string, content: ReactNode) => (
+    <Card withBorder radius="md" p="md">
+      <Stack gap="sm">
+        <Title order={4}>{title}</Title>
+        <Divider />
+        {content}
+      </Stack>
+    </Card>
+  );
 
   if (!Number.isFinite(teamNumber)) {
     return (
@@ -715,31 +751,10 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
       { label: 'Algae - Processor', value: formValues.teleAlgaeProcessor },
     ];
 
-    const renderBooleanTable = (fields: { label: string; value: boolean }[]) => (
-      <Table withColumnBorders highlightOnHover={false} verticalSpacing="xs" horizontalSpacing="sm">
-        <Table.Thead>
-          <Table.Tr>
-            {fields.map((field) => (
-              <Table.Th key={field.label}>{field.label}</Table.Th>
-            ))}
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          <Table.Tr>
-            {fields.map((field) => (
-              <Table.Td key={field.label} style={getBooleanCellStyles(field.value)}>
-                {field.value ? 'Yes' : 'No'}
-              </Table.Td>
-            ))}
-          </Table.Tr>
-        </Table.Tbody>
-      </Table>
-    );
-
     return (
-      <>
-        <Box>
-          <Title order={4}>General Information</Title>
+      <Stack>
+        {renderSectionCard(
+          'General Information',
           <Table
             withColumnBorders
             highlightOnHover={false}
@@ -765,19 +780,13 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               </Table.Tr>
             </Table.Tbody>
           </Table>
-        </Box>
-        <Box>
-          <Title order={4}>Starting Positions</Title>
-          {renderBooleanTable(startingPositionFields)}
-        </Box>
-        <Box>
-          <Title order={4}>Pickup Options</Title>
-          {renderBooleanTable(pickupFields)}
-        </Box>
-        <Box>
-          <Title order={4}>Autonomous</Title>
+        )}
+        {renderSectionCard('Starting Positions', renderBooleanBadges(startingPositionFields))}
+        {renderSectionCard('Pickup Options', renderBooleanBadges(pickupFields))}
+        {renderSectionCard(
+          'Autonomous',
           <Stack gap="sm">
-            {renderBooleanTable(autoCoralFields)}
+            {renderBooleanBadges(autoCoralFields)}
             <Table
               withColumnBorders
               highlightOnHover={false}
@@ -817,11 +826,11 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               </Table.Tbody>
             </Table>
           </Stack>
-        </Box>
-        <Box>
-          <Title order={4}>Teleop</Title>
+        )}
+        {renderSectionCard(
+          'Teleop',
           <Stack gap="sm">
-            {renderBooleanTable(telePerformanceFields)}
+            {renderBooleanBadges(telePerformanceFields)}
             <Table
               withColumnBorders
               highlightOnHover={false}
@@ -840,9 +849,9 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               </Table.Tbody>
             </Table>
           </Stack>
-        </Box>
-        <Box>
-          <Title order={4}>Endgame & Overall Notes</Title>
+        )}
+        {renderSectionCard(
+          'Endgame & Overall Notes',
           <Table
             withColumnBorders
             highlightOnHover={false}
@@ -866,8 +875,8 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               </Table.Tr>
             </Table.Tbody>
           </Table>
-        </Box>
-      </>
+        )}
+      </Stack>
     );
   };
 
@@ -900,31 +909,10 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
       { label: 'Auto Climb', value: record.autoClimb },
     ];
 
-    const renderBooleanTable = (fields: { label: string; value: boolean }[]) => (
-      <Table withColumnBorders highlightOnHover={false} verticalSpacing="xs" horizontalSpacing="sm">
-        <Table.Thead>
-          <Table.Tr>
-            {fields.map((field) => (
-              <Table.Th key={field.label}>{field.label}</Table.Th>
-            ))}
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          <Table.Tr>
-            {fields.map((field) => (
-              <Table.Td key={field.label} style={getBooleanCellStyles(field.value)}>
-                {field.value ? 'Yes' : 'No'}
-              </Table.Td>
-            ))}
-          </Table.Tr>
-        </Table.Tbody>
-      </Table>
-    );
-
     return (
-      <>
-        <Box>
-          <Title order={4}>General Information</Title>
+      <Stack>
+        {renderSectionCard(
+          'General Information',
           <Table
             withColumnBorders
             highlightOnHover={false}
@@ -950,19 +938,13 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               </Table.Tr>
             </Table.Tbody>
           </Table>
-        </Box>
-        <Box>
-          <Title order={4}>Starting Positions</Title>
-          {renderBooleanTable(startingPositionFields)}
-        </Box>
-        <Box>
-          <Title order={4}>Pickup Options</Title>
-          {renderBooleanTable(pickupFields)}
-        </Box>
-        <Box>
-          <Title order={4}>Autonomous</Title>
+        )}
+        {renderSectionCard('Starting Positions', renderBooleanBadges(startingPositionFields))}
+        {renderSectionCard('Pickup Options', renderBooleanBadges(pickupFields))}
+        {renderSectionCard(
+          'Autonomous',
           <Stack gap="sm">
-            {renderBooleanTable(autoFields)}
+            {renderBooleanBadges(autoFields)}
             <Table
               withColumnBorders
               highlightOnHover={false}
@@ -996,11 +978,11 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               </Table.Tbody>
             </Table>
           </Stack>
-        </Box>
-        <Box>
-          <Title order={4}>Teleop</Title>
+        )}
+        {renderSectionCard(
+          'Teleop',
           <Stack gap="sm">
-            {renderBooleanTable(teleopFields)}
+            {renderBooleanBadges(teleopFields)}
             <Table
               withColumnBorders
               highlightOnHover={false}
@@ -1021,9 +1003,9 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               </Table.Tbody>
             </Table>
           </Stack>
-        </Box>
-        <Box>
-          <Title order={4}>Endgame & Overall Notes</Title>
+        )}
+        {renderSectionCard(
+          'Endgame & Overall Notes',
           <Table
             withColumnBorders
             highlightOnHover={false}
@@ -1045,8 +1027,8 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
               </Table.Tr>
             </Table.Tbody>
           </Table>
-        </Box>
-      </>
+        )}
+      </Stack>
     );
   };
 
@@ -1063,12 +1045,6 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
       {errorMessage ? (
         <Alert color="red" title="Pit scouting error">
           {errorMessage}
-        </Alert>
-      ) : null}
-      {is2026Record ? (
-        <Alert color="blue" title="2026 pit data">
-          This team has 2026 pit scouting data from the legacy schema. Data can be viewed here, but
-          editing is currently disabled to prevent overwriting it with 2025 fields.
         </Alert>
       ) : null}
       {content}
