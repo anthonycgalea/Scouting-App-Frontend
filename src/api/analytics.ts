@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query';
-
 import { apiFetch } from './httpClient';
 
 export interface TeamAnalyticsResponse {
@@ -44,15 +43,21 @@ export interface TeamHeadToHeadResponse {
   team_number: number;
   team_name?: string;
   matches_played: number;
+  autonomous_fuel_scored?: HeadToHeadMetricResponse;
+  autonomous_fuel_passed?: HeadToHeadMetricResponse;
+  autonomous_auto_climb?: HeadToHeadMetricResponse;
   autonomous_coral?: HeadToHeadMetricResponse;
   autonomous_net_algae?: HeadToHeadMetricResponse;
   autonomous_processor_algae?: HeadToHeadMetricResponse;
   autonomous_points?: HeadToHeadMetricResponse;
+  teleop_fuel_scored?: HeadToHeadMetricResponse;
+  teleop_fuel_passed?: HeadToHeadMetricResponse;
   teleop_coral?: HeadToHeadMetricResponse;
   teleop_game_pieces?: HeadToHeadMetricResponse;
   teleop_points?: HeadToHeadMetricResponse;
   teleop_net_algae?: HeadToHeadMetricResponse;
   teleop_processor_algae?: HeadToHeadMetricResponse;
+  endgame_climb?: HeadToHeadMetricResponse;
   endgame_points?: HeadToHeadMetricResponse;
   total_points?: HeadToHeadMetricResponse;
   total_net_algae?: HeadToHeadMetricResponse;
@@ -130,7 +135,8 @@ export const teamAnalyticsQueryKey = () => ['analytics', 'team-performance'] as 
 export const fetchTeamAnalytics = () =>
   apiFetch<TeamAnalyticsResponse[]>('analytics/eventSummary/teams');
 
-export const teamDetailedAnalyticsQueryKey = () => ['analytics', 'team-performance-detailed'] as const;
+export const teamDetailedAnalyticsQueryKey = () =>
+  ['analytics', 'team-performance-detailed'] as const;
 
 export const fetchTeamDetailedAnalytics = () =>
   apiFetch<TeamDetailedAnalyticsResponse[]>('analytics/event/teams/detailed');
@@ -147,8 +153,7 @@ export const fetchTeamMatchHistory = () =>
 
 export const teamZScoresQueryKey = () => ['analytics', 'team-z-scores'] as const;
 
-export const fetchTeamZScores = () =>
-  apiFetch<TeamZScoreResponse>('analytics/event/teams/zScores');
+export const fetchTeamZScores = () => apiFetch<TeamZScoreResponse>('analytics/event/teams/zScores');
 
 export const useTeamAnalytics = () =>
   useQuery({
