@@ -910,125 +910,133 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
     ];
 
     return (
-      <Stack>
-        {renderSectionCard(
-          'General Information',
-          <Table
-            withColumnBorders
-            highlightOnHover={false}
-            verticalSpacing="xs"
-            horizontalSpacing="sm"
-          >
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>Robot Weight</Table.Th>
-                <Table.Th>Drivetrain</Table.Th>
-                <Table.Th>Drive Team</Table.Th>
-                <Table.Th>Notes</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              <Table.Tr>
-                <Table.Td>{formatNumber(record.robot_weight)}</Table.Td>
-                <Table.Td>{formatText(record.drivetrain)}</Table.Td>
-                <Table.Td>{formatText(record.driveteam)}</Table.Td>
-                <Table.Td>
-                  <Text style={{ whiteSpace: 'pre-wrap' }}>{formatText(record.notes)}</Text>
-                </Table.Td>
-              </Table.Tr>
-            </Table.Tbody>
-          </Table>
-        )}
-        {renderSectionCard('Starting Positions', renderBooleanBadges(startingPositionFields))}
-        {renderSectionCard('Pickup Options', renderBooleanBadges(pickupFields))}
-        {renderSectionCard(
-          'Autonomous',
-          <Stack gap="sm">
-            {renderBooleanBadges(autoFields)}
-            <Table
-              withColumnBorders
-              highlightOnHover={false}
-              verticalSpacing="xs"
-              horizontalSpacing="sm"
-            >
-              <Table.Tbody>
-                <Table.Tr>
-                  <Table.Th scope="row">Auto Fuel Count</Table.Th>
-                  <Table.Td>{formatNumber(record.autoFuelCount)}</Table.Td>
-                </Table.Tr>
-                <Table.Tr>
-                  <Table.Th scope="row">Auto Pass Count</Table.Th>
-                  <Table.Td>{formatNumber(record.autoPassCount)}</Table.Td>
-                </Table.Tr>
-              </Table.Tbody>
-            </Table>
-            <Table
-              withColumnBorders
-              highlightOnHover={false}
-              verticalSpacing="xs"
-              horizontalSpacing="sm"
-            >
-              <Table.Tbody>
-                <Table.Tr>
-                  <Table.Th scope="row">Autonomous Notes</Table.Th>
-                  <Table.Td>
-                    <Text style={{ whiteSpace: 'pre-wrap' }}>{formatText(record.autoNotes)}</Text>
-                  </Table.Td>
-                </Table.Tr>
-              </Table.Tbody>
-            </Table>
+      <Grid gutter="md">
+        <Grid.Col span={{ base: 12, md: 6 }}>
+          <Stack>
+            {renderSectionCard(
+              'General Information',
+              <Table
+                withColumnBorders
+                highlightOnHover={false}
+                verticalSpacing="xs"
+                horizontalSpacing="sm"
+              >
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>Robot Weight</Table.Th>
+                    <Table.Th>Drivetrain</Table.Th>
+                    <Table.Th>Drive Team</Table.Th>
+                    <Table.Th>Notes</Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  <Table.Tr>
+                    <Table.Td>{formatNumber(record.robot_weight)}</Table.Td>
+                    <Table.Td>{formatText(record.drivetrain)}</Table.Td>
+                    <Table.Td>{formatText(record.driveteam)}</Table.Td>
+                    <Table.Td>
+                      <Text style={{ whiteSpace: 'pre-wrap' }}>{formatText(record.notes)}</Text>
+                    </Table.Td>
+                  </Table.Tr>
+                </Table.Tbody>
+              </Table>
+            )}
+            {renderSectionCard('Pickup Options', renderBooleanBadges(pickupFields))}
+            {renderSectionCard(
+              'Endgame & Overall Notes',
+              <Table
+                withColumnBorders
+                highlightOnHover={false}
+                verticalSpacing="xs"
+                horizontalSpacing="sm"
+              >
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>Endgame</Table.Th>
+                    <Table.Th>Overall Notes</Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  <Table.Tr>
+                    <Table.Td>{formatText(record.endgame)}</Table.Td>
+                    <Table.Td>
+                      <Text style={{ whiteSpace: 'pre-wrap' }}>{formatText(record.overallNotes)}</Text>
+                    </Table.Td>
+                  </Table.Tr>
+                </Table.Tbody>
+              </Table>
+            )}
           </Stack>
-        )}
-        {renderSectionCard(
-          'Teleop',
-          <Stack gap="sm">
-            {renderBooleanBadges(teleopFields)}
-            <Table
-              withColumnBorders
-              highlightOnHover={false}
-              verticalSpacing="xs"
-              horizontalSpacing="sm"
-            >
-              <Table.Tbody>
-                <Table.Tr>
-                  <Table.Th scope="row">Hopper Capacity</Table.Th>
-                  <Table.Td>{formatNumber(record.hopperCapacity)}</Table.Td>
-                </Table.Tr>
-                <Table.Tr>
-                  <Table.Th scope="row">Teleop Notes</Table.Th>
-                  <Table.Td>
-                    <Text style={{ whiteSpace: 'pre-wrap' }}>{formatText(record.teleNotes)}</Text>
-                  </Table.Td>
-                </Table.Tr>
-              </Table.Tbody>
-            </Table>
+        </Grid.Col>
+        <Grid.Col span={{ base: 12, md: 6 }}>
+          <Stack>
+            {renderSectionCard('Starting Positions', renderBooleanBadges(startingPositionFields))}
+            {renderSectionCard(
+              'Autonomous',
+              <Stack gap="sm">
+                {renderBooleanBadges(autoFields)}
+                <Table
+                  withColumnBorders
+                  highlightOnHover={false}
+                  verticalSpacing="xs"
+                  horizontalSpacing="sm"
+                >
+                  <Table.Tbody>
+                    <Table.Tr>
+                      <Table.Th scope="row">Auto Fuel Count</Table.Th>
+                      <Table.Td>{formatNumber(record.autoFuelCount)}</Table.Td>
+                    </Table.Tr>
+                    <Table.Tr>
+                      <Table.Th scope="row">Auto Pass Count</Table.Th>
+                      <Table.Td>{formatNumber(record.autoPassCount)}</Table.Td>
+                    </Table.Tr>
+                  </Table.Tbody>
+                </Table>
+                <Table
+                  withColumnBorders
+                  highlightOnHover={false}
+                  verticalSpacing="xs"
+                  horizontalSpacing="sm"
+                >
+                  <Table.Tbody>
+                    <Table.Tr>
+                      <Table.Th scope="row">Autonomous Notes</Table.Th>
+                      <Table.Td>
+                        <Text style={{ whiteSpace: 'pre-wrap' }}>{formatText(record.autoNotes)}</Text>
+                      </Table.Td>
+                    </Table.Tr>
+                  </Table.Tbody>
+                </Table>
+              </Stack>
+            )}
+            {renderSectionCard(
+              'Teleop',
+              <Stack gap="sm">
+                {renderBooleanBadges(teleopFields)}
+                <Table
+                  withColumnBorders
+                  highlightOnHover={false}
+                  verticalSpacing="xs"
+                  horizontalSpacing="sm"
+                >
+                  <Table.Tbody>
+                    <Table.Tr>
+                      <Table.Th scope="row">Hopper Capacity</Table.Th>
+                      <Table.Td>{formatNumber(record.hopperCapacity)}</Table.Td>
+                    </Table.Tr>
+                    <Table.Tr>
+                      <Table.Th scope="row">Teleop Notes</Table.Th>
+                      <Table.Td>
+                        <Text style={{ whiteSpace: 'pre-wrap' }}>{formatText(record.teleNotes)}</Text>
+                      </Table.Td>
+                    </Table.Tr>
+                  </Table.Tbody>
+                </Table>
+              </Stack>
+            )}
           </Stack>
-        )}
-        {renderSectionCard(
-          'Endgame & Overall Notes',
-          <Table
-            withColumnBorders
-            highlightOnHover={false}
-            verticalSpacing="xs"
-            horizontalSpacing="sm"
-          >
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>Endgame</Table.Th>
-                <Table.Th>Overall Notes</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              <Table.Tr>
-                <Table.Td>{formatText(record.endgame)}</Table.Td>
-                <Table.Td>
-                  <Text style={{ whiteSpace: 'pre-wrap' }}>{formatText(record.overallNotes)}</Text>
-                </Table.Td>
-              </Table.Tr>
-            </Table.Tbody>
-          </Table>
-        )}
-      </Stack>
+        </Grid.Col>
+      </Grid>
     );
   };
 
