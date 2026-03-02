@@ -9,7 +9,6 @@ import {
 import {
   Alert,
   Badge,
-  Box,
   Button,
   Card,
   Checkbox,
@@ -112,8 +111,11 @@ const getEmptyFormValues = (teamNumber: number): PitScoutFormValues => ({
   overallNotes: '',
 });
 
+const isPitScout2025Record = (record: PitScout | undefined): record is PitScout2025 =>
+  Boolean(record && 'autoL4Coral' in record && 'teleL4Coral' in record);
+
 const isPitScout2026Record = (record: PitScout | undefined): record is PitScout2026 =>
-  Boolean(record && 'hopperCapacity' in record);
+  Boolean(record && !isPitScout2025Record(record));
 
 const normalizeRecord = (record: PitScout | undefined, teamNumber: number): PitScoutFormValues => {
   const base = getEmptyFormValues(teamNumber);
@@ -316,10 +318,6 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
   const isDeleting = deletePitScout.isPending;
 
   const handlePrimaryAction = async () => {
-    if (is2026Record) {
-      return;
-    }
-
     if (!isEditing) {
       setIsEditing(true);
       setIsConfirmingDelete(false);
@@ -471,8 +469,9 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
   }
 
   const renderEditingContent = () => (
-    <>
-      <Box>
+    <Stack>
+      {renderSectionCard(
+        'General Information',
         <Grid gutter="md">
           <Grid.Col span={{ base: 12, md: 6 }}>
             <NumberInput
@@ -515,9 +514,9 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
             />
           </Grid.Col>
         </Grid>
-      </Box>
-      <Box>
-        <Title order={4}>Starting Positions</Title>
+      )}
+      {renderSectionCard(
+        'Starting Positions',
         <Group gap="md">
           <Checkbox
             label="Left"
@@ -538,9 +537,9 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
             disabled={!isEditing}
           />
         </Group>
-      </Box>
-      <Box>
-        <Title order={4}>Pickup Options</Title>
+      )}
+      {renderSectionCard(
+        'Pickup Options',
         <Group gap="md">
           <Checkbox
             label="Ground"
@@ -555,9 +554,9 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
             disabled={!isEditing}
           />
         </Group>
-      </Box>
-      <Box>
-        <Title order={4}>Autonomous</Title>
+      )}
+      {renderSectionCard(
+        'Autonomous',
         <Grid gutter="md">
           <Grid.Col span={{ base: 12, md: 3 }}>
             <Checkbox
@@ -632,9 +631,9 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
             />
           </Grid.Col>
         </Grid>
-      </Box>
-      <Box>
-        <Title order={4}>Teleop</Title>
+      )}
+      {renderSectionCard(
+        'Teleop',
         <Grid gutter="md">
           <Grid.Col span={{ base: 12, md: 3 }}>
             <Checkbox
@@ -695,9 +694,9 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
             />
           </Grid.Col>
         </Grid>
-      </Box>
-      <Box>
-        <Title order={4}>Endgame & Overall Notes</Title>
+      )}
+      {renderSectionCard(
+        'Endgame & Overall Notes',
         <Grid gutter="md">
           <Grid.Col span={{ base: 12, md: 4 }}>
             <Select
@@ -719,8 +718,8 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
             />
           </Grid.Col>
         </Grid>
-      </Box>
-    </>
+      )}
+    </Stack>
   );
 
   const renderReadOnlyContent = () => {
@@ -1069,7 +1068,7 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
         <Button
           color="red"
           onClick={handleDelete}
-          disabled={!existingRecord || isDeleting || isSubmitting || is2026Record}
+          disabled={!existingRecord || isDeleting || isSubmitting}
           loading={isDeleting}
           variant={isConfirmingDelete ? 'filled' : 'outline'}
         >
@@ -1077,7 +1076,7 @@ export function TeamPitScout({ teamNumber }: TeamPitScoutProps) {
         </Button>
         <Button
           onClick={handlePrimaryAction}
-          disabled={isDeleting || isSubmitting || is2026Record}
+          disabled={isDeleting || isSubmitting}
           loading={isSubmitting}
         >
           {isEditing ? 'Save changes' : 'Edit information'}
