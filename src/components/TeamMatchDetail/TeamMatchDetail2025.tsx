@@ -124,13 +124,12 @@ const SEASON_2026_MATCH_CONFIG: SeasonMatchTableConfig = {
       title: 'Autonomous',
       columns: [
         numberColumn('autoFuel', 'Fuel'),
-        numberColumn('autoPass', 'Pass'),
         numberColumn('autoClimb', 'Climb'),
       ],
     },
     {
       title: 'Teleop',
-      columns: [numberColumn('teleopFuel', 'Fuel'), numberColumn('teleopPass', 'Pass')],
+      columns: [numberColumn('teleopFuel', 'Fuel')],
     },
   ],
   trailingColumns: [
