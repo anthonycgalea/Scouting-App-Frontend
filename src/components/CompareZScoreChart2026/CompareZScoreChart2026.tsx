@@ -40,7 +40,6 @@ type ZScoreAttributeKey =
   | 'teleop_fuel_z'
   | 'total_fuel_z'
   | 'autonomous_passing_z'
-  | 'teleop_passing_z'
   | 'autonomous_climb_z'
   | 'superscout_overall_score_z'
   | 'superscout_driver_score_z'
@@ -62,7 +61,6 @@ const ATTRIBUTE_OPTIONS: AttributeOption[] = [
   { value: 'teleop_fuel_z', label: 'Teleop Fuel', extremesKey: 'teleop_fuel_average' },
   { value: 'total_fuel_z', label: 'Total Fuel', extremesKey: 'total_fuel_average' },
   { value: 'autonomous_passing_z', label: 'Autonomous Passing', extremesKey: 'autonomous_passing_average' },
-  { value: 'teleop_passing_z', label: 'Teleop Passing', extremesKey: 'teleop_passing_average' },
   { value: 'autonomous_climb_z', label: 'Autonomous Climb', extremesKey: 'autonomous_climb_average' },
   {
     value: 'superscout_overall_score_z',
@@ -86,7 +84,6 @@ const DEFAULT_ATTRIBUTE_SELECTION: ZScoreAttributeKey[] = [
   'autonomous_fuel_z',
   'teleop_fuel_z',
   'autonomous_passing_z',
-  'teleop_passing_z',
 ];
 
 type CompareZScoreChart2026Props = {
