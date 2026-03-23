@@ -38,7 +38,6 @@ type MetricKey =
   | 'autoFuel'
   | 'autoClimb'
   | 'teleopFuel'
-  | 'teleopPass'
   | 'total_fuel';
 
 type MetricOption = {
@@ -107,12 +106,6 @@ const METRIC_OPTIONS_2026: MetricOption[] = [
     valueSuffix: 'Climb',
   },
   { value: 'teleopFuel', label: 'Teleop Fuel', axisLabel: 'Teleop Fuel', valueSuffix: 'Fuel' },
-  {
-    value: 'teleopPass',
-    label: 'Teleop Passing',
-    axisLabel: 'Teleop Passing',
-    valueSuffix: 'Passes',
-  },
 ];
 
 const getMetricValue = (match: TeamMatchHistoryResponse['matches'][number], metricKey: MetricKey) => {
@@ -134,13 +127,6 @@ const getMetricValue = (match: TeamMatchHistoryResponse['matches'][number], metr
       : typeof match.teleopFuel === 'number'
         ? match.teleopFuel
         : null;
-  const teleopPassing =
-    typeof match.teleop_passing === 'number'
-      ? match.teleop_passing
-      : typeof match.teleopPass === 'number'
-        ? match.teleopPass
-        : null;
-
   if (metricKey === 'autoFuel') {
     return autonomousFuelScored;
   }
@@ -151,10 +137,6 @@ const getMetricValue = (match: TeamMatchHistoryResponse['matches'][number], metr
 
   if (metricKey === 'teleopFuel') {
     return teleopFuel;
-  }
-
-  if (metricKey === 'teleopPass') {
-    return teleopPassing;
   }
 
   if (metricKey === 'total_fuel') {
