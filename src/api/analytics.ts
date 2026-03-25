@@ -135,6 +135,12 @@ export const teamAnalyticsQueryKey = () => ['analytics', 'team-performance'] as 
 export const fetchTeamAnalytics = () =>
   apiFetch<TeamAnalyticsResponse[]>('analytics/eventSummary/teams');
 
+export const teamPrescoutAnalyticsQueryKey = () =>
+  ['analytics', 'prescout', 'team-performance'] as const;
+
+export const fetchTeamPrescoutAnalytics = () =>
+  apiFetch<TeamAnalyticsResponse[]>('analytics/prescout/teams');
+
 export const teamDetailedAnalyticsQueryKey = () =>
   ['analytics', 'team-performance-detailed'] as const;
 
@@ -159,6 +165,12 @@ export const useTeamAnalytics = () =>
   useQuery({
     queryKey: teamAnalyticsQueryKey(),
     queryFn: fetchTeamAnalytics,
+  });
+
+export const useTeamPrescoutAnalytics = () =>
+  useQuery({
+    queryKey: teamPrescoutAnalyticsQueryKey(),
+    queryFn: fetchTeamPrescoutAnalytics,
   });
 
 export const useTeamDetailedAnalytics = () =>
