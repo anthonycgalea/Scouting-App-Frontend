@@ -22,6 +22,10 @@ const TeamPitScout = lazy(async () => ({
   default: (await import('@/components/TeamPitScout/TeamPitScout')).TeamPitScout,
 }));
 
+const TeamPrescoutDetail = lazy(async () => ({
+  default: (await import('@/components/TeamMatchDetail/TeamPrescoutDetail')).TeamPrescoutDetail,
+}));
+
 const TeamHeader = lazy(async () => ({
   default: (await import('@/components/TeamHeader/TeamHeader')).TeamHeader,
 }));
@@ -39,6 +43,8 @@ export function TeamDetailPage() {
         return <TeamAnalytics teamNumber={teamNumber} />;
       case 'pit-scouting':
         return <TeamPitScout teamNumber={teamNumber} />;
+      case 'prescout-match-data':
+        return <TeamPrescoutDetail teamNumber={teamNumber} />;
       default:
         return <TeamMatchDetail teamNumber={teamNumber} />;
     }

@@ -7,9 +7,9 @@ export interface PrescoutRecord extends Record<string, unknown> {
   event_key: string;
   match_number: number;
   match_level: string;
-  user_id: string | null;
-  organization_id: number | null;
-  timestamp: string;
+  user_id?: string;
+  organization_id?: number;
+  timestamp?: string;
   notes?: string | null;
 }
 

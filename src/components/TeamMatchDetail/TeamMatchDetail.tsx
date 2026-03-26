@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Alert, Center, Loader } from '@mantine/core';
-import { type TeamMatchData, useTeamMatchData, useMatchSchedule } from '@/api';
+import { useTeamMatchData, useMatchSchedule } from '@/api';
 import { TeamMatchDetail2025 } from './TeamMatchDetail2025';
 
 interface TeamMatchDetailProps {
