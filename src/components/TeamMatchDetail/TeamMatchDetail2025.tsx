@@ -12,6 +12,7 @@ interface TeamMatchDetail2025Props {
   isUpcomingError: boolean;
   totalScheduledMatches: number;
   teamNumber: number;
+  showUpcomingMatches?: boolean;
 }
 
 type ColumnAlignment = 'left' | 'center' | 'right';
@@ -219,6 +220,7 @@ export function TeamMatchDetail2025({
   isUpcomingError,
   totalScheduledMatches,
   teamNumber,
+  showUpcomingMatches = true,
 }: TeamMatchDetail2025Props) {
   const [scrolled, setScrolled] = useState(false);
 
@@ -521,33 +523,41 @@ export function TeamMatchDetail2025({
     );
   };
 
+  const table = (
+    <Stack gap="sm" style={{ flex: 2, minHeight: 0 }}>
+      <ScrollArea
+        scrollbars="xy"
+        onScrollPositionChange={({ y }) => setScrolled(y !== 0)}
+        style={{ flex: 1, minHeight: 0 }}
+      >
+        <Table miw={1100}>
+          <Table.Thead className={cx(classes.header, { [classes.scrolled]: scrolled })}>
+            <Table.Tr>
+              {renderHeaderRow(tableConfig.leadColumns, hasColumnGroups ? { rowSpan: 2 } : undefined)}
+              {hasColumnGroups ? groupHeaderCells : null}
+              {renderHeaderRow(tableConfig.trailingColumns, hasColumnGroups ? { rowSpan: 2 } : undefined)}
+              {hasColumnGroups ? trailingGroupHeaderCells : null}
+            </Table.Tr>
+            {hasColumnGroups ? (
+              <Table.Tr>
+                {groupColumnHeaders}
+                {trailingGroupColumnHeaders}
+              </Table.Tr>
+            ) : null}
+          </Table.Thead>
+          <Table.Tbody>{rows}</Table.Tbody>
+        </Table>
+      </ScrollArea>
+    </Stack>
+  );
+
+  if (!showUpcomingMatches) {
+    return table;
+  }
+
   return (
     <Stack gap="lg" h="100%" style={{ flex: 1, minHeight: 0 }}>
-      <Stack gap="sm" style={{ flex: 2, minHeight: 0 }}>
-        <ScrollArea
-          scrollbars="xy"
-          onScrollPositionChange={({ y }) => setScrolled(y !== 0)}
-          style={{ flex: 1, minHeight: 0 }}
-        >
-          <Table miw={1100}>
-            <Table.Thead className={cx(classes.header, { [classes.scrolled]: scrolled })}>
-              <Table.Tr>
-                {renderHeaderRow(tableConfig.leadColumns, hasColumnGroups ? { rowSpan: 2 } : undefined)}
-                {hasColumnGroups ? groupHeaderCells : null}
-                {renderHeaderRow(tableConfig.trailingColumns, hasColumnGroups ? { rowSpan: 2 } : undefined)}
-                {hasColumnGroups ? trailingGroupHeaderCells : null}
-              </Table.Tr>
-              {hasColumnGroups ? (
-                <Table.Tr>
-                  {groupColumnHeaders}
-                  {trailingGroupColumnHeaders}
-                </Table.Tr>
-              ) : null}
-            </Table.Thead>
-            <Table.Tbody>{rows}</Table.Tbody>
-          </Table>
-        </ScrollArea>
-      </Stack>
+      {table}
       <Stack gap="xs" style={{ flex: 1, minHeight: 0 }}>
         <Text fw={600}>Upcoming Matches</Text>
         {renderUpcomingContent()}
