@@ -1,9 +1,10 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { Alert, Box, Center, Loader, Skeleton, Stack } from '@mantine/core';
 import {
   TeamPageSection,
   TeamPageToggle,
 } from '@/components/TeamPageToggle/TeamPageToggle';
+import { useEventPrescoutRecords, usePitScoutRecords } from '@/api';
 import { useParams } from '@tanstack/react-router';
 
 const TeamMatchDetail = lazy(async () => ({
@@ -34,6 +35,27 @@ export function TeamDetailPage() {
   const { teamId } = useParams({ from: '/teams/$teamId' });
   const teamNumber = Number.parseInt(teamId ?? '', 10);
   const [activeSection, setActiveSection] = useState<TeamPageSection>('match-data');
+  const { data: pitScoutRecords = [] } = usePitScoutRecords(teamNumber);
+  const { data: prescoutRecords = [] } = useEventPrescoutRecords({
+    enabled: Number.isFinite(teamNumber),
+  });
+
+  const hasPitScoutingData = pitScoutRecords.length > 0;
+  const hasPrescoutData = useMemo(
+    () => prescoutRecords.some((record) => record.team_number === teamNumber),
+    [prescoutRecords, teamNumber]
+  );
+
+  useEffect(() => {
+    if (activeSection === 'pit-scouting' && !hasPitScoutingData) {
+      setActiveSection('match-data');
+      return;
+    }
+
+    if (activeSection === 'prescout-match-data' && !hasPrescoutData) {
+      setActiveSection('match-data');
+    }
+  }, [activeSection, hasPitScoutingData, hasPrescoutData]);
 
   const renderActiveSection = () => {
     switch (activeSection) {
@@ -60,7 +82,12 @@ export function TeamDetailPage() {
             <TeamHeader teamNumber={teamNumber} />
           )}
         </Suspense>
-        <TeamPageToggle value={activeSection} onChange={(value) => setActiveSection(value)} />
+        <TeamPageToggle
+          value={activeSection}
+          onChange={(value) => setActiveSection(value)}
+          showPitScouting={hasPitScoutingData}
+          showPrescoutMatchData={hasPrescoutData}
+        />
         <Box style={{ flex: 1, minHeight: 0, display: 'flex' }}>
           <Suspense
             fallback={

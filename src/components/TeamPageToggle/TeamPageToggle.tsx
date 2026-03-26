@@ -11,20 +11,31 @@ export type TeamPageSection =
 type TeamPageToggleProps = {
   value: TeamPageSection;
   onChange: (value: TeamPageSection) => void;
+  showPitScouting?: boolean;
+  showPrescoutMatchData?: boolean;
 };
 
-export function TeamPageToggle({ value, onChange }: TeamPageToggleProps) {
+export function TeamPageToggle({
+  value,
+  onChange,
+  showPitScouting = true,
+  showPrescoutMatchData = true,
+}: TeamPageToggleProps) {
+  const tabData = [
+    { label: 'Match Data', value: 'match-data' },
+    { label: 'SuperScout', value: 'super-scout' },
+    { label: 'Analytics', value: 'analytics' },
+    ...(showPitScouting ? [{ label: 'Pit Scouting', value: 'pit-scouting' }] : []),
+    ...(showPrescoutMatchData
+      ? [{ label: 'Prescout Match Data', value: 'prescout-match-data' }]
+      : []),
+  ];
+
   return (
     <SegmentedControl
       radius="xl"
       size="md"
-      data={[
-        { label: 'Match Data', value: 'match-data' },
-        { label: 'SuperScout', value: 'super-scout' },
-        { label: 'Analytics', value: 'analytics' },
-        { label: 'Pit Scouting', value: 'pit-scouting' },
-        { label: 'Prescout Match Data', value: 'prescout-match-data' },
-      ]}
+      data={tabData}
       value={value}
       onChange={(newValue) => onChange(newValue as TeamPageSection)}
       classNames={classes}
