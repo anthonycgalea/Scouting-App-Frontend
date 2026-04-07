@@ -184,12 +184,10 @@ export const MatchPreview2026 = ({
 
   const autonomousFields: FieldConfig[] = [
     { key: 'auto-fuel-scored', label: 'Fuel Scored', getTeamStat: (team) => team?.auto.fuel_scored },
-    { key: 'auto-fuel-passed', label: 'Fuel Passed', getTeamStat: (team) => team?.auto.fuel_passed },
     { key: 'auto-climb-points', label: 'Auto Climb Points', getTeamStat: (team) => team?.auto.climb_points },
   ];
   const teleopFields: FieldConfig[] = [
     { key: 'teleop-fuel-scored', label: 'Fuel Scored', getTeamStat: (team) => team?.teleop.fuel_scored },
-    { key: 'teleop-fuel-passed', label: 'Fuel Passed', getTeamStat: (team) => team?.teleop.fuel_passed },
   ];
   const endgameFields: FieldConfig[] = [
     { key: 'endgame-points', label: 'Endgame Points', getTeamStat: (team) => team?.endgame },
