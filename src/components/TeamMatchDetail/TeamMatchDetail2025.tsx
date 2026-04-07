@@ -8,6 +8,7 @@ import {
   Group,
   Loader,
   ScrollArea,
+  Select,
   Stack,
   Table,
   Text,
@@ -276,6 +277,13 @@ const SEASON_TABLE_CONFIGS: Record<number, SeasonMatchTableConfig> = {
   2: SEASON_2026_MATCH_CONFIG,
   2026: SEASON_2026_MATCH_CONFIG,
 };
+
+const ENDGAME_EDIT_OPTIONS = [
+  { value: 'NONE', label: 'None' },
+  { value: 'L1', label: 'L1' },
+  { value: 'L2', label: 'L2' },
+  { value: 'L3', label: 'L3' },
+];
 
 export function TeamMatchDetail2025({
   data,
@@ -552,6 +560,19 @@ export function TeamMatchDetail2025({
 
     if (!canEditMatches || editingMatchKey !== getMatchKey(row) || rowValue === undefined) {
       return column.render(row);
+    }
+
+    if (fieldKey === 'endgame' && (resolvedSeason === 2 || resolvedSeason === 2026)) {
+      return (
+        <Select
+          size="xs"
+          data={ENDGAME_EDIT_OPTIONS}
+          value={editValues[fieldKey] ?? 'NONE'}
+          onChange={(value) => updateEditValue(fieldKey, value ?? 'NONE')}
+          allowDeselect={false}
+          comboboxProps={{ withinPortal: true }}
+        />
+      );
     }
 
     return (
