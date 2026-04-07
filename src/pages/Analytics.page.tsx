@@ -29,6 +29,7 @@ import {
   Text,
   Title,
 } from '@mantine/core';
+import { useLocalStorage, useMediaQuery } from '@mantine/hooks';
 
 const BOX_METRIC_OPTIONS: { label: string; value: BoxMetric }[] = [
   { label: 'Total Points', value: 'total' },
@@ -61,6 +62,13 @@ const mapDetailedAnalyticsResponse = (
 });
 
 export function AnalyticsPage() {
+  const [isNavbarCollapsed] = useLocalStorage<boolean>({
+    key: 'navbar-collapsed',
+    defaultValue: false,
+  });
+  const isSmallScreen = useMediaQuery('(max-width: 62em)');
+  const shouldUseFullBleedCharts = Boolean(isSmallScreen && isNavbarCollapsed);
+
   const {
     data: analyticsData,
     isLoading,
@@ -244,17 +252,33 @@ export function AnalyticsPage() {
                     <AnalyticsViewToggle value={view} onChange={setView} />
                   </Box>
                   {view === 'scatter' && (
-                    <Box w="100%" maw={1200} h={600} mx="auto">
+                    <Box
+                      w={shouldUseFullBleedCharts ? '100vw' : '100%'}
+                      maw={shouldUseFullBleedCharts ? 'none' : 1200}
+                      h={600}
+                      mx={shouldUseFullBleedCharts ? 'calc(50% - 50vw)' : 'auto'}
+                    >
                       <ScatterChart2025 teams={filteredTeams} />
                     </Box>
                   )}
                   {view === 'bar' && (
-                    <Box w="100%" maw={1200} h={600} mx="auto" style={{ overflowY: 'auto' }}>
+                    <Box
+                      w={shouldUseFullBleedCharts ? '100vw' : '100%'}
+                      maw={shouldUseFullBleedCharts ? 'none' : 1200}
+                      h={600}
+                      mx={shouldUseFullBleedCharts ? 'calc(50% - 50vw)' : 'auto'}
+                      style={{ overflowY: 'auto' }}
+                    >
                       <BarChart2025 teams={filteredTeams} />
                     </Box>
                   )}
                   {view === 'box' && (
-                    <Box w="100%" maw={1200} mx="auto" style={{ maxHeight: 600, overflowY: 'auto' }}>
+                    <Box
+                      w={shouldUseFullBleedCharts ? '100vw' : '100%'}
+                      maw={shouldUseFullBleedCharts ? 'none' : 1200}
+                      mx={shouldUseFullBleedCharts ? 'calc(50% - 50vw)' : 'auto'}
+                      style={{ maxHeight: 600, overflowY: 'auto' }}
+                    >
                       <Stack gap="md">
                         <SegmentedControl
                           radius="md"
