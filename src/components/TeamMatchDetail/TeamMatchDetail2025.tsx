@@ -1,8 +1,29 @@
 import { type ReactNode, useCallback, useMemo, useState } from 'react';
 import cx from 'clsx';
-import { Alert, Anchor, Group, Loader, ScrollArea, Stack, Table, Text } from '@mantine/core';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  Alert,
+  Anchor,
+  Button,
+  Group,
+  Loader,
+  ScrollArea,
+  Stack,
+  Table,
+  Text,
+  TextInput,
+} from '@mantine/core';
+import { notifications } from '@mantine/notifications';
 import { Link } from '@tanstack/react-router';
-import type { MatchScheduleEntry, TeamMatchData } from '@/api';
+import {
+  scoutMatchQueryKey,
+  teamMatchDataQueryKey,
+  teamMatchValidationQueryKey,
+  updateMatchDataBatch,
+  useUserRole,
+  type MatchScheduleEntry,
+  type TeamMatchData,
+} from '@/api';
 import classes from './TeamMatchDetail2025.module.css';
 
 interface TeamMatchDetail2025Props {
@@ -35,6 +56,49 @@ interface SeasonMatchTableConfig {
   trailingColumns: ColumnDefinition[];
   trailingGroups?: ColumnGroupDefinition[];
 }
+
+type MatchDataEditableField =
+  | 'al4c'
+  | 'al3c'
+  | 'al2c'
+  | 'al1c'
+  | 'tl4c'
+  | 'tl3c'
+  | 'tl2c'
+  | 'tl1c'
+  | 'aNet'
+  | 'tNet'
+  | 'aProcessor'
+  | 'tProcessor'
+  | 'autoPass'
+  | 'autoFuel'
+  | 'autoClimb'
+  | 'teleopFuel'
+  | 'teleopPass'
+  | 'endgame'
+  | 'notes';
+
+const EDITABLE_FIELDS: readonly MatchDataEditableField[] = [
+  'al4c',
+  'al3c',
+  'al2c',
+  'al1c',
+  'tl4c',
+  'tl3c',
+  'tl2c',
+  'tl1c',
+  'aNet',
+  'tNet',
+  'aProcessor',
+  'tProcessor',
+  'autoPass',
+  'autoFuel',
+  'autoClimb',
+  'teleopFuel',
+  'teleopPass',
+  'endgame',
+  'notes',
+];
 
 const formatEndgameLabel = (value: string | null | undefined) => {
   if (!value) {
@@ -223,6 +287,117 @@ export function TeamMatchDetail2025({
   showUpcomingMatches = true,
 }: TeamMatchDetail2025Props) {
   const [scrolled, setScrolled] = useState(false);
+  const [editingMatchKey, setEditingMatchKey] = useState<string | null>(null);
+  const [editValues, setEditValues] = useState<Partial<Record<MatchDataEditableField, string>>>({});
+  const { data: userRole } = useUserRole();
+  const canEditMatches = userRole?.role === 'ADMIN' || userRole?.role === 'LEAD';
+  const queryClient = useQueryClient();
+  const { mutateAsync: submitMatchEdit, isPending: isSubmittingEdit } = useMutation({
+    mutationFn: updateMatchDataBatch,
+  });
+
+  const getMatchKey = useCallback(
+    (row: TeamMatchData) => `${String(row.match_level ?? '').toLowerCase()}-${row.match_number}`,
+    []
+  );
+
+  const startEditing = useCallback((row: TeamMatchData) => {
+    const nextEditValues: Partial<Record<MatchDataEditableField, string>> = {};
+    const rowValues = row as unknown as Record<string, unknown>;
+
+    EDITABLE_FIELDS.forEach((field) => {
+      const value = rowValues[field];
+
+      if (value === undefined || value === null) {
+        nextEditValues[field] = '';
+        return;
+      }
+
+      nextEditValues[field] = String(value);
+    });
+
+    setEditingMatchKey(getMatchKey(row));
+    setEditValues(nextEditValues);
+  }, [getMatchKey]);
+
+  const stopEditing = useCallback(() => {
+    setEditingMatchKey(null);
+    setEditValues({});
+  }, []);
+
+  const updateEditValue = useCallback((field: MatchDataEditableField, value: string) => {
+    setEditValues((previous) => ({ ...previous, [field]: value }));
+  }, []);
+
+  const parseEditedValue = useCallback(
+    (field: MatchDataEditableField, currentValue: unknown) => {
+      const rawInput = editValues[field] ?? '';
+      const trimmed = rawInput.trim();
+
+      if (field === 'notes') {
+        return trimmed.length > 0 ? trimmed : null;
+      }
+
+      if (typeof currentValue === 'number') {
+        if (trimmed.length === 0) {
+          return 0;
+        }
+
+        const parsedNumber = Number(trimmed);
+
+        if (!Number.isFinite(parsedNumber)) {
+          throw new Error(`"${rawInput}" is not a valid value for ${field}.`);
+        }
+
+        return parsedNumber;
+      }
+
+      if (trimmed.length === 0) {
+        return currentValue;
+      }
+
+      return trimmed;
+    },
+    [editValues]
+  );
+
+  const handleSubmitEdit = useCallback(async (row: TeamMatchData) => {
+    try {
+      const updatedMatch = { ...row };
+      const rowValues = row as unknown as Record<string, unknown>;
+      const mutableMatch = updatedMatch as Record<string, unknown>;
+
+      EDITABLE_FIELDS.forEach((field) => {
+        if (rowValues[field] === undefined) {
+          return;
+        }
+
+        mutableMatch[field] = parseEditedValue(field, rowValues[field]);
+      });
+
+      await submitMatchEdit([updatedMatch]);
+
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: teamMatchDataQueryKey(teamNumber) }),
+        queryClient.invalidateQueries({ queryKey: teamMatchValidationQueryKey() }),
+        queryClient.invalidateQueries({ queryKey: scoutMatchQueryKey() }),
+      ]);
+
+      notifications.show({
+        color: 'green',
+        title: 'Match updated',
+        message: `Saved edits for ${formatMatchIdentifier(row)}.`,
+      });
+
+      stopEditing();
+    } catch (error) {
+      notifications.show({
+        color: 'red',
+        title: 'Unable to save match',
+        message: error instanceof Error ? error.message : 'Failed to edit match data.',
+      });
+    }
+  }, [parseEditedValue, queryClient, stopEditing, submitMatchEdit, teamNumber]);
 
   const sortedData = useMemo(() => {
     return [...data].sort((a, b) => {
@@ -371,32 +546,67 @@ export function TeamMatchDetail2025({
     )),
   );
 
+  const renderEditableCell = (row: TeamMatchData, column: ColumnDefinition) => {
+    const fieldKey = column.key as MatchDataEditableField;
+    const rowValue = (row as unknown as Record<string, unknown>)[fieldKey];
+
+    if (!canEditMatches || editingMatchKey !== getMatchKey(row) || rowValue === undefined) {
+      return column.render(row);
+    }
+
+    return (
+      <TextInput
+        size="xs"
+        value={editValues[fieldKey] ?? ''}
+        onChange={(event) => updateEditValue(fieldKey, event.currentTarget.value)}
+      />
+    );
+  };
+
   const rows = sortedData.map((row, index) => (
     <Table.Tr key={`${row.match_level}-${row.match_number}-${row.user_id ?? index}`}>
       {tableConfig.leadColumns.map((column) => (
         <Table.Td key={column.key} style={{ textAlign: column.align ?? 'left', whiteSpace: 'nowrap' }}>
-          {column.render(row)}
+          {renderEditableCell(row, column)}
         </Table.Td>
       ))}
       {tableConfig.groups.flatMap((group) =>
         group.columns.map((column) => (
           <Table.Td key={`${group.title}-${column.key}`} style={{ textAlign: column.align ?? 'left' }}>
-            {column.render(row)}
+            {renderEditableCell(row, column)}
           </Table.Td>
         )),
       )}
       {tableConfig.trailingColumns.map((column) => (
         <Table.Td key={column.key} style={{ textAlign: column.align ?? 'left' }}>
-          {column.render(row)}
+          {renderEditableCell(row, column)}
         </Table.Td>
       ))}
       {trailingGroups.flatMap((group) =>
         group.columns.map((column) => (
           <Table.Td key={`${group.title}-${column.key}`} style={{ textAlign: column.align ?? 'left' }}>
-            {column.render(row)}
+            {renderEditableCell(row, column)}
           </Table.Td>
         )),
       )}
+      {canEditMatches ? (
+        <Table.Td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+          {editingMatchKey === getMatchKey(row) ? (
+            <Group gap="xs" justify="flex-end">
+              <Button size="xs" onClick={() => void handleSubmitEdit(row)} loading={isSubmittingEdit}>
+                Submit
+              </Button>
+              <Button size="xs" variant="default" onClick={stopEditing} disabled={isSubmittingEdit}>
+                Cancel
+              </Button>
+            </Group>
+          ) : (
+            <Button size="xs" variant="light" onClick={() => startEditing(row)}>
+              Edit
+            </Button>
+          )}
+        </Table.Td>
+      ) : null}
     </Table.Tr>
   ));
 
@@ -537,6 +747,11 @@ export function TeamMatchDetail2025({
               {hasColumnGroups ? groupHeaderCells : null}
               {renderHeaderRow(tableConfig.trailingColumns, hasColumnGroups ? { rowSpan: 2 } : undefined)}
               {hasColumnGroups ? trailingGroupHeaderCells : null}
+              {canEditMatches ? (
+                <Table.Th rowSpan={hasColumnGroups ? 2 : undefined} style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                  Actions
+                </Table.Th>
+              ) : null}
             </Table.Tr>
             {hasColumnGroups ? (
               <Table.Tr>
