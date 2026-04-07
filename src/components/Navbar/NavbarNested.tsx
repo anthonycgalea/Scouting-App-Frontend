@@ -135,7 +135,6 @@ export function NavbarNested() {
           <div className={classes.header}>
             <Group justify="space-between">
               <Logo style={{ width: 120 }} />
-              <Code fw={700}>v0.0.1</Code>
             </Group>
           </div>
 
