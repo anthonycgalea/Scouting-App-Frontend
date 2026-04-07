@@ -4,12 +4,15 @@ import {
   IconCircleKey,
   IconFileAnalytics,
   IconGauge,
+  IconLayoutSidebarLeftCollapse,
+  IconLayoutSidebarLeftExpand,
   IconLock,
   IconPresentationAnalytics,
   IconUsersGroup,
   IconNumber123,
 } from '@tabler/icons-react';
-import { Button, Code, Group, ScrollArea } from '@mantine/core';
+import { ActionIcon, Button, Code, Group, ScrollArea, Tooltip } from '@mantine/core';
+import { useLocalStorage } from '@mantine/hooks';
 import { LinksGroup } from '../NavbarLinksGroup/NavbarLinksGroup';
 import { UserButton } from '../UserButton/UserButton';
 import { useUserInfo, useUserRole } from '@/api';
@@ -78,6 +81,10 @@ export function NavbarNested() {
   const canAccessPrivilegedSections = isOrganizationRoleAllowed(userRole?.role ?? null);
   const canManageOrganizations = canAccessPrivilegedSections;
   const isSiteAdmin = Boolean(userRole?.isSiteAdmin);
+  const [isCollapsed, setIsCollapsed] = useLocalStorage<boolean>({
+    key: 'navbar-collapsed',
+    defaultValue: false,
+  });
 
   const linksData = useMemo(
     () => {
@@ -105,30 +112,51 @@ export function NavbarNested() {
   const links = linksData.map((item) => <LinksGroup {...item} key={item.label} />);
 
   return (
-    <nav className={classes.navbar}>
-      <div className={classes.header}>
-        <Group justify="space-between">
-          <Logo style={{ width: 120 }} />
-          <Code fw={700}>v0.0.1</Code>
-        </Group>
+    <nav className={`${classes.navbar} ${isCollapsed ? classes.collapsed : ''}`}>
+      <div className={classes.collapseToggleRow}>
+        <Tooltip label={isCollapsed ? 'Expand navigation' : 'Collapse navigation'} position="right">
+          <ActionIcon
+            aria-label={isCollapsed ? 'Expand navigation' : 'Collapse navigation'}
+            variant="default"
+            size="lg"
+            onClick={() => setIsCollapsed((currentValue) => !currentValue)}
+          >
+            {isCollapsed ? (
+              <IconLayoutSidebarLeftExpand size={18} />
+            ) : (
+              <IconLayoutSidebarLeftCollapse size={18} />
+            )}
+          </ActionIcon>
+        </Tooltip>
       </div>
 
-      <ScrollArea className={classes.links}>
-        <div className={classes.linksInner}>{links}</div>
-      </ScrollArea>
+      {!isCollapsed && (
+        <>
+          <div className={classes.header}>
+            <Group justify="space-between">
+              <Logo style={{ width: 120 }} />
+              <Code fw={700}>v0.0.1</Code>
+            </Group>
+          </div>
 
-      <div className={classes.footer}>
-        {!loading && user ? (
-          <>
-            <Button fullWidth mb="sm" variant="light" onClick={logout}>
-              Log out
-            </Button>
-            <UserButton />
-          </>
-        ) : (
-          <UserButton />
-        )}
-      </div>
+          <ScrollArea className={classes.links}>
+            <div className={classes.linksInner}>{links}</div>
+          </ScrollArea>
+
+          <div className={classes.footer}>
+            {!loading && user ? (
+              <>
+                <Button fullWidth mb="sm" variant="light" onClick={logout}>
+                  Log out
+                </Button>
+                <UserButton />
+              </>
+            ) : (
+              <UserButton />
+            )}
+          </div>
+        </>
+      )}
     </nav>
   );
 }
