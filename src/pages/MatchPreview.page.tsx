@@ -40,6 +40,50 @@ export function MatchPreviewPage() {
     );
   }, [matchLevel, numericMatchNumber, scheduleData]);
 
+  const matchLevelLabels: Record<string, string> = {
+    qm: 'Qualification',
+    sf: 'Playoff',
+    f: 'Finals',
+  };
+
+  const normalizedLevel = match?.match_level?.toLowerCase() ?? matchLevel?.toLowerCase();
+  const previewParams =
+    normalizedLevel && !Number.isNaN(numericMatchNumber)
+      ? {
+          matchLevel: normalizedLevel,
+          matchNumber: match?.match_number ?? numericMatchNumber,
+        }
+      : undefined;
+  const {
+    data: matchPreview,
+    isLoading: isMatchPreviewLoading,
+    isError: isMatchPreviewError,
+  } = useMatchPreview(previewParams);
+  const simulationQueryKey = previewParams ? matchSimulationQueryKey(previewParams) : undefined;
+  const {
+    data: simulationResult,
+    isLoading: isSimulationLoading,
+    isError: isSimulationError,
+    isFetching: isSimulationFetching,
+  } = useMatchSimulation(previewParams);
+  const queryClient = useQueryClient();
+  const { mutate: triggerSimulation, isPending: isSimulationRunning } = useMutation({
+    mutationFn: runMatchSimulation,
+    onSuccess: async () => {
+      if (simulationQueryKey) {
+        await queryClient.invalidateQueries({ queryKey: simulationQueryKey });
+      }
+    },
+  });
+
+  const handleSimulationRefresh = () => {
+    if (!previewParams || isSimulationRunning) {
+      return;
+    }
+
+    triggerSimulation(previewParams);
+  };
+
   if (isLoading) {
     return (
       <Center mih={200}>
@@ -73,50 +117,7 @@ export function MatchPreviewPage() {
       </Center>
     );
   }
-
-  const matchLevelLabels: Record<string, string> = {
-    qm: 'Qualification',
-    sf: 'Playoff',
-    f: 'Finals',
-  };
-
-  const normalizedLevel = match.match_level?.toLowerCase() ?? matchLevel.toLowerCase();
   const matchLevelLabel = matchLevelLabels[normalizedLevel] ?? match.match_level ?? matchLevel;
-  const previewParams = match
-    ? {
-        matchLevel: normalizedLevel,
-        matchNumber: match.match_number ?? numericMatchNumber,
-      }
-    : undefined;
-  const {
-    data: matchPreview,
-    isLoading: isMatchPreviewLoading,
-    isError: isMatchPreviewError,
-  } = useMatchPreview(previewParams);
-  const simulationQueryKey = previewParams ? matchSimulationQueryKey(previewParams) : undefined;
-  const {
-    data: simulationResult,
-    isLoading: isSimulationLoading,
-    isError: isSimulationError,
-    isFetching: isSimulationFetching,
-  } = useMatchSimulation(previewParams);
-  const queryClient = useQueryClient();
-  const { mutate: triggerSimulation, isPending: isSimulationRunning } = useMutation({
-    mutationFn: runMatchSimulation,
-    onSuccess: async () => {
-      if (simulationQueryKey) {
-        await queryClient.invalidateQueries({ queryKey: simulationQueryKey });
-      }
-    },
-  });
-
-  const handleSimulationRefresh = () => {
-    if (!previewParams || isSimulationRunning) {
-      return;
-    }
-
-    triggerSimulation(previewParams);
-  };
 
   if (isMatchPreviewLoading) {
     return (
