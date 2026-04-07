@@ -11,7 +11,7 @@ import {
   IconUsersGroup,
   IconNumber123,
 } from '@tabler/icons-react';
-import { ActionIcon, Button, Code, Group, ScrollArea, Tooltip } from '@mantine/core';
+import { ActionIcon, Button, Group, ScrollArea, Tooltip } from '@mantine/core';
 import { useLocalStorage } from '@mantine/hooks';
 import { LinksGroup } from '../NavbarLinksGroup/NavbarLinksGroup';
 import { UserButton } from '../UserButton/UserButton';
@@ -113,28 +113,36 @@ export function NavbarNested() {
 
   return (
     <nav className={`${classes.navbar} ${isCollapsed ? classes.collapsed : ''}`}>
-      <div className={classes.collapseToggleRow}>
-        <Tooltip label={isCollapsed ? 'Expand navigation' : 'Collapse navigation'} position="right">
-          <ActionIcon
-            aria-label={isCollapsed ? 'Expand navigation' : 'Collapse navigation'}
-            variant="default"
-            size="lg"
-            onClick={() => setIsCollapsed((currentValue) => !currentValue)}
-          >
-            {isCollapsed ? (
+      {isCollapsed ? (
+        <div className={classes.collapseToggleRow}>
+          <Tooltip label="Expand navigation" position="right">
+            <ActionIcon
+              aria-label="Expand navigation"
+              variant="default"
+              size="lg"
+              onClick={() => setIsCollapsed((currentValue) => !currentValue)}
+            >
               <IconLayoutSidebarLeftExpand size={18} />
-            ) : (
-              <IconLayoutSidebarLeftCollapse size={18} />
-            )}
-          </ActionIcon>
-        </Tooltip>
-      </div>
+            </ActionIcon>
+          </Tooltip>
+        </div>
+      ) : null}
 
       {!isCollapsed && (
         <>
           <div className={classes.header}>
             <Group justify="space-between">
               <Logo style={{ width: 120 }} />
+              <Tooltip label="Collapse navigation" position="right">
+                <ActionIcon
+                  aria-label="Collapse navigation"
+                  variant="default"
+                  size="lg"
+                  onClick={() => setIsCollapsed((currentValue) => !currentValue)}
+                >
+                  <IconLayoutSidebarLeftCollapse size={18} />
+                </ActionIcon>
+              </Tooltip>
             </Group>
           </div>
 
